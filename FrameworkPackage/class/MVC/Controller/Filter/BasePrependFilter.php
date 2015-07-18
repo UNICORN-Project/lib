@@ -50,7 +50,7 @@ class BasePrependFilter {
 			debug('MVCPrependFilter denyHTTP ALLOW='.$allow);
 		}
 		// IPアドレスチェック
-		if(FALSE !== $denyALLIP && 0 !== $denyALLIP && "0" !== $denyALLIP){
+		if(FALSE !== $allow && FALSE !== $denyALLIP && 0 !== $denyALLIP && "0" !== $denyALLIP){
 			debug('MVCPrependFilter denyALLIP check');
 			debug('MVCPrependFilter denyALLIP='.$denyALLIP);
 			// ローカルIPでは無い
@@ -62,6 +62,22 @@ class BasePrependFilter {
 				$allow = TRUE;
 			}
 			debug('MVCPrependFilter denyALLIP ALLOW='.$allow);
+		}
+		if(FALSE !== $allow){
+			// モバイルIPは非固定なので、UAから判断してしまって、許可をする
+			$serverUserAgent = $_SERVER ['HTTP_USER_AGENT'];
+			if (false != strpos ( strtolower ( $serverUserAgent ), 'iphone' )) {
+				$allow = TRUE;
+			}
+			elseif (false != strpos ( strtolower ( $serverUserAgent ), 'ipad' )) {
+				$allow = TRUE;
+			}
+			elseif (false != strpos ( strtolower ( $serverUserAgent ), 'ipod' )) {
+				$allow = TRUE;
+			}
+			elseif (false != strpos ( strtolower ( $serverUserAgent ), 'android' )) {
+				$allow = TRUE;
+			}
 		}
 		debug('MVCPrependFilter ALLOW='.$allow);
 		return $allow;

@@ -403,7 +403,7 @@ class GenericDBO {
 						}
 					}
 					elseif(FALSE !== strpos($baseDescribes[$baseDescribeNum]["Type"], "blob")){
-						$describes[$baseDescribes[$baseDescribeNum]["Field"]]["type"] = "blob";
+						$describes[$baseDescribes[$baseDescribeNum]["Field"]]["type"] = strtolower($baseDescribes[$baseDescribeNum]["Type"]);
 						$describes[$baseDescribes[$baseDescribeNum]["Field"]]["default"] = FALSE;
 						if(TRUE === $describes[$baseDescribes[$baseDescribeNum]["Field"]]["null"] && NULL === $baseDescribes[$baseDescribeNum]["Default"]){
 							$describes[$baseDescribes[$baseDescribeNum]["Field"]]["default"] = NULL;

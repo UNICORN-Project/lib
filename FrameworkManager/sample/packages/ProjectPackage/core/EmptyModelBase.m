@@ -5,6 +5,7 @@
 //
 
 #import "%modelName%ModelBase.h"
+%import%
 
 @implementation %modelName%ModelBase
 {

@@ -3,13 +3,28 @@
   Project
 
   Created by saimushi on 2014/10/01.
-  Copyright (c) 2014年 shuhei_ohono. All rights reserved.
+  Copyright (c) 2014年 saimushi. All rights reserved.
 */
-"MM/dd/yy, HH:mm" = "yyyy-MM-dd HH:mm";
-"Last Updated: %@" = "前回読み込み日時: %@";
-"Pull down to refresh..." = "下に引っ張って再読み込み";
-"Release to refresh..." = "指を離すと再読み込みを開始します";
-"Loading..." = "読み込み中...";
-
-"Cancel" = "キャンセル";
-"OK" = "完了";
+"MM/dd/yy, HH:mm" = "MM/dd/yy, HH:mm";
+"Last Updated: %@" = "Last Updated: %@";
+"Pull down to refresh..." = "Pull down to refresh...";
+"Release to refresh..." = "Release to refresh...";
+"Loading..." = "Loading...";
+"Cancel" = "Cancel";
+"OK" = "OK";
+"SAVE" = "SAVE";
+" OK " = " OK ";
+"Close" = "Close";
+"Choose" = "Choose";
+"Add" = "Add";
+"Limit String Length %d ~ %d" = "Limit String Length %d ~ %d";
+"Limit Over String %d" = "Limit Over String %d";
+"Limit Under String %d" = "Limit Under String %d";
+"Fatal Error!\rPlease try restart this application" = "Fatal Error!\rPlease try restart this application";
+"Time out" = "Time out";
+"Internal Server Error" = "Internal Server Error";
+"Error code 400\rBad Request" = "Error code 400\rBad Request";
+"Error code 401\rUnauthorized" = "Error code 401\rUnauthorized";
+"Error code 404\rNot Found" = "Error code 404\rNot Found";
+"Error code 503\rService Unavailable" = "Error code 503\rService Unavailable";
+"Please update new version." = "Please update new version.";

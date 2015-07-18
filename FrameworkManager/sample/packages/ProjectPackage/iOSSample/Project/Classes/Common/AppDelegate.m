@@ -8,6 +8,10 @@
 #import "AppDelegate.h"
 
 @implementation AppDelegate
+{
+    // Private
+    NSMutableArray *overlayViews;
+}
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
@@ -18,56 +22,11 @@
 
     // Google Analyticsの初期化
     [self initializeGoogleAnalytics];
-    
+
     NSDictionary *userInfo = [launchOptions objectForKey:UIApplicationLaunchOptionsRemoteNotificationKey];
     if (userInfo != nil) {
         //アプリが起動していないときにpush通知からアプリが起動された時
     }
-
-//    // アプリ全体のステータスバーのスタイルを変更(用plistのView controller-based status bar = NO)
-//    [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent];
-//
-//    // ナビゲーションバーのスタイルを定義しておく
-//    // ナビゲーションバーの全体の色指定
-//    [[UINavigationBar appearance] setBarTintColor:RGBA(30, 30, 30, 1)];
-//    // ナビゲーションバーのボタンアイテムのテキストカラー指定
-//    [[UINavigationBar appearance] setTintColor:[UIColor whiteColor]];
-//    // ナビゲーションバーのタイトルテキストカラー指定
-//    [[UINavigationBar appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor]}];
-//
-//    // タブバーのスタイルを定義しておく
-//    // タブバーの背景色指定
-//    [[UITabBar appearance] setBarTintColor:[UINavigationBar appearance].barTintColor];
-//    // タブバーのタイトルテキストカラー指定
-//    [[UITabBarItem appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor lightGrayColor]} forState:UIControlStateNormal];
-//    // タブバーの選択色指定
-//    [[UITabBarItem appearance] setTitleTextAttributes:@{NSForegroundColorAttributeName: [UIColor whiteColor]} forState:UIControlStateSelected];
-//
-//    // TabbarItemの数だけUINavigationControllerのインスタンスを生成
-//    self.topViewController = [[TopViewController alloc] init];
-//    UIViewControllerBase *settingViewController = [[SettingViewController alloc] init];
-//    UINavigationController *topNavigationController = [[UINavigationController alloc] initWithRootViewController:self.topViewController];
-//    UINavigationController *settingNavigationController = [[UINavigationController alloc] initWithRootViewController:settingViewController];
-//    topNavigationController.navigationBar.barStyle = UIBarStyleBlack;
-//    settingNavigationController.navigationBar.barStyle = UIBarStyleBlack;
-//
-//    // タブバーの設置
-//    UITabBarController *tabBarController = [[UITabBarController alloc] init];
-//    tabBarController.delegate = self;
-//    // TabBarControllerにNavigationControllerをセット
-//    tabBarController.viewControllers = [NSMutableArray arrayWithObjects:topNavigationController, settingNavigationController, nil];
-//    // タブバータイトルの設定
-//    ((UITabBarItem *)[tabBarController.tabBar.items objectAtIndex:0]).title = self.topViewController.screenName;
-//    ((UITabBarItem *)[tabBarController.tabBar.items objectAtIndex:1]).title = settingViewController.screenName;
-//
-//    // タブコントローラをメインルートに設定
-//    self.mainRootViewController = tabBarController;
-//
-//    // Windowを表示
-//    self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-//    self.window.backgroundColor = [UIColor whiteColor];
-//    [self.window setRootViewController:self.mainRootViewController];
-//    [self.window makeKeyAndVisible];
 
     return YES;
 }
@@ -194,6 +153,35 @@
 - (BOOL)isSimulator;
 {
     return [[[UIDevice currentDevice] model] hasSuffix:@"Simulator"];
+}
+
+- (void)addSubviewFirstFront:(UIView *)argView;
+{
+    if (nil == overlayViews){
+        overlayViews = [[NSMutableArray alloc] init];
+    }
+    [overlayViews addObject:argView];
+    [self.window addSubview:[overlayViews objectAtIndex:overlayViews.count-1]];
+}
+
+- (void)removeFromFirstFrontSubview:(UIView *)argView;
+{
+    if (nil == overlayViews){
+        return;
+    }
+    NSString *className = NSStringFromClass([argView class]);
+    BOOL removed = NO;
+    for (UIView *view in overlayViews){
+        if (nil != view && [view isKindOfClass:NSClassFromString(@"UIView")] && [view isKindOfClass:NSClassFromString(className)] && [view isEqual:argView]){
+            [view removeFromSuperview];
+            [overlayViews removeObject:view];
+            removed = YES;
+            break;
+        }
+    }
+    if (NO == removed) {
+        [argView removeFromSuperview];
+    }
 }
 
 #pragma mark - ローディング関連

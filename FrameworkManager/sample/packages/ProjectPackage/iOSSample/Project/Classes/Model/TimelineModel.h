@@ -1,5 +1,5 @@
 //
-//  SampleModel.h
+//  TimelineModel.h
 //  自由に拡張可能です
 //
 //  Copyright (c) 2014年 saimushi. All rights reserved.
@@ -9,8 +9,8 @@
 // 循環参照エラーになる場合があります！
 // ヘッダーでmodelを利用する場合は、@class指定を使って下さい！
 
-#import "SampleModelBase.h"
+#import "TimelineModelBase.h"
 
-@interface SampleModel : SampleModelBase
+@interface TimelineModel : TimelineModelBase
 
 @end

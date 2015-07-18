@@ -26,6 +26,9 @@
 @synthesize index;
 @synthesize total;
 @synthesize records;
+@synthesize limit;
+@synthesize offset;
+@synthesize isDeep;
 @synthesize delegate;
 
 
@@ -65,7 +68,10 @@
         index = 0;
         total = 0;
         records = 0;
+        limit = 10;
+        offset = 0;
         replaced = NO;
+        isDeep = YES;
         // ハンドラBlockは標準ではnilである！
         completionHandler = nil;
         // delegateは標準ではnilである！
@@ -123,60 +129,39 @@
 {
     NSString *url = @"";
     if(nil != argResourceID){
-        // 更新(Put)
         url = [NSString stringWithFormat:@"%@://%@%@%@%@/%@.json", argProtocol, argDomain, argURLBase, argMyResourcePrefix, argModelName, argResourceID];
     }
     else{
-        // 新規(POST)
         url = [NSString stringWithFormat:@"%@://%@%@%@%@.json", argProtocol, argDomain, argURLBase, argMyResourcePrefix, argModelName];
     }
     return url;
 }
 
 /* モデルを参照する */
-- (BOOL)load;
+- (BOOL)load:(loadResourceMode)argLoadResourceMode;
 {
-//    if(nil == self.ID){
-//        // ID無指定は単一モデル参照エラー
-//        return NO;
-//    }
-    return [self _load:myResource :nil];
+    return [self _load:argLoadResourceMode :nil];
 }
 
-- (BOOL)load:(RequestCompletionHandler)argCompletionHandler;
-{
-//    if(nil == self.ID){
-//        // ID無指定は単一モデル参照エラー
-//        return NO;
-//    }
-    completionHandler = argCompletionHandler;
-    return [self _load:myResource :nil];
-}
-
-- (BOOL)list;
-{
-    return [self _load:listedResource :nil];
-}
-
-- (BOOL)list:(RequestCompletionHandler)argCompletionHandler;
+- (BOOL)load:(loadResourceMode)argLoadResourceMode :(RequestCompletionHandler)argCompletionHandler;
 {
     completionHandler = argCompletionHandler;
-    return [self _load:listedResource :nil];
+    return [self _load:argLoadResourceMode :nil];
 }
 
-- (BOOL)query:(NSMutableDictionary *)argWhereParams;
+- (BOOL)query:(NSMutableDictionary *)argWhereParams :(loadResourceMode)argLoadResourceMode;
 {
-    return [self _load:automaticResource :argWhereParams];
+    return [self _load:argLoadResourceMode :argWhereParams];
 }
 
-- (BOOL)query:(NSMutableDictionary *)argWhereParams :(RequestCompletionHandler)argCompletionHandler;
+- (BOOL)query:(NSMutableDictionary *)argWhereParams :(loadResourceMode)argLoadResourceMode :(RequestCompletionHandler)argCompletionHandler;
 {
     completionHandler = argCompletionHandler;
-    return [self _load:automaticResource :argWhereParams];
+    return [self _load:argLoadResourceMode :argWhereParams];
 }
 
 /* モデルを読み込む */
-- (BOOL)_load:(int)argLoadResourceMode :(NSMutableDictionary *)argSaveParams;
+- (BOOL)_load:(int)argLoadResourceMode :(NSMutableDictionary *)argParams;
 {
     // モデルの読み込み(RESTful)
     // 認証を先ずチェック
@@ -188,82 +173,117 @@
         [Request saveCookie];
     }
     if(nil != [ModelBase loadDeviceToken]){
-        [argSaveParams setObject:[ModelBase loadDeviceToken] forKey:deviceTokenKeyName];
+        if (nil == argParams){
+            argParams = [[NSMutableDictionary alloc] init];
+        }
+        [argParams setObject:[ModelBase loadDeviceToken] forKey:deviceTokenKeyName];
 #ifdef DEBUG
         // 通知先はSANDBOXの端末である
-        [argSaveParams setObject:@"1" forKey:@"sandbox_enabled"];
+        [argParams setObject:@"1" forKey:@"sandbox_enabled"];
 #else
         // 通知先はSANDBOXでは無い！端末である
-        [argSaveParams setObject:@"0" forKey:@"sandbox_enabled"];
+        [argParams setObject:@"0" forKey:@"sandbox_enabled"];
 #endif
     }
+
+    if (NO == self.isDeep) {
+        if (nil == argParams){
+            argParams = [[NSMutableDictionary alloc] init];
+        }
+        [argParams setObject:@"0" forKey:@"_deep_"];
+    }
+
     // 保存モデルのRESTfulURLを作成
     NSString *url = @"";
     // 通信
     statusCode = 0;
     requested = NO;
-    if(myResource == argLoadResourceMode){
+    if(IDResource == argLoadResourceMode){
         // 単一モデル参照
-        url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :self.ID];
+        url = [self createURLString:protocol :domain :urlbase :@"" :self.modelName :self.ID];
         NSLog(@"get url=%@", url);
         if (nil != requestMethod) {
             if ([requestMethod isEqualToString:@"POST"]){
-                [Request post:self :url :argSaveParams];
+                [Request post:self :url :argParams];
             }
             else if ([requestMethod isEqualToString:@"PUT"]){
-                [Request put:self :url :argSaveParams];
+                [Request put:self :url :argParams];
             }
         }
         else {
-            [Request get:self :url :argSaveParams];
+            [Request get:self :url :argParams];
+        }
+    }
+    else if(myIDResource == argLoadResourceMode){
+        // 自己所有モデル参照
+        url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :nil];
+        NSLog(@"get url=%@", url);
+        if (nil != requestMethod) {
+            if ([requestMethod isEqualToString:@"POST"]){
+                [Request post:self :url :argParams];
+            }
+            else if ([requestMethod isEqualToString:@"PUT"]){
+                [Request put:self :url :argParams];
+            }
+        }
+        else {
+            [Request get:self :url :argParams];
         }
     }
     else if(listedResource == argLoadResourceMode){
         // 配列モデル参照
-        url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :nil];
+        if (-1 < self.limit) {
+            if (nil == argParams){
+                argParams = [[NSMutableDictionary alloc] init];
+            }
+            [argParams setValue:[NSString stringWithFormat:@"%d", self.limit] forKey:@"LIMIT"];
+        }
+        if (-1 < self.offset) {
+            if (nil == argParams){
+                argParams = [[NSMutableDictionary alloc] init];
+            }
+            [argParams setValue:[NSString stringWithFormat:@"%d", self.offset] forKey:@"OFFSET"];
+        }
+        url = [self createURLString:protocol :domain :urlbase :@"" :self.modelName :nil];
         NSLog(@"get url=%@", url);
         if (nil != requestMethod) {
             if ([requestMethod isEqualToString:@"POST"]){
-                [Request post:self :url :argSaveParams];
+                [Request post:self :url :argParams];
             }
             else if ([requestMethod isEqualToString:@"PUT"]){
-                [Request put:self :url :argSaveParams];
+                [Request put:self :url :argParams];
             }
         }
         else {
-            [Request get:self :url :argSaveParams];
+            [Request get:self :url :argParams];
         }
     }
-    else if(nil != self.ID){
-        // 単一モデル参照
-        url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :self.ID];
-        NSLog(@"get url=%@", url);
-        if (nil != requestMethod) {
-            if ([requestMethod isEqualToString:@"POST"]){
-                [Request post:self :url :argSaveParams];
-            }
-            else if ([requestMethod isEqualToString:@"PUT"]){
-                [Request put:self :url :argSaveParams];
-            }
-        }
-        else {
-            [Request get:self :url :argSaveParams];
-        }
-    }
-    else {
+    else if(myListedResource == argLoadResourceMode){
         // 配列モデル参照
+        if (-1 < self.limit) {
+            if (nil == argParams){
+                argParams = [[NSMutableDictionary alloc] init];
+            }
+            [argParams setValue:[NSString stringWithFormat:@"%d", self.limit] forKey:@"LIMIT"];
+        }
+        if (-1 < self.offset) {
+            if (nil == argParams){
+                argParams = [[NSMutableDictionary alloc] init];
+            }
+            [argParams setValue:[NSString stringWithFormat:@"%d", self.offset] forKey:@"OFFSET"];
+        }
         url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :nil];
         NSLog(@"get url=%@", url);
         if (nil != requestMethod) {
             if ([requestMethod isEqualToString:@"POST"]){
-                [Request post:self :url :argSaveParams];
+                [Request post:self :url :argParams];
             }
             else if ([requestMethod isEqualToString:@"PUT"]){
-                [Request put:self :url :argSaveParams];
+                [Request put:self :url :argParams];
             }
         }
         else {
-            [Request get:self :url :argSaveParams];
+            [Request get:self :url :argParams];
         }
     }
     requestMethod = nil;
@@ -325,6 +345,9 @@
         [Request saveCookie];
     }
     if(nil != [ModelBase loadDeviceToken]){
+        if (nil == argSaveParams){
+            argSaveParams = [[NSMutableDictionary alloc] init];
+        }
         [argSaveParams setObject:[ModelBase loadDeviceToken] forKey:deviceTokenKeyName];
 #ifdef DEBUG
         // 通知先はSANDBOXの端末である
@@ -336,6 +359,11 @@
     }
     // 保存モデルのRESTfulURLを作成
     NSString *url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :self.ID];
+
+    if (NO == self.isDeep) {
+        url = [NSString stringWithFormat:@"%@?_deep_=0", url];
+    }
+
     // 通信
     statusCode = 0;
     requested = NO;
@@ -407,6 +435,9 @@
         [Request saveCookie];
     }
     if(nil != [ModelBase loadDeviceToken]){
+        if (nil == argSaveParams){
+            argSaveParams = [[NSMutableDictionary alloc] init];
+        }
         [argSaveParams setObject:[ModelBase loadDeviceToken] forKey:deviceTokenKeyName];
 #ifdef DEBUG
         // 通知先はSANDBOXの端末である
@@ -418,6 +449,11 @@
     }
     // 保存モデルのRESTfulURLを作成
     NSString *url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :self.ID];
+
+    if (NO == self.isDeep) {
+        url = [NSString stringWithFormat:@"%@?_deep_=0", url];
+    }
+
     // 通信
     statusCode = 0;
     requested = NO;
@@ -487,6 +523,9 @@
         [Request saveCookie];
     }
     if(nil != [ModelBase loadDeviceToken]){
+        if (nil == argSaveParams){
+            argSaveParams = [[NSMutableDictionary alloc] init];
+        }
         [argSaveParams setObject:[ModelBase loadDeviceToken] forKey:deviceTokenKeyName];
 #ifdef DEBUG
         // 通知先はSANDBOXの端末である
@@ -498,6 +537,11 @@
     }
     // 保存モデルのRESTfulURLを作成
     NSString *url = [self createURLString:protocol :domain :urlbase :myResourcePrefix :self.modelName :self.ID];
+
+    if (NO == self.isDeep) {
+        url = [NSString stringWithFormat:@"%@?_deep_=0", url];
+    }
+
     // 通信
     statusCode = 0;
     requested = NO;
@@ -835,8 +879,7 @@
     self.total = (int)[list count];
 }
 
-/* 廃止? */
-- (id)search:(NSString *)argSearchKey :(NSString *)argSearchValue;
+- (NSIndexSet *)search:(NSString *)argSearchKey :(NSString *)argSearchValue;
 {
     NSPredicate *patternMatchFilter = [NSPredicate predicateWithBlock:^BOOL(id obj, NSDictionary *d){
         NSDictionary *data = obj;
@@ -846,11 +889,13 @@
         NSRange range = [[data objectForKey:argSearchKey] rangeOfString:argSearchValue];
         return (range.location != NSNotFound);
     }];
-    NSUInteger filteredIndex = [list indexOfObjectPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
+    NSIndexSet *filteredIndexs = [list indexesOfObjectsPassingTest:^BOOL(id obj, NSUInteger idx, BOOL *stop) {
         return [patternMatchFilter evaluateWithObject:obj];
     }];
-    NSLog(@"index=%d", (int)filteredIndex);
-    return [self objectAtIndex:(int)filteredIndex];
+    if (0 < [filteredIndexs count]){
+        return filteredIndexs;
+    }
+    return nil;
 }
 
 /* モデル側で必ず実装して下さい！ */
@@ -863,8 +908,16 @@
 {
     requestMethod = nil;
     response = nil;
-    list = [argDataArray mutableCopy];
+    if(self.offset > 0 && nil != list && 0 < [list count]){
+        [list addObjectsFromArray:argDataArray];
+    }
+    else {
+        list = [argDataArray mutableCopy];
+    }
     self.total = (int)[list count];
+    if (1 < [list count]){
+        self.offset = self.total;
+    }
     if(0 < [list count]){
         response = [list objectAtIndex:0];
         [self _setModelData:response];
@@ -883,6 +936,25 @@
         [self _setModelData:response];
     }
 }
+
+//- (void)setModelData:(NSMutableArray *)argDataArray :(int)argIndex;
+//{
+//    requestMethod = nil;
+//    response = nil;
+//    if(self.offset > 0 && nil != list && 0 < [list count]){
+//        [list addObjectsFromArray:argDataArray];
+//    }
+//    else {
+//        list = [argDataArray mutableCopy];
+//    }
+//    self.total = (int)[list count];
+//    self.offset = self.total;
+//    if(argIndex < [list count]){
+//        response = [list objectAtIndex:argIndex];
+//        self.index = argIndex;
+//        [self _setModelData:response];
+//    }
+//}
 
 - (void)_setModelData:(NSMutableDictionary *)argDataDic;
 {
@@ -987,6 +1059,9 @@
             else {
                 data = (NSMutableArray *)dic;
             }
+            // レコード総数を保持
+            self.records = (int)[[headerInfo objectForKey:@"Records"] integerValue];
+            // モデルデータに加工する
             [self setModelData:data];
         }
         else {

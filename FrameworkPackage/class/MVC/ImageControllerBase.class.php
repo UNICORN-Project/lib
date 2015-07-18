@@ -19,7 +19,7 @@ class ImageControllerBase extends APIControllerBase {
 		$key = NULL;
 		$DSN = NULL;
 		$memcacheExists = FALSE;
-		if(NULL === $argMemcacheDSN && class_exists('Config') && NULL !== Configure::constant('MEMCACHE_DSN')){
+		if(NULL === $argMemcacheDSN && class_exists('Configure') && NULL !== Configure::constant('MEMCACHE_DSN')){
 			$DSN = Configure::MEMCACHE_DSN;
 		}
 		else {

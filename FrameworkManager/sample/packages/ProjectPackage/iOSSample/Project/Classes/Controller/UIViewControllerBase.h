@@ -5,20 +5,31 @@
 //  Copyright (c) 2012年 saimushi. All rights reserved.
 //
 
-@interface UIViewControllerBase : UIViewController
+#import "ModelBase.h"
+
+@interface UIViewControllerBase : UIViewController <UINavigationControllerDelegate>
 {
     // Protected
     NSDate *viewStayStartTime;
     NSDate *viewStayEndTime;
     NSString *screenName;
     BOOL isNavigateion;
+    loadResourceMode resourceMode;
+    ModelBase *data;
+    UIButton *tapAreaAlphaBtn;
+    BOOL _loading;
+    NSString *loadingMessage;
 }
 
 // Public
-@property (nonatomic) NSDate *viewStayStartTime;
-@property (nonatomic) NSDate *viewStayEndTime;
-@property (nonatomic) NSString *screenName;
+@property (strong, nonatomic) ModelBase *data;
 
+- (void)setModelData:(ModelBase *)argModelData;
+- (void)showData:(NSHTTPURLResponse *)argResponseHeader :(NSString *)argResponseBody;
+- (void)showLoading:(NSString *)argLoadingMessage;
+- (void)hideLoading;
 - (void)dataLoad;
+- (void)startDataLoad;
+- (void)endDataLoad:(BOOL)argSuccess :(NSInteger)argStatusCode :(NSHTTPURLResponse *)argResponseHeader :(NSString *)argResponseBody :(NSError *)argError;
 
 @end

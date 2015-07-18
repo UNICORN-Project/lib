@@ -19,9 +19,7 @@
     float textAreaHeight;
     float latestKeyboardHeight;
     float onelineTextHeight;
-    UIView *childeView;
     UIImageView *textAreaBGView;
-    UITextView *textView;
     UIButton *leftBtn;
     UIButton *rightBtn;
     NSRange latestRange;
@@ -38,6 +36,8 @@
 }
 
 @synthesize textAreaView;
+@synthesize childeView;
+@synthesize textView;
 
 #pragma mark override methods
 
@@ -152,15 +152,14 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
 
         // 左ボタン
         leftBtn = argLeftBtn;
+        if(leftBtn != nil){
+            [self.textAreaView addSubview:leftBtn];
+        }
         // ボタン押下で実行するブロックの定義
         leftBtnBlock = argLeftCompletion;
         if (nil != leftBtnBlock) {
-            // 左ボタンを設置
-            if (CGRectEqualToRect(leftBtn.frame, CGRectZero)){
-                leftBtn.frame = CGRectMake(10, (argTextAreaHeight - (argTextAreaHeight / 2.0f)) / 2.0f, argTextAreaHeight / 2.0f, argTextAreaHeight / 2.0f);
-            }
+            // 左ボタンイベントを設置
             [leftBtn addTarget:self action:@selector(onPushLeft:) forControlEvents:UIControlEventTouchUpInside];
-            [self.textAreaView addSubview:leftBtn];
         }
         
         // 右ボタン
@@ -208,6 +207,32 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
     }
     return self;
 }
+
+-(id)initWithFrame:(CGRect)argFrame andIdentifier:(NSString *)argIdentifier
+           andView:(UIView *)argChildeView
+ andMaxInputLength:(int)argMaxInputLength
+ andTextAreaHieght:(float)argTextAreaHeight
+    andPlaceHolder:(NSString *)argPlaceHolder
+andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
+        andLeftBtn:(UIButton *)argLeftBtn
+       andRightBtn:(UIButton *)argRightBtn
+         leftBlock:(BOOL(^)(NSString *inputText))argLeftCompletion
+        rightBlock:(BOOL(^)(NSString *inputText))argRightCompletion
+   limitCheckBlock:(BOOL(^)(BOOL limitUnover, float length))argLimitCheckCompletion;
+{
+    // 中央テキストエリア
+    float height = TEXTVIEW_FONT_SIZE * 1.7f;
+    UITextView *_textView = [[UITextView alloc] initWithFrame:CGRectMake(argLeftBtn.frame.origin.x + argLeftBtn.frame.size.width + 10, argRightBtn.frame.origin.y + (argRightBtn.frame.size.height - height) / 2.0f, argFrame.size.width - argLeftBtn.frame.size.width - argRightBtn.frame.size.width - 10 * 4, height)];
+    _textView.font = [UIFont systemFontOfSize:TEXTVIEW_FONT_SIZE];
+    _textView.textColor = TEXTVIEW_FONT_COLOR;
+    _textView.backgroundColor = TEXTVIEW_BG_COLOR;
+    // パディング制御
+    _textView.contentInset = UIEdgeInsetsMake(-6, 0, 0, 0);
+    _textView.autoresizingMask = UIViewAutoresizingFlexibleHeight;
+    
+    return [self initWithFrame:argFrame andIdentifier:argIdentifier andView:argChildeView andMaxInputLength:argMaxInputLength andTextAreaHieght:argTextAreaHeight andPlaceHolder:(NSString *)argPlaceHolder andTextAreaBackgroundImage:argTextAreaBackgroundImage andTextView:_textView andLeftBtn:argLeftBtn andRightBtn:argRightBtn leftBlock:argLeftCompletion rightBlock:argRightCompletion limitCheckBlock:argLimitCheckCompletion];
+}
+
 
 -(id)initWithFrame:(CGRect)argFrame andIdentifier:(NSString *)argIdentifier
            andView:(UIView *)argChildeView
@@ -354,6 +379,16 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
     textView.text = argText;
     range.length = 0;
     textView.selectedRange = range;
+}
+
+/* 外から入力テキストを取得する */
+- (NSString *)getText;
+{
+    NSString *inputText = textView.text;
+    if (NO == placeHolderHidden) {
+        inputText = @"";
+    }
+    return inputText;
 }
 
 /* 外から+ボタンのEnable・Disableを操作するアクセサ */
@@ -580,14 +615,14 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
         // XXX ホントにframeを変更！
         textView.frame = frame;
         // ボタンの位置を移動
-        if (nil != leftBtnBlock) {
+        if (nil != leftBtn) {
             leftBtn.frame = CGRectMake(leftBtn.frame.origin.x, (self.textAreaView.frame.size.height - textAreaHeight) + (textAreaHeight - leftBtn.frame.size.height) / 2.0f, leftBtn.frame.size.width, leftBtn.frame.size.height);
         }
-        if (nil != rightBtnBlock) {
+        if (nil != rightBtn) {
             rightBtn.frame = CGRectMake(rightBtn.frame.origin.x, (self.textAreaView.frame.size.height - textAreaHeight) + (textAreaHeight - rightBtn.frame.size.height) / 2.0f, rightBtn.frame.size.width, rightBtn.frame.size.height);
         }
         // テキストエリアのオリジナルフレームサイズを変更する
-        textAreaViewLatestOriginFrame = CGRectMake(textAreaViewOriginFrame.origin.x, textAreaViewOriginFrame.origin.y - textViewHeight, textAreaViewOriginFrame.size.width, textViewHeight * 2.5f + ((textAreaHeight - textViewHeight) / 2.0f) * 2.0f);
+        textAreaViewLatestOriginFrame = CGRectMake(textAreaViewOriginFrame.origin.x, textAreaViewOriginFrame.origin.y - textViewHeight * 1.5f, textAreaViewOriginFrame.size.width, textViewHeight * 2.5f + ((textAreaHeight - textViewHeight) / 2.0f) * 2.0f);
         // コンテンツ領域のフレームサイズも変更
         childeView.frame = CGRectMake(childeViewOriginFrame.origin.x, childeViewOriginFrame.origin.y, childeViewOriginFrame.size.width, childeViewOriginFrame.size.height - latestKeyboardHeight - textViewHeight);
         // 次のRect
@@ -616,14 +651,14 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
         // XXX ホントにframeを変更！
         textView.frame = frame;
         // ボタンの位置を移動
-        if (nil != leftBtnBlock) {
+        if (nil != leftBtn) {
             leftBtn.frame = CGRectMake(leftBtn.frame.origin.x, (self.textAreaView.frame.size.height - textAreaHeight) + (textAreaHeight - leftBtn.frame.size.height) / 2.0f, leftBtn.frame.size.width, leftBtn.frame.size.height);
         }
-        if (nil != rightBtnBlock) {
+        if (nil != rightBtn) {
             rightBtn.frame = CGRectMake(rightBtn.frame.origin.x, (self.textAreaView.frame.size.height - textAreaHeight) + (textAreaHeight - rightBtn.frame.size.height) / 2.0f, rightBtn.frame.size.width, rightBtn.frame.size.height);
         }
         // テキストエリアのオリジナルフレームサイズを変更する
-        textAreaViewLatestOriginFrame = CGRectMake(textAreaViewOriginFrame.origin.x, textAreaViewOriginFrame.origin.y - textViewHeight, textAreaViewOriginFrame.size.width, textViewHeight * 1.8f + ((textAreaHeight - textViewHeight) / 2.0f) * 2.0f);
+        textAreaViewLatestOriginFrame = CGRectMake(textAreaViewOriginFrame.origin.x, textAreaViewOriginFrame.origin.y - textViewHeight * 0.8f, textAreaViewOriginFrame.size.width, textViewHeight * 1.8f + ((textAreaHeight - textViewHeight) / 2.0f) * 2.0f);
         // コンテンツ領域のフレームサイズも変更
         childeView.frame = CGRectMake(childeViewOriginFrame.origin.x, childeViewOriginFrame.origin.y, childeViewOriginFrame.size.width, childeViewOriginFrame.size.height - latestKeyboardHeight - textViewHeight);
         // 次のRect
@@ -644,14 +679,14 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
         }
         textView.frame = CGRectMake(textView.frame.origin.x, textView.frame.origin.y, textView.frame.size.width, textViewHeight);
         // ボタンの位置を移動
-        if (nil != leftBtnBlock) {
+        if (nil != leftBtn) {
             leftBtn.frame = CGRectMake(leftBtn.frame.origin.x, (textAreaHeight - leftBtn.frame.size.height) / 2.0f, leftBtn.frame.size.width, leftBtn.frame.size.height);
         }
-        if (nil != rightBtnBlock) {
+        if (nil != rightBtn) {
             rightBtn.frame = CGRectMake(rightBtn.frame.origin.x, (textAreaHeight - rightBtn.frame.size.height) / 2.0f, rightBtn.frame.size.width, rightBtn.frame.size.height);
         }
         // テキストエリアのオリジナルフレームサイズを変更する
-        textAreaViewLatestOriginFrame = textAreaViewOriginFrame;
+        textAreaViewLatestOriginFrame = CGRectMake(textAreaViewOriginFrame.origin.x, textAreaViewOriginFrame.origin.y, textAreaViewOriginFrame.size.width, textAreaViewOriginFrame.size.height);;
         // コンテンツ領域内のオフセットの移動判定
         CGPoint offset = CGPointMake(-10000, -10000);
         if ([childeView isKindOfClass:NSClassFromString(@"UIScrollView")]) {

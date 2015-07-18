@@ -1,5 +1,4 @@
 #import "DismissSegue.h"
-#import "AppDelegate.h"
 
 @implementation DismissSegue
 
@@ -8,12 +7,13 @@
     // ワーニング対策のダミー
 }
 
-- (void)perform {
+- (void)perform
+{
     UIViewController *sourceViewController = self.sourceViewController;
     NSString *dismissedVCName = NSStringFromClass([sourceViewController class]);
     [sourceViewController.presentingViewController dismissViewControllerAnimated:YES completion:^{
-        if ([((AppDelegate*)[UIApplication sharedApplication].delegate) respondsToSelector:@selector(dismissCompletion:)]){
-            [((AppDelegate*)[UIApplication sharedApplication].delegate) performSelectorOnMainThread:@selector(dismissCompletion:) withObject:dismissedVCName waitUntilDone:NO];
+        if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(dismissCompletion:)]){
+            [((UIResponder*)[UIApplication sharedApplication].delegate) performSelectorOnMainThread:@selector(dismissCompletion:) withObject:dismissedVCName waitUntilDone:NO];
         }
     }];
 }

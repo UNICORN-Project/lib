@@ -1,19 +1,19 @@
 //
-//  SettingViewController.m
+//  HowaboutViewController.m
 //
 //  Created by saimushi on 2014/09/19.
 //  Copyright (c) 2014年 saimushi. All rights reserved.
 //
 
-#import "SettingViewController.h"
+#import "HowaboutViewController.h"
 
-@interface SettingViewController ()
+@interface HowaboutViewController ()
 {
     // Private
 }
 @end
 
-@implementation SettingViewController
+@implementation HowaboutViewController
 
 - (void)viewDidLoad
 {

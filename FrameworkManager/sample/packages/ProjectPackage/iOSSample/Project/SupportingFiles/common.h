@@ -49,11 +49,15 @@
 
 // UNICORNカスタムUIパーツの読み込み
 #import "UIViewControllerBase.h"
+#import "UITableViewControllerBase.h"
+#import "UIStaticTableViewControllerBase.h"
 //#import "CustomWebView.h"
 
 /* 全ての機能から突如呼ばれる可能性のあるViewControllerは、commonでimportしておく */
-#import "TopViewController.h"
-#import "SettingViewController.h"
+#import "TimelineViewController.h"
+
+#import "UserModel.h"
+#import "ProfileModel.h"
 
 /* 最後にAppDelegate */
 #import "AppDelegate.h"

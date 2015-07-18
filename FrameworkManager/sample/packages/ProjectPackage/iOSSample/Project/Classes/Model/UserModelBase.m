@@ -1,15 +1,15 @@
 //
-//  SampleModelBase.m
+//  UserModelBase.m
 //
 //  Copyright (c) 2014年 saimushi. All rights reserved.
 //
 
-#import "SampleModelBase.h"
+#import "UserModelBase.h"
 
-@implementation SampleModelBase
+@implementation UserModelBase
 {
     BOOL name_replaced;
-    BOOL owner_id_replaced;
+    BOOL uniq_name_replaced;
     BOOL created_replaced;
     BOOL modified_replaced;
     BOOL available_replaced;
@@ -17,7 +17,7 @@
 }
 
 @synthesize name;
-@synthesize owner_id;
+@synthesize uniq_name;
 @synthesize created;
 @synthesize modified;
 @synthesize available;
@@ -30,10 +30,10 @@
     replaced = YES;
 }
 
--(void)setOwner_id:(NSString *)argOwner_id
+-(void)setUniq_name:(NSString *)argUniq_name
 {
-    owner_id = argOwner_id;
-    owner_id_replaced = YES;
+    uniq_name = argUniq_name;
+    uniq_name_replaced = YES;
     replaced = YES;
 }
 
@@ -58,14 +58,16 @@
     replaced = YES;
 }
 
+
+
 /* オーバーライド */
 - (id)init:(NSString *)argProtocol :(NSString *)argDomain :(NSString *)argURLBase :(NSString *)argTokenKeyName;
 {
     self = [super init:argProtocol :argDomain :argURLBase :argTokenKeyName];
     if(nil != self){
-        modelName = @"sample";
+        modelName = @"user";
         name_replaced = NO;
-        owner_id_replaced = NO;
+        uniq_name_replaced = NO;
         created_replaced = NO;
         modified_replaced = NO;
         available_replaced = NO;
@@ -82,8 +84,8 @@
         if(YES == name_replaced){
             [saveParams setValue:self.name forKey:@"name"];
         }
-        if(YES == owner_id_replaced){
-            [saveParams setValue:self.owner_id forKey:@"owner_id"];
+        if(YES == uniq_name_replaced){
+            [saveParams setValue:self.uniq_name forKey:@"uniq_name"];
         }
         if(YES == created_replaced){
             [saveParams setValue:self.created forKey:@"created"];
@@ -106,7 +108,7 @@
     NSMutableDictionary *newDic = [[NSMutableDictionary alloc] init];
     [newDic setObject:self.ID forKey:@"id"];
     [newDic setObject:self.name forKey:@"name"];
-    [newDic setObject:self.owner_id forKey:@"owner_id"];
+    [newDic setObject:self.uniq_name forKey:@"uniq_name"];
     [newDic setObject:self.created forKey:@"created"];
     [newDic setObject:self.modified forKey:@"modified"];
     [newDic setObject:self.available forKey:@"available"];
@@ -118,7 +120,7 @@
 {
     self.ID = [argDataDic objectForKey:@"id"];
     self.name = [argDataDic objectForKey:@"name"];
-    self.owner_id = [argDataDic objectForKey:@"owner_id"];
+    self.uniq_name = [argDataDic objectForKey:@"uniq_name"];
     self.created = [argDataDic objectForKey:@"created"];
     self.modified = [argDataDic objectForKey:@"modified"];
     self.available = [argDataDic objectForKey:@"available"];
@@ -129,7 +131,7 @@
 - (void)resetReplaceFlagment;
 {
     name_replaced = NO;
-    owner_id_replaced = NO;
+    uniq_name_replaced = NO;
     created_replaced = NO;
     modified_replaced = NO;
     available_replaced = NO;

@@ -5,7 +5,8 @@
 //  Copyright (c) 2012年 saimushi. All rights reserved.
 //
 
-#import "common.h"
+#import "UIViewControllerBase.h"
+#import "MProgress.h"
 
 @interface UIViewControllerBase()
 {
@@ -15,15 +16,91 @@
 
 @implementation UIViewControllerBase
 
-@synthesize viewStayStartTime;
-@synthesize viewStayEndTime;
-@synthesize screenName;
+@synthesize data;
+
+
+#pragma mark Custom Methods
+
+- (void)showData:(NSHTTPURLResponse *)argResponseHeader :(NSString *)argResponseBody;
+{
+}
+
+- (void)showLoading:(NSString *)argLoadingMessage;
+{
+    if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(showLoading:)]){
+        [[UIApplication sharedApplication].delegate performSelector:@selector(showLoading:) withObject:argLoadingMessage];
+    }
+    else {
+        [UIApplication sharedApplication].networkActivityIndicatorVisible = YES;
+        [MProgress showProgressWithLoadingText:argLoadingMessage];
+    }
+}
+
+- (void)hideLoading;
+{
+    if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(hideLoading)]){
+        [[UIApplication sharedApplication].delegate performSelector:@selector(hideLoading) withObject:nil];
+    }
+    else {
+        [UIApplication sharedApplication].networkActivityIndicatorVisible = NO;
+        [MProgress dismissProgress];
+    }
+}
+
+#pragma mark Dummy Methods
+
+- (void)setModelData:(ModelBase *)argModelData;
+{
+    self.data = argModelData;
+}
+
+- (void)dataLoad;
+{
+    [self startDataLoad];
+    [self.data load:resourceMode :^(BOOL success, NSInteger statusCode, NSHTTPURLResponse *responseHeader, NSString *responseBody, NSError *error) {
+        [self endDataLoad:success :statusCode :responseHeader :responseBody :error];
+    }];
+}
+
+- (void)startDataLoad;
+{
+    _loading = YES;
+    [self showLoading:loadingMessage];
+}
+
+- (void)endDataLoad:(BOOL)argSuccess :(NSInteger)argStatusCode :(NSHTTPURLResponse *)argResponseHeader :(NSString *)argResponseBody :(NSError *)argError;
+{
+    _loading = NO;
+    [self hideLoading];
+    if (argSuccess && 200 == argStatusCode){
+        [self showData:argResponseHeader :argResponseBody];
+    }
+    else {
+        // エラー処理をするならココ
+    }
+}
+
+
+#pragma mark UIView Controller Event Methods
 
 - (id)init
 {
     self = [super init];
     if(self != nil){
         isNavigateion = YES;
+        loadingMessage = NSLocalizedString(@"Loading...", @"読み込み中...");
+        resourceMode = IDResource;
+    }
+    return self;
+}
+
+- (id)initWithCoder:(NSCoder*)aDecoder
+{
+    self = [super initWithCoder:aDecoder];
+    if(self != nil){
+        isNavigateion = YES;
+        loadingMessage = NSLocalizedString(@"Loading...", @"読み込み中...");
+        resourceMode = IDResource;
     }
     return self;
 }
@@ -33,11 +110,19 @@
     [super viewDidAppear:animated];
     if (nil == screenName){
         screenName = @"UIViewControllerBase";
+        if (isNavigateion){
+            screenName = self.navigationItem.title;
+        }
     }
 //    [TrackingManager sendScreenTracking:screenName];
     viewStayStartTime = [NSDate date];
     if (isNavigateion){
         self.navigationItem.title = screenName;
+    }
+    else {
+        if (nil != self.navigationItem){
+            self.navigationController.navigationBarHidden = YES;
+        }
     }
 }
 
@@ -50,9 +135,12 @@
     [super viewDidDisappear:animated];
 }
 
-- (void)dataLoad
+
+- (void)didReceiveMemoryWarning
 {
-    
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
 }
+
 
 @end

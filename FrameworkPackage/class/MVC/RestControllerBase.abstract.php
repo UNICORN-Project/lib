@@ -1183,6 +1183,13 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						}
 					}
 				}
+				// 日付の自動変換
+				if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+					$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+				}
+				if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+					$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+				}
 			}
 			else {
 				$requestParams = $this->getRequestParams();
@@ -1327,6 +1334,13 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									}
 								}
 							}
+							// 日付の自動変換
+							if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
+							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
 						}
 						else if(TRUE === $this->rootREST && TRUE !== $this->restResourceListed){
 							// ROOT-RESTで且つLIST指定で無い時は、素直にリソースが無かったエラー
@@ -1415,6 +1429,13 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										$resources[count($resources)-1][$field] = $DeepREST->execute($deepResource);
 									}
 								}
+							}
+							// 日付の自動変換
+							if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
+							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
 						} while (FALSE !== $Model->next());
 					}
@@ -1720,6 +1741,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						$resources[count($resources)-1][$key] = $val;
 					}
 				}
+			}
+		}
+		if (isset($resources[count($resources)-1])){
+			if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+				$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+			}
+			if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+				$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 			}
 		}
 		return $resources;

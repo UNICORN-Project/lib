@@ -1,0 +1,42 @@
+
+/* Class = "UILabel"; text = "Title"; ObjectID = "0SU-Dh-jXk"; */
+"0SU-Dh-jXk.text" = "Title";
+
+/* Class = "UILabel"; text = "Subtitle"; ObjectID = "CRr-Om-gcY"; */
+"CRr-Om-gcY.text" = "Subtitle";
+
+/* Class = "UINavigationItem"; title = "設定"; ObjectID = "FAm-hF-MmO"; */
+"FAm-hF-MmO.title" = "設定";
+
+/* Class = "UITabBarItem"; title = "マイタイムライン"; ObjectID = "Fba-hW-WdK"; */
+"Fba-hW-WdK.title" = "マイタイムライン";
+
+/* Class = "UITabBarItem"; title = "タイムライン"; ObjectID = "dOF-bl-XUh"; */
+"dOF-bl-XUh.title" = "タイムライン";
+
+/* Class = "UINavigationItem"; title = "マイタイムライン"; ObjectID = "dWC-yH-CJZ"; */
+"dWC-yH-CJZ.title" = "マイタイムライン";
+
+/* Class = "UILabel"; text = "SampleModel.Name"; ObjectID = "gFo-eW-vb0"; */
+"gFo-eW-vb0.text" = "SampleModel.Name";
+
+/* Class = "UIBarButtonItem"; title = "追加"; ObjectID = "hFz-A1-8uK"; */
+"hFz-A1-8uK.title" = "追加";
+
+/* Class = "UILabel"; text = "SampleModel.modified"; ObjectID = "mhC-Nx-inD"; */
+"mhC-Nx-inD.text" = "SampleModel.modified";
+
+/* Class = "UIBarButtonItem"; title = "編集"; ObjectID = "nCD-i3-BoB"; */
+"nCD-i3-BoB.title" = "編集";
+
+/* Class = "UILabel"; text = "SampleModel.Name"; ObjectID = "sKY-A0-6Qt"; */
+"sKY-A0-6Qt.text" = "SampleModel.Name";
+
+/* Class = "UINavigationItem"; title = "詳細"; ObjectID = "sdi-cR-CBf"; */
+"sdi-cR-CBf.title" = "詳細";
+
+/* Class = "UITabBarItem"; title = "設定"; ObjectID = "utK-c8-zed"; */
+"utK-c8-zed.title" = "設定";
+
+/* Class = "UILabel"; text = "SampleModel.modified"; ObjectID = "xS6-uw-T7w"; */
+"xS6-uw-T7w.text" = "SampleModel.modified";

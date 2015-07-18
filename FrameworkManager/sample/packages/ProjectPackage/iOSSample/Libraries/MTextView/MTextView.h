@@ -70,9 +70,13 @@
 @interface MTextView : UIView <UITextViewDelegate, NSLayoutManagerDelegate>
 {
     UIView *textAreaView;
+    UIView *childeView;
+    UITextView *textView;
 }
 
 @property (strong, nonatomic) UIView *textAreaView;
+@property (strong, nonatomic) UIView *childeView;
+@property (strong, nonatomic) UITextView *textView;
 
 /* 左右のボタン及び、テキストViewを指定して初期化 */
 -(id)initWithFrame:(CGRect)argFrame andIdentifier:(NSString *)argIdentifier
@@ -87,6 +91,18 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
          leftBlock:(BOOL(^)(NSString *inputText))argLeftCompletion
         rightBlock:(BOOL(^)(NSString *inputText))argRightCompletion
    limitCheckBlock:(BOOL(^)(BOOL limitUnover, float length))arglimitCheckCompletion;
+
+-(id)initWithFrame:(CGRect)argFrame andIdentifier:(NSString *)argIdentifier
+           andView:(UIView *)argChildeView
+ andMaxInputLength:(int)argMaxInputLength
+ andTextAreaHieght:(float)argTextAreaHeight
+    andPlaceHolder:(NSString *)argPlaceHolder
+andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
+        andLeftBtn:(UIButton *)argLeftBtn
+       andRightBtn:(UIButton *)argRightBtn
+         leftBlock:(BOOL(^)(NSString *inputText))argLeftCompletion
+        rightBlock:(BOOL(^)(NSString *inputText))argRightCompletion
+   limitCheckBlock:(BOOL(^)(BOOL limitUnover, float length))argLimitCheckCompletion;
 
 /* 左右のボタン画像及び、テキストView背景画像を指定して初期化 */
 -(id)initWithFrame:(CGRect)argFrame andIdentifier:(NSString *)argIdentifier
@@ -118,7 +134,13 @@ andTextAreaBackgroundImage:(UIImage *)argTextAreaBackgroundImage
 - (void)setText:(NSString *)argText;
 /* 外から+ボタンのEnable・Disableを操作するアクセサ */
 - (void)enabledLeft:(BOOL)argEnabled;
+/* 外から入力テキストを取得する */
+- (NSString *)getText;
 /* 外から送信ボタンのEnable・Disableを操作するアクセサ */
 - (void)enabledRight:(BOOL)argEnabled;
+/* キーボード表示アニメーション */
+- (void)keyboardWillShow:(NSNotification *)notification;
+/* キーボード非表示アニメーション */
+- (void)keyboardWillHide:(NSNotification *)notification;
 
 @end

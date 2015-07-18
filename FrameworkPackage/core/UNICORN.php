@@ -1693,7 +1693,6 @@ function getLocalEnabled($argProjectName=NULL, $argHost=NULL){
 		else {
 			if(NULL !== $argProjectName){
 				$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.$argProjectName.'/.local';
-				debug($localEnabledFilepath);
 				if(TRUE !== is_file($localEnabledFilepath)){
 					$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.$argProjectName.'Package/.local';
 				}
@@ -2304,25 +2303,21 @@ function getConfig($argKey, $argConfigName=''){
 				$value = $ProjectConfigure::constant($argKey);
 			}
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		if(!class_exists($argConfigName . 'Configure') && !class_exists($argConfigName) && !class_exists(str_replace('Package', '', $argConfigName))){
 			loadConfigForConfigName($argConfigName);
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		if('' !== $argConfigName && strlen($argConfigName) > 0 && class_exists($argConfigName . 'Configure')){
 			$ArgConfigure = $argConfigName . 'Configure';
 			if(TRUE === defined($ArgConfigure.'::'.$argKey)){
 				$value = $ArgConfigure::constant($argKey);
 			}
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		if('' !== $argConfigName && strlen($argConfigName) > 0 && class_exists($argConfigName)){
 			$ArgConfigure = $argConfigName;
 			if(TRUE === defined($ArgConfigure.'::'.$argKey)){
 				$value = $ArgConfigure::constant($argKey);
 			}
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		$argConfigName = str_replace('Package', '', $argConfigName);
 		if('' !== $argConfigName && strlen($argConfigName) > 0 && class_exists($argConfigName . 'Configure')){
 			$ArgConfigure = $argConfigName . 'Configure';
@@ -2330,14 +2325,12 @@ function getConfig($argKey, $argConfigName=''){
 				$value = $ArgConfigure::constant($argKey);
 			}
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		if('' !== $argConfigName && strlen($argConfigName) > 0 && class_exists($argConfigName)){
 			$ArgConfigure = $argConfigName;
 			if(TRUE === defined($ArgConfigure.'::'.$argKey)){
 				$value = $ArgConfigure::constant($argKey);
 			}
 		}
-		debug('AppModel '. $argKey. ' & '.$value);
 		$values[$argConfigName][$argKey] = $value;
 	}
 	else {

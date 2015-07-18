@@ -6,6 +6,8 @@
 
 #import "ProjectModelBase.h"
 
+%class%
+
 @interface %modelName%ModelBase : ProjectModelBase
 {
 %protected%

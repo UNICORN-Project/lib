@@ -118,7 +118,9 @@ class GenericORMapper {
 				}
 				// ローカル環境の時はクライアントモデルをオートでジェネレートしてあげる
 				if(false === is_file(getConfig('PROJECT_ROOT_PATH').'.manager') && 1 === getLocalEnabled()){
-					AppMigrationManager::generateModel($argDBO, $tableName);
+					if (class_exists('AppMigrationManager')){
+						AppMigrationManager::generateModel($argDBO, $tableName);
+					}
 				}
 			}
 		}

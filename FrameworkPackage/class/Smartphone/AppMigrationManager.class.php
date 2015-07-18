@@ -10,6 +10,8 @@ class AppMigrationManager {
 			if (NULL === $argTargetPlatform || 'iOS' === $argTargetPlatform) {
 				$headerfile = file_get_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/core/EmptyModelBase.h' );
 				$modelfile = file_get_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/core/EmptyModelBase.m' );
+				$class = '';
+				$import = '';
 				$protected = '';
 				$public = '';
 				$synthesize = '';
@@ -39,6 +41,32 @@ class AppMigrationManager {
 						$convert .= '    [newDic setObject:self.' . $colName . ' forKey:@"' . $colName . '"];' . PHP_CR . PHP_LF;
 						$set .= '    self.' . $colName . ' = [argDataDic objectForKey:@"' . $colName . '"];' . PHP_CR . PHP_LF;
 						$reset .= '    ' . $colName . '_replaced = NO;' . PHP_CR . PHP_LF;
+						// DEEP REST
+						debug('AppModel isDeep?'.strpos($colName, '_id'));
+						if (1 < strpos($colName, '_id') && 3 === strlen(substr($colName, strpos($colName, '_id'))) && getConfig ( 'REST_RESOURCE_OWNER_PKEY_NAME', $argTargetProjectName ) !== $colName){
+							$subTableNameLower = strtolower(substr($colName, 0, strlen($colName) -3));
+							$subTableName = ucfirst($subTableNameLower);
+							$class .= '@class ' . $subTableName . 'Model;' . PHP_CR . PHP_LF;
+							$import .= '#import "' . $subTableName . 'Model.h"' . PHP_CR . PHP_LF;
+							$protected .= '    /* ' . $subTableName . 'モデルのDEEP-RESTモデル */' . PHP_CR . PHP_LF;
+							$protected .= '    ' . $subTableName . 'Model *' . $subTableNameLower . ';' . PHP_CR . PHP_LF;
+							$public .= '@property (strong, nonatomic) ' . $subTableName . 'Model *' . $subTableNameLower . ';' . PHP_CR . PHP_LF;
+							$synthesize .= '@synthesize ' . $subTableNameLower . ';' . PHP_CR . PHP_LF;
+							$convert .= '    /* ' . $subTableName . 'モデルのDEEP-REST */' . PHP_CR . PHP_LF;
+							$convert .= '    NSMutableArray *' . $subTableNameLower . 'List = [[NSMutableArray alloc] init];' . PHP_CR . PHP_LF;
+							$convert .= '    if(0 < self.' . $subTableNameLower . '.total){' . PHP_CR . PHP_LF;
+							$convert .= '        do {' . PHP_CR . PHP_LF;
+							$convert .= '            [' . $subTableNameLower . 'List addObject:[self.' . $subTableNameLower . ' convertModelData]];' . PHP_CR . PHP_LF;
+							$convert .= '        } while (YES == [self.' . $subTableNameLower . ' next]);' . PHP_CR . PHP_LF;
+							$convert .= '    }' . PHP_CR . PHP_LF;
+							$convert .= '    [newDic setObject:' . $subTableNameLower . 'List forKey:@"' . $subTableNameLower . '"];' . PHP_CR . PHP_LF;
+							$set .= '    /* ' . $subTableName . 'モデルのDEEP-REST */' . PHP_CR . PHP_LF;
+							$set .= '    NSMutableArray *' . $subTableNameLower . 'Dic = [argDataDic objectForKey:@"' . $subTableNameLower . '"];' . PHP_CR . PHP_LF;
+							$set .= '    if(nil != ' . $subTableNameLower . 'Dic){' . PHP_CR . PHP_LF;
+							$set .= '        self.' . $subTableNameLower . ' = [[' . $subTableName . 'Model alloc] init:protocol :domain :urlbase :tokenKeyName :cryptKey :cryptIV :timeout];' . PHP_CR . PHP_LF;
+							$set .= '        [self.' . $subTableNameLower . ' setModelData:[argDataDic objectForKey:@"' . $subTableNameLower . '"]];' . PHP_CR . PHP_LF;
+							$set .= '    }' . PHP_CR . PHP_LF;
+						}
 					}
 					else {
 						$convert .= '    [newDic setObject:self.ID forKey:@"id"];' . PHP_CR . PHP_LF;
@@ -46,8 +74,10 @@ class AppMigrationManager {
 					}
 				}
 				$headerfile = str_replace ( '%modelName%', $modelName, $headerfile );
+				$headerfile = str_replace ( '%class%', $class, $headerfile );
 				$headerfile = str_replace ( '%protected%', $protected, $headerfile );
 				$headerfile = str_replace ( '%public%', $public, $headerfile );
+				$modelfile = str_replace ( '%import%', $import, $modelfile );
 				$modelfile = str_replace ( '%modelName%', $modelName, $modelfile );
 				$modelfile = str_replace ( '%tableName%', $tableName, $modelfile );
 				$modelfile = str_replace ( '%flags%', $flags, $modelfile );

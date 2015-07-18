@@ -261,7 +261,7 @@ abstract class GenericModelBase {
 					if("clob" === $val["type"]){
 						$replaceCLOBFields[$key] = $this->{$key};
 					}
-					elseif("blob" === $val["type"]){
+					elseif(FALSE !== strpos($val["type"], "blob")){
 						$replaceBLOBFields[$key] = $this->{$key};
 					}
 					elseif("date" === $val["type"]){
@@ -414,7 +414,7 @@ abstract class GenericModelBase {
 					if("clob" === $val["type"]){
 						$replaceCLOBFields[$key] = $this->{$key};
 					}
-					elseif("blob" === $val["type"]){
+					elseif(FALSE !== strpos($val["type"], "blob")){
 						$replaceBLOBFields[$key] = $this->{$key};
 					}
 					elseif("date" === $val["type"]){
@@ -584,7 +584,7 @@ abstract class GenericModelBase {
 			// 文字列型チェック
 			throw new Exception("TYPE MISSMATCH STRING");
 		}
-		elseif("blob" === $this->describes[$argKey]["type"] && FALSE === is_string($argValue)){
+		elseif(FALSE !== strpos($this->describes[$argKey]["type"], "blob") && FALSE === is_string($argValue)){
 			// BLOB型チェック
 			throw new Exception("TYPE MISSMATCH BLOB");
 		}

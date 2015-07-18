@@ -59,6 +59,7 @@
     [request setHTTPMethod:method];
     [request setTimeoutInterval:DEFAULT_TIMEOUT];
     [request addHeader:[Request createUserAgent] forKey:@"User-Agent"];
+    [request addHeader:[NSTimeZone localTimeZone].name forKey:@"Accept-Timezone"];
 
     // パラメータのセット
     if(NO == [method isEqualToString:@"GET"] && nil != requestParams){
@@ -113,6 +114,7 @@
     [request setHTTPMethod:method];
     [request setTimeoutInterval:DEFAULT_TIMEOUT];
     [request addHeader:[Request createUserAgent] forKey:@"User-Agent"];
+    [request addHeader:[NSTimeZone localTimeZone].name forKey:@"Accept-Timezone"];
     
     // パラメータのセット
     if(nil != requestParams){
@@ -176,7 +178,8 @@
     [request setHTTPMethod:method];
     [request setTimeoutInterval:DEFAULT_TIMEOUT];
     [request addHeader:[Request createUserAgent] forKey:@"User-Agent"];
-    
+    [request addHeader:[NSTimeZone localTimeZone].name forKey:@"Accept-Timezone"];
+
     // パラメータのセット
     if(nil != requestParams){
         NSArray *keys = [requestParams allKeys];
@@ -534,7 +537,7 @@
             responseHeader = (NSHTTPURLResponse *)task.response;
             // ステータスコードをとっておく
             statusCode = (int)responseHeader.statusCode;
-            NSLog(@"didCompleteWithError [statusCode] %d", statusCode);
+            NSLog(@"didComplete [statusCode] %d", statusCode);
             // HTTP 200 OK の場合
             // HTTP 201 Upload Success の場合
             if(statusCode == 200 || statusCode == 201 || statusCode == 202){

@@ -8,9 +8,10 @@
 
 // モデル参照モード
 typedef enum{
-	myResource,
-	listedResource,
-	automaticResource,
+    IDResource,
+    myIDResource,
+    listedResource,
+    myListedResource,
 } loadResourceMode;
 
 // 通信パケット監視用クラス
@@ -50,12 +51,19 @@ typedef enum{
     NSString *requestMethod;
     // モデルは原則配列を許容する
     int index;
+    // ページング上のレコード総数
     int total;
+    // テーブル上の該当レコード総件数
     int records;
+    // XXX LIMIT OFFSETを自動化したく無い場合、-1を指定して下さい
+    int limit;
+    int offset;
     NSMutableArray *list;
     // 通信に関する変数
     BOOL replaced;
     BOOL requested;
+    // XXX DEEP RESTを利用しない場合はNOを指定して下さい
+    BOOL isDeep;
     NSMutableDictionary *response;
     int statusCode;
     // Blockでハンドラを受け取るバージョンの為に用意
@@ -71,6 +79,9 @@ typedef enum{
 @property (nonatomic) int index;
 @property (nonatomic) int total;
 @property (nonatomic) int records;
+@property (nonatomic) int limit;
+@property (nonatomic) int offset;
+@property (nonatomic) BOOL isDeep;
 @property (strong, nonatomic) id<ModelDelegate> delegate;
 
 /* シングルトンでModelクラスを受け取る */
@@ -93,21 +104,17 @@ typedef enum{
 // XXX システムによって実装が変わる場合はオーバーライドして適宜変更して下さい
 - (NSString *)createURLString:(NSString *)argProtocol :(NSString *)argDomain :(NSString *)argURLBase :(NSString *)argMyResourcePrefix :(NSString *)argModelName :(NSString *)argResourceID;
 
-/* 単一モデルを読み込む(読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)load;
+/* 単一モデルを読み込む(読み込み処理をモデル側で実装を変えたい場合はこのメソッドをオーバーライドする) */
+- (BOOL)load:(loadResourceMode)argLoadResourceMode;
 /* 単一モデルを読み込む(BlockでHandlerを受け取れるバージョン:読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)load:(RequestCompletionHandler)argCompletionHandler;
-/* モデルリストを読み込む(読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)list;
-/* モデルリストを読み込む(BlockでHandlerを受け取れるバージョン:読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)list:(RequestCompletionHandler)argCompletionHandler;
+- (BOOL)load:(loadResourceMode)argLoadResourceMode :(RequestCompletionHandler)argCompletionHandler;
 /* 条件指定でモデルを読み込む(読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)query:(NSMutableDictionary *)argWhereParams;
+- (BOOL)query:(NSMutableDictionary *)argWhereParams :(loadResourceMode)argLoadResourceMode;
 /* 条件指定でモデルを読み込む(BlockでHandlerを受け取れるバージョン:読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
-- (BOOL)query:(NSMutableDictionary *)argWhereParams :(RequestCompletionHandler)argCompletionHandler;
+- (BOOL)query:(NSMutableDictionary *)argWhereParams :(loadResourceMode)argLoadResourceMode :(RequestCompletionHandler)argCompletionHandler;
 
 /* モデルを読み込む(Protected:参照処理の実態) */
-- (BOOL)_load:(int)argListed :(NSMutableDictionary *)argSaveParams;
+- (BOOL)_load:(int)argListed :(NSMutableDictionary *)argParams;
 /* モデルを保存する(モデルが継承してオーバーライドする空のメソッド定義) */
 - (BOOL)save;
 /* モデルを保存する(BlockでHandlerを受け取れるバージョン:読み込み処理をモデル側で実装を変えた場合はこのメソッドをオーバーライドする) */
@@ -118,7 +125,7 @@ typedef enum{
 /* XXX 大きいファイルのアップロードには- (BOOL)save:(NSMutableDictionary *)argSaveParams :(NSURL *)argUploadFilePath;を使って下さい！ */
 - (BOOL)_save:(NSMutableDictionary *)argSaveParams :(NSData *)argUploadData :(NSString *)argUploadDataName :(NSString *)argUploadDataContentType :(NSString *)argUploadDataKey;
 /* ファイルを一つのモデルリソースと見立てて保存する(Protected:ファイルアップロード) */
-/* PUTメソッドでのアップロード処理を強制します！ */
+/* PUTメソッドでのアップロード処理を強制します！ POSTを利用したい場合は、小クラスで、メセッドの時実行前に「requestMethod」に「POST」を指定して下さい！ */
 - (BOOL)_save:(NSMutableDictionary *)argSaveParams :(NSURL *)argUploadFilePath;
 
 /* 特殊なメソッド1 インクリメント(加算:モデルが継承してオーバーライドする空のメソッド定義) */
@@ -128,25 +135,25 @@ typedef enum{
 - (BOOL)decrement;
 - (BOOL)_decrement:(NSMutableDictionary *)argSaveParams;
 
-/* 端末固有IDの保存 */
-+ (void)saveIdentifier:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
-/* 端末固有IDの読み込み */
-+ (NSString *)loadIdentifier:(NSString *)argCryptKey :(NSString *)argCryptIV;
-
-/* レコード所有者IDの保存 */
-+ (void)saveOwnerID:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
-/* レコード所有者IDの読み込み */
-+ (NSString *)loadOwnerID:(NSString *)argCryptKey :(NSString *)argCryptIV;
-
-/* レコード所有者IDの保存 */
-+ (void)saveOwnerName:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
-/* レコード所有者IDの読み込み */
-+ (NSString *)loadOwnerName:(NSString *)argCryptKey :(NSString *)argCryptIV;
-
-/* レコード所有者画像URLの保存 */
-+ (void)saveOwnerImageURL:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
-/* レコード所有者画像URLの読み込み */
-+ (NSString *)loadOwnerImageURL:(NSString *)argCryptKey :(NSString *)argCryptIV;
+///* 端末固有IDの保存 */
+//+ (void)saveIdentifier:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
+///* 端末固有IDの読み込み */
+//+ (NSString *)loadIdentifier:(NSString *)argCryptKey :(NSString *)argCryptIV;
+//
+///* レコード所有者IDの保存 */
+//+ (void)saveOwnerID:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
+///* レコード所有者IDの読み込み */
+//+ (NSString *)loadOwnerID:(NSString *)argCryptKey :(NSString *)argCryptIV;
+//
+///* レコード所有者IDの保存 */
+//+ (void)saveOwnerName:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
+///* レコード所有者IDの読み込み */
+//+ (NSString *)loadOwnerName:(NSString *)argCryptKey :(NSString *)argCryptIV;
+//
+///* レコード所有者画像URLの保存 */
+//+ (void)saveOwnerImageURL:(NSString *)argIdentifier :(NSString *)argCryptKey :(NSString *)argCryptIV;
+///* レコード所有者画像URLの読み込み */
+//+ (NSString *)loadOwnerImageURL:(NSString *)argCryptKey :(NSString *)argCryptIV;
 
 /* デバイストークンの保存 */
 + (void)saveDeviceTokenString:(NSString *)argDeviceTokenString;
@@ -167,9 +174,8 @@ typedef enum{
 - (NSMutableDictionary *)convertModelData;
 /* モデルデータをセットする(モデルが継承してオーバーライドする空のメソッド定義) */
 - (void)_setModelData:(NSMutableDictionary *)argDataDic;
-
-// 廃止？？
-- (id)search:(NSString *)argSearchKey :(NSString *)argSearchValue;
+/* 該当のデータを持つModelのIndexの一覧を返す */
+- (NSIndexSet *)search:(NSString *)argSearchKey :(NSString *)argSearchValue;
 
 // ステータスコードに応じたRESTfulエラーメッセージを表示
 +(void)showRequestError:(int)argStatusCode;

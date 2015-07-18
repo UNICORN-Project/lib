@@ -8,12 +8,19 @@
 #import "common.h"
 
 @interface AppDelegate : UIResponder <UIApplicationDelegate, UITabBarControllerDelegate, ModelDelegate>
+{
+    // Protected
+}
 
+// Public
 @property (strong, nonatomic) UIWindow *window;
+@property (strong, nonatomic) UserModel *me;
 
 - (void)registerDeviceToken;
 - (void)initializeGoogleAnalytics;
 - (BOOL)isSimulator;
+- (void)addSubviewFirstFront:(UIView *)argView;
+- (void)removeFromFirstFrontSubview:(UIView *)argView;
 - (void)showLoading:(NSString *)argLoadingMessage;
 - (void)showLoading;
 - (void)hideLoading;
