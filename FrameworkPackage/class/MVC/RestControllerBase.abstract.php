@@ -614,52 +614,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			}
 			$this->restResource = $resource;
 
-			// REST全体のPrepend処理
-			if(TRUE === $this->rootREST && FALSE === $prepend){
-				$prepend = TRUE;
-				// 外部からのGETのQUERYとJOINは危険なので、FILTERで許可されていなければ削除する
-				if (TRUE !== $this->allowed){
-					$_GET['QUERY'] = '';
-					$_GET['JOIN'] = '';
-					unset($_GET['QUERY']);
-					unset($_GET['JOIN']);
-				}
-				// 許可されてあっても、「; GRANT CREATE SHOW INSERT UPDATE DELETE ALTER DROP TRUNCATE」は削除
-				if (isset($_GET['QUERY'])){
-					$_GET['QUERY'] = str_ireplace('; ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('GRANT ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('CREATE ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('SHOW ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('INSERT ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('UPDATE ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('DELETE ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('ALTER ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('DROP ', '', $_GET['QUERY']);
-					$_GET['QUERY'] = str_ireplace('TRUNCATE ', '', $_GET['QUERY']);
-				}
-				if (isset($_GET['JOIN'])){
-					$_GET['JOIN'] = str_ireplace('; ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('GRANT ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('CREATE ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('SHOW ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('INSERT ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('UPDATE ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('DELETE ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('ALTER ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('DROP ', '', $_GET['JOIN']);
-					$_GET['JOIN'] = str_ireplace('TRUNCATE ', '', $_GET['JOIN']);
-				}
-				// Filterがあったらフィルター処理をする
-				$filerName = 'RestPrependFilter';
-				debug('$filerName='.$filerName);
-				if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-					$filterClass = MVCCore::loadMVCFilter($filerName);
-					$Filter = new $filterClass();
-					$Filter->REST = $this;
-					$Filter->execute($argRequestParams);
-				}
-			}
-
+			// ホワイトリストフィルター
 			$classHint = str_replace(' ', '', ucwords(str_replace(' ', '', $this->restResourceModel)));
 			debug('$classHint='.$classHint);
 			debug('whitelistcheck allowed='.var_export($this->allowed,TRUE));
@@ -667,8 +622,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				// アクセスエラー！
 				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
 			}
-			else if (TRUE !== $this->allowed){
-				// ホワイトリストフィルター
+			else{
 				if (TRUE === $this->rootREST){
 					// 現在のホワイトリストの一覧を取得
 					$nowWhiteList = stripslashes(trim(getConfig('REST_RESOURCE_WHITE_LIST')));
@@ -712,13 +666,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if ($nowWhiteList != $newWhiteList){
 								debug("whitelistcheck modify whiteList=". $newWhiteList);
 								modifiyConfig('REST_RESOURCE_WHITE_LIST', PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.
-									str_replace("\"],\"", "\"]".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.",\"", 
-										str_replace("\"]},\"Method ", "\"]}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.",\"Method ", 
-											str_replace("\":{\"", "\":".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."{\"", 
-												str_replace(":{\"Method ", ":".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."{\"Method ", 
-													str_replace("}}", "}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB."}", 
-														str_replace("\"]}}", "\"]}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB, json_encode($whiteList))))))).PHP_EOL.PHP_TAB.PHP_TAB);
+								str_replace("\"],\"", "\"]".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.",\"",
+								str_replace("\"]},\"Method ", "\"]}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.",\"Method ",
+								str_replace("\":{\"", "\":".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."{\"",
+								str_replace(":{\"Method ", ":".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."{\"Method ",
+								str_replace("}}", "}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB."}",
+								str_replace("\"]}}", "\"]}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB.PHP_TAB."}".PHP_EOL.PHP_TAB.PHP_TAB.PHP_TAB, json_encode($whiteList))))))).PHP_EOL.PHP_TAB.PHP_TAB);
 							}
+							$this->allowed = TRUE;
 						}
 						else {
 							debug("whitelistcheck new is??");
@@ -743,8 +698,55 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							// 許可されたRESTへのアクセス
 							debug("whitelistcheck new is ok!");
+							$this->allowed = TRUE;
 						}
 					}
+				}
+			}
+
+			// REST全体のPrepend処理
+			if(TRUE === $this->rootREST && FALSE === $prepend){
+				$prepend = TRUE;
+// 				// 外部からのGETのQUERYとJOINは危険なので、FILTERで許可されていなければ削除する
+// 				if (TRUE !== $this->allowed){
+// 					$_GET['QUERY'] = '';
+// 					$_GET['JOIN'] = '';
+// 					unset($_GET['QUERY']);
+// 					unset($_GET['JOIN']);
+// 				}
+				// 許可されてあっても、「; GRANT CREATE SHOW INSERT UPDATE DELETE ALTER DROP TRUNCATE」は削除
+				if (isset($_GET['QUERY'])){
+					$_GET['QUERY'] = str_ireplace('; ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('GRANT ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('CREATE ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('SHOW ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('INSERT ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('UPDATE ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('DELETE ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('ALTER ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('DROP ', '', $_GET['QUERY']);
+					$_GET['QUERY'] = str_ireplace('TRUNCATE ', '', $_GET['QUERY']);
+				}
+				if (isset($_GET['JOIN'])){
+					$_GET['JOIN'] = str_ireplace('; ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('GRANT ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('CREATE ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('SHOW ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('INSERT ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('UPDATE ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('DELETE ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('ALTER ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('DROP ', '', $_GET['JOIN']);
+					$_GET['JOIN'] = str_ireplace('TRUNCATE ', '', $_GET['JOIN']);
+				}
+				// Filterがあったらフィルター処理をする
+				$filerName = 'RestPrependFilter';
+				debug('$filerName='.$filerName);
+				if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
+					$filterClass = MVCCore::loadMVCFilter($filerName);
+					$Filter = new $filterClass();
+					$Filter->REST = $this;
+					$Filter->execute($argRequestParams);
 				}
 			}
 
