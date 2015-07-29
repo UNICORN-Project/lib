@@ -21,7 +21,7 @@
     screenName = self.navigationItem.title;
     [super viewDidLoad];
     // WebViewにライセンスページを表示
-    [self.webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"http://unicorn-project.github.io/license.html"]]];
+    [self.webView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:@"http://unicorn-project.github.io/licenses.html"]]];
 }
 
 #pragma mark UIWebView Delegate

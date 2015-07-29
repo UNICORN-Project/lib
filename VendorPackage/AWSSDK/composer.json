@@ -1,0 +1,8 @@
+{
+    "require": {
+        "aws/aws-sdk-php": "*"
+    },
+    "config": {
+        "vendor-dir": "./"
+    }
+}

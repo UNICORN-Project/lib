@@ -78,7 +78,7 @@ class GenericAppReceiptVerifier
 				$status = FALSE;
 				$lastExpireDateMS = "0";
 				$lastExpireDate = "";
-				$result['last_receipt'] = base64_decode($argBase64EncodedReceipt);
+				$result['last_receipt'] = $argBase64EncodedReceipt;
 				if(FALSE === $argAutorenewSubscription){
 					if(isset($data['receipt']) && isset($data['receipt']['product_id']) && $argProductID == $data['receipt']['product_id']){
 						$status = TRUE;
@@ -117,6 +117,8 @@ class GenericAppReceiptVerifier
 						logging('receiptverify 期限内！', 'receiptverify');
 						$result['expired'] = FALSE;
 					}
+					// 過去のレシート情報を返す
+					$result['latest_receipt_info'] = $data['latest_receipt_info'];
 					logging('receiptverify expired:' . var_export($result['expired'], TRUE), 'receiptverify');
 					logging('receiptverify now:' . Utilities::date("YmdHis", NULL, NULL, "GMT"), 'receiptverify');
 					logging('receiptverify exp:' . Utilities::date("YmdHis", $lastExpireDate, "GMT", "GMT"), 'receiptverify');
@@ -174,7 +176,8 @@ class GenericAppReceiptVerifier
 			debug('receiptverify body:' . $res);
 
 			if ($res === 1) {
-
+				// 有効である
+				$result['last_receipt'] = $argBase64EncodedReceipt;
 				if(TRUE === $argAutorenewSubscription){
 					// 定期購読アイテムの購読期間チェック
 					logging('receiptverify argAutorenewSubscription check', 'receiptverify');
@@ -252,10 +255,7 @@ class GenericAppReceiptVerifier
 					logging('receiptverify exp:' . $subs->getExpiryTimeSeconds(), 'receiptverify');
 					logging('receiptverify exp_date:' . $result['expire_date'], 'receiptverify');
 				}
-				// 有効である
-				$result['last_receipt'] = base64_decode($argBase64EncodedReceipt);;
-			}
-			else {
+			} else {
 				// 署名が正しくない(0)またはエラー(-1)
 				return FALSE;
 			}
