@@ -22,10 +22,6 @@ class Auth
 
 			$DSN = NULL;
 
-			if(class_exists('Configure') && NULL !== Configure::constant('DB_DSN')){
-				// 定義からセッションDBの接続情報を特定
-				$DSN = Configure::DB_DSN;
-			}
 			if(class_exists('Configure') && NULL !== Configure::constant('AUTH_DB_DSN')){
 				// 定義からセッションDBの接続情報を特定
 				$DSN = Configure::AUTH_DB_DSN;
@@ -106,10 +102,6 @@ class Auth
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
-				if(NULL !== $ProjectConfigure::constant('DB_DSN')){
-					// 定義からセッションDBの接続情報を特定
-					$DSN = $ProjectConfigure::DB_DSN;
-				}
 				if(NULL !== $ProjectConfigure::constant('AUTH_DB_DSN')){
 					// 定義からセッションDBの接続情報を特定
 					$DSN = $ProjectConfigure::AUTH_DB_DSN;

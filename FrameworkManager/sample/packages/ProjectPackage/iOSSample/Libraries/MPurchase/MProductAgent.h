@@ -2,7 +2,7 @@
 
 
 // ローカライズ用のキー定義
-#define STORE_GET_ITEM_ERROR_KEY @"store get item error"
+#define STORE_GET_ITEM_ERROR_KEY @"このアイテムは購入出来ません。"
 
 
 // 課金アイテム種別

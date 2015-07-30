@@ -55,11 +55,12 @@ class GenericDBO {
 	 * @param string $argDSN DSN
 	 * @return GenericDBO DB
 	 */
-	public static function sharedInstance($argDSN="Default", $argReadable=FALSE){
+	public static function sharedInstance($argDSN="default", $argReadable=FALSE){
 		static $DBO = array();
+		logging("initDB DSN=".$argDSN, "query");
 		if(!isset($DBO[$argDSN.(string)$argReadable])){
 			$DSN = $argDSN;
-			if("Default" === $DSN){
+			if("default" === $DSN){
 				$DSN = NULL;
 			}
 			$DBO[$argDSN.(string)$argReadable] = new DBO($DSN, $argReadable);
@@ -189,7 +190,7 @@ class GenericDBO {
 				$this->DSN = $dsn;
 			}
 			if(TRUE === @property_exists($this, "dbidentifykey")){
-				$this->dbidentifykey = sha1($dsn);
+				$this->dbidentifykey = "default";
 			}
 
 			if (TRUE === $argReadable){
@@ -272,7 +273,7 @@ class GenericDBO {
 		if(FALSE !== strpos(strtolower($argQuery), "update") || FALSE !== strpos(strtolower($argQuery), "insert") || FALSE !== strpos(strtolower($argQuery), "delete")){
 			self::begin();
 		}
-		else if (0 === strpos(strtolower(trim($argQuery)), "select") || 0 === strpos(strtolower(trim($argQuery)), "show")){
+		else if (TRUE === $argAutoReadable && 0 === strpos(strtolower(trim($argQuery)), "select") || 0 === strpos(strtolower(trim($argQuery)), "show")){
 			// リーダブルDBを探してみる
 			$instanceIndex = self::_initDB($argAutoReadable);
 			logging("initDB use readableDSN=".$instanceIndex, "query");
@@ -338,7 +339,6 @@ class GenericDBO {
 		else{
 			$tables = array();
 			$basetables = $response->GetAll();
-			debug($basetables);
 			for($idx=0; $idx < count($basetables); $idx++){
 				$keys = array_keys($basetables[$idx]);
 				$tables[$idx] = array('name', 'row', 'comment');

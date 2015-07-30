@@ -40,10 +40,6 @@ class SessionDB extends SessionDataDB implements SessionIO {
 			$DSN = NULL;
 			$expiredtime = self::$_expiredtime;
 
-			if(class_exists('Configure') && NULL !== Configure::constant('DB_DSN')){
-				// 定義からセッションDBの接続情報を特定
-				$DSN = Configure::DB_DSN;
-			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_DB_DSN')){
 				// 定義からセッションDBの接続情報を特定
 				$DSN = Configure::SESSION_DB_DSN;
@@ -90,10 +86,6 @@ class SessionDB extends SessionDataDB implements SessionIO {
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
-				if(NULL !== $ProjectConfigure::constant('DB_DSN')){
-					// 定義からセッションDBの接続情報を特定
-					$DSN = $ProjectConfigure::DB_DSN;
-				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_DB_DSN')){
 					// 定義からセッションDBの接続情報を特定
 					$DSN = $ProjectConfigure::SESSION_DB_DSN;

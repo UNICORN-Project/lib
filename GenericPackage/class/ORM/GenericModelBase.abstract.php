@@ -297,7 +297,7 @@ abstract class GenericModelBase {
 						}else{
 							// 独自シーケンス取得SQLが未定義済みならばフレームワーク固有のSQLを実行
 							$seqSql = "UPDATE ".strtolower($this->tableName)."_".$this->pkeyName."_seq SET id=LAST_INSERT_ID(id+1)";
-							$response = $this->_DBO->execute($seqSql);
+							$response = $this->_DBO->execute($seqSql, NULL, FALSE);
 							if(FALSE === $response){
 								throw new Exception("");
 							}
@@ -334,8 +334,7 @@ abstract class GenericModelBase {
 					throw new Exception("");
 				}
 				if(!(isset($lastInsertIdEnabled) && TRUE === $lastInsertIdEnabled)){
-					debug('$seqSql='.$seqSql);
-					$response = $this->_DBO->execute($seqSql);
+					$response = $this->_DBO->execute($seqSql, NULL, FALSE);
 					if(FALSE === $response){
 						throw new Exception("");
 					}else{
@@ -343,8 +342,6 @@ abstract class GenericModelBase {
 						$pkey = $responseArr[0]["new_id"];
 					}
 					$replaceFields[$this->pkeyName] = $pkey;
-					debug($this->pkeyName);
-					debug($replaceFields);
 				}
 			}
 			// インサート文
@@ -360,7 +357,7 @@ abstract class GenericModelBase {
 
 			// MySQLのauto_increment用処理
 			if(isset($lastInsertIdEnabled) && TRUE === $lastInsertIdEnabled){
-				$response = $this->_DBO->execute("SELECT LAST_INSERT_ID() AS new_id FROM `" . strtolower($this->tableName) . "` LIMIT 1");
+				$response = $this->_DBO->execute("SELECT LAST_INSERT_ID() AS new_id FROM `" . strtolower($this->tableName) . "` LIMIT 1", NULL, FALSE);
 				if(FALSE === $response){
 					throw new Exception("");
 				}else{
@@ -513,7 +510,6 @@ abstract class GenericModelBase {
 			}
 			$this->describes[$key]["replace"] = NULL;
 		}
-
 		return TRUE;
 	}
 

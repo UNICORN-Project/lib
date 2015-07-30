@@ -97,50 +97,50 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		static $defaultDSN = NULL;
 		static $DBO = array();
 		// DSNの自動判別
-		$DSN = $defaultDSN;
+		$DSN = NULL;
+		if (NULL !== $defaultDSN && 0 < strlen($defaultDSN) && $defaultDSN != 'default'){
+			$DSN = $defaultDSN;
+		}
 		if(NULL === $argDSN && NULL === $defaultDSN){
-			$DSN = NULL;
-			if(class_exists('Configure') && NULL !== Configure::constant('DB_DSN')){
-				// 定義からセッションDBの接続情報を特定
-				$DSN = Configure::DB_DSN;
-			}
 			if(class_exists('Configure') && NULL !== Configure::constant('REST_DB_DSN')){
 				// 定義からセッションDBの接続情報を特定
 				$DSN = Configure::REST_DB_DSN;
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
-				if(NULL !== $ProjectConfigure::constant('DB_DSN')){
-					// 定義からセッションDBの接続情報を特定
-					$DSN = $ProjectConfigure::DB_DSN;
-				}
 				if(NULL !== $ProjectConfigure::constant('REST_DB_DSN')){
 					// 定義からセッションDBの接続情報を特定
 					$DSN = $ProjectConfigure::REST_DB_DSN;
 				}
 			}
-			$defaultDSN = $DSN;
+			if (NULL !== $DSN && 0 < strlen($DSN)){
+				$defaultDSN = $DSN;
+			}
+			else {
+				// Default DSNを使う指示を取っておく
+				$defaultDSN = 'default';
+			}
 		}
 		// DSN指定があった場合はそれに従う
 		elseif(NULL !== $argDSN){
 			$DSN = $argDSN;
 		}
-		if(!isset($DBO[$DSN])){
-			$DBO[$DSN] = DBO::sharedInstance($DSN);
+		if(!isset($DBO[(string)$DSN])){
+			$DBO[(string)$DSN] = DBO::sharedInstance($DSN);
 		}
-		return $DBO[$DSN];
+		return $DBO[(string)$DSN];
 	}
 
-	public function getModel($argModel, $argIdentifierORQuery=NULL, $argBinds=NULL, $argDSN=NULL){
-		return self::_getModel($argModel, $argIdentifierORQuery, $argBinds, $argDSN);
+	public function getModel($argModel, $argIdentifierORQuery=NULL, $argBinds=NULL, $argDSN=NULL, $argAutoReadable=TRUE){
+		return self::_getModel($argModel, $argIdentifierORQuery, $argBinds, $argDSN, $argAutoReadable);
 	}
 
-	protected function _getModel($argModel, $argIdentifierORQuery=NULL, $argBinds=NULL, $argDSN=NULL){
+	protected function _getModel($argModel, $argIdentifierORQuery=NULL, $argBinds=NULL, $argDSN=NULL, $argAutoReadable=TRUE){
 		if(NULL !== $argIdentifierORQuery){
-			return ORMapper::getModel(self::_getDBO($argDSN), $argModel, $argIdentifierORQuery, $argBinds);
+			return ORMapper::getModel(self::_getDBO($argDSN), $argModel, $argIdentifierORQuery, $argBinds, $argAutoReadable);
 		}
 		else{
-			return ORMapper::getModel(self::_getDBO($argDSN), $argModel);
+			return ORMapper::getModel(self::_getDBO($argDSN), $argModel, $argIdentifierORQuery, NULL, $argAutoReadable);
 		}
 	}
 
@@ -659,7 +659,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							// ホワイトリストに追加
 							if (isset($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser])){
-								$paramKeys = array_merge($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser], $paramKeys);
+								$paramKeys = array_merge($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser], array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser]));
 							}
 							$whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser] = $paramKeys;
 							$newWhiteList = json_encode($whiteList);
