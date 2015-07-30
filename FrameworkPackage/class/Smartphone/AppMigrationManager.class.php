@@ -88,16 +88,16 @@ class AppMigrationManager {
 				$modelfile = str_replace ( '%convert%', $convert, $modelfile );
 				$modelfile = str_replace ( '%set%', $set, $modelfile );
 				$modelfile = str_replace ( '%reset%', $reset, $modelfile );
-				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Classes/Model/' . $modelName . 'ModelBase.h', $headerfile );
-				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Classes/Model/' . $modelName . 'ModelBase.m', $modelfile );
-				if (! is_file ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Classes/Model/' . $modelName . 'Model.m' )) {
+				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Class/Model/' . $modelName . 'ModelBase.h', $headerfile );
+				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Class/Model/' . $modelName . 'ModelBase.m', $modelfile );
+				if (! is_file ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Class/Model/' . $modelName . 'Model.m' )) {
 					// まだ該当のモデルの最下層ファイルがなければ生成する
 					$headerfile = file_get_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/core/EmptyModel.h' );
 					$modelfile = file_get_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/core/EmptyModel.m' );
 					$headerfile = str_replace ( '%modelName%', $modelName, $headerfile );
 					$modelfile = str_replace ( '%modelName%', $modelName, $modelfile );
-					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Classes/Model/' . $modelName . 'Model.h', $headerfile );
-					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Classes/Model/' . $modelName . 'Model.m', $modelfile );
+					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Class/Model/' . $modelName . 'Model.h', $headerfile );
+					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/iOSSample/Project/Class/Model/' . $modelName . 'Model.m', $modelfile );
 				}
 			}
 			if (NULL === $argTargetPlatform || 'android' === $argTargetPlatform) {

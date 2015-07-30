@@ -658,6 +658,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								$whiteList[$resourcePath]["Method ".$this->requestMethod] = array();
 							}
 							// ホワイトリストに追加
+							if (isset($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser])){
+								$paramKeys = array_merge($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser], $paramKeys);
+							}
 							$whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser] = $paramKeys;
 							$newWhiteList = json_encode($whiteList);
 							debug("whitelistcheck new whiteList=". $newWhiteList);

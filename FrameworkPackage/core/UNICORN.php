@@ -718,7 +718,6 @@ function loadConfig($argConfigPath){
 						if(count($val2) > 1){
 							$skip = TRUE;
 							for($attrCnt=0;count($val2)>$attrCnt;$attrCnt++){
-								var_dump($key2);
 								if(isset($configure->{$key}->{$key2}[$attrCnt]->attributes()->stage)){
 									$stage = $configure->{$key}->{$key2}[$attrCnt]->attributes()->stage;
 									if('local' == $stage && 1 === (int)$localFlag){
