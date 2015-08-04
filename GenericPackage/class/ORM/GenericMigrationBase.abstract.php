@@ -175,7 +175,9 @@ abstract class GenericMigrationBase {
 				$sql = 'ALTER TABLE `' . $this->tableName . '` DROP COLUMN `' . $field . '`';
 			}
 			elseif('RENAME' === $propaty['alter'] && isset($propaty['before'])){
-				$sql = 'ALTER TABLE `' . $this->tableName . '` RENAME COLUMN `' . $field . '` TO `' . $propaty['before'] .'`';
+				$fielPropatyQueries = $this->_getFieldPropatyQuery(array($field => $propaty));
+				$fieldDef = $fielPropatyQueries['fieldDef'];
+				$sql = 'ALTER TABLE `' . $this->tableName . '` CHANGE COLUMN `' . $propaty['before'] . '` ' . $fieldDef;
 			}
 			else{
 				$fielPropatyQueries = $this->_getFieldPropatyQuery(array($field => $propaty));
@@ -193,7 +195,7 @@ abstract class GenericMigrationBase {
 			}
 			if(strlen($sql) > 0){
 				try {
-					debug('migration alter sql='.$sql);
+					logging('migration alter sql='.$sql, 'migration');
 					$argDBO->execute($sql);
 				}
 				catch (Exception $Exception){
@@ -211,7 +213,7 @@ abstract class GenericMigrationBase {
 		$indexQueries = $this->_getIndexQueries($argIndex);
 		for($idx=0; $idx < count($indexQueries); $idx++){
 			try {
-				debug('migration alter index='.$indexQueries[$idx]);
+				logging('migration alter index='.$indexQueries[$idx], 'migration');
 				$argDBO->execute($indexQueries[$idx]);
 			}
 			catch (Exception $Exception){
