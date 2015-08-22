@@ -169,11 +169,11 @@ class GenericAppReceiptVerifier
 				return FALSE;
 			}
 
-			debug('receiptverify pkbin:' . $pkbin);
+			logging('receiptverify pkbin:' . $pkbin, 'receiptverify');
 
 			// レシートチェック
 			$res = openssl_verify($argBase64EncodedReceipt, base64_decode($argSignatureOrSecretKey), $pkbin);
-			debug('receiptverify body:' . $res);
+			logging('receiptverify body:' . $res, 'receiptverify');
 
 			if ($res === 1) {
 				// 有効である

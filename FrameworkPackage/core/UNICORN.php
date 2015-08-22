@@ -2,11 +2,11 @@
 
 /*
  * UNICORN Framework
-*
-* @author saimushi
-* @website http://unicorn-project.github.io
-* @copyright (C) 2014 saimushi All Rights Reserved.
-*/
+ *
+ * @author saimushi
+ * @website http://unicorn-project.github.io
+ * @copyright (C) 2014 saimushi All Rights Reserved.
+ */
 
 
 // このファイルのファイル名を持ってしてフレームワークの名称と位置づける
@@ -613,6 +613,7 @@ function loadConfig($argConfigPath){
 	static $stagingFlag = NULL;
 	static $debugFlag = NULL;
 	static $errorReportFlag = NULL;
+	static $loggingFlag = NULL;
 	static $regenerateFlag = NULL;
 
 	if(NULL === $errorReportFlag){
@@ -629,7 +630,9 @@ function loadConfig($argConfigPath){
 		// デバッグモードフラグのセット
 		$debugFlag = getDebugEnabled();
 		// エラーレポートフラグのセット
-		$errorReportFlag = getErrorReportEnabled();;
+		$errorReportFlag = getErrorReportEnabled();
+		// ロギングフラグのセット
+		$loggingFlag = getLoggingEnabled();
 	}
 
 	if(TRUE === $autoGenerateFlag){
@@ -660,12 +663,15 @@ function loadConfig($argConfigPath){
 					if(!isset($flagchaces['errorReportFlag']) || (int)$errorReportFlag != $flagchaces['errorReportFlag']){
 						$regenerateFlag = TRUE;
 					}
+					if(!isset($flagchaces['loggingFlag']) || (int)$loggingFlag != $flagchaces['loggingFlag']){
+						$regenerateFlag = TRUE;
+					}
 				}
 				else{
 					$regenerateFlag = TRUE;
 				}
 				if(TRUE === $regenerateFlag){
-					$flagchaceBody = '$flagchaces = array(\'autoMigrationFlag\'=>' . (int)$autoMigrationFlag . ', \'localFlag\'=>' . (int)$localFlag . ', \'devFlag\'=>' . (int)$devFlag . ', \'testFlag\'=>' . (int)$testFlag . ', \'stagingFlag\'=>' . (int)$stagingFlag . ', \'debugFlag\'=>' . (int)$debugFlag . ', \'errorReportFlag\'=>' . (int)$errorReportFlag . ');';
+					$flagchaceBody = '$flagchaces = array(\'autoMigrationFlag\'=>' . (int)$autoMigrationFlag . ', \'localFlag\'=>' . (int)$localFlag . ', \'devFlag\'=>' . (int)$devFlag . ', \'testFlag\'=>' . (int)$testFlag . ', \'stagingFlag\'=>' . (int)$stagingFlag . ', \'debugFlag\'=>' . (int)$debugFlag . ', \'errorReportFlag\'=>' . (int)$errorReportFlag . ', \'loggingFlag\'=>' . (int)$loggingFlag . ');';
 					// フラグメントキャッシュを更新
 					file_put_contents($flagcacheFileName, '<?php' . PHP_EOL . $flagchaceBody . PHP_EOL . '?>');
 					@chmod($flagcacheFileName,0777);
@@ -703,6 +709,7 @@ function loadConfig($argConfigPath){
 		$configure->addChild('STAGING_ENABLED', $stagingFlag);
 		$configure->addChild('DEBUG_ENABLED', $debugFlag);
 		$configure->addChild('ERROR_REPORT_ENABLED', $errorReportFlag);
+		$configure->addChild('LOGGING_ENABLED', $loggingFlag);
 	}
 
 	foreach(get_object_vars($configure) as $key => $val){
@@ -1406,6 +1413,8 @@ function dir_move($dir_name, $new_dir, $permission = 0755) {
  */
 function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 
+	static $beforeDate = NULL;
+	static $date = NULL;
 	static $pdate = NULL;
 	static $phour = NULL;
 	static $loggingLineNum = 1;
@@ -1415,11 +1424,16 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 		$logpath = Configure::LOG_PATH;
 	}
 
-	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::DEBUG_ENABLED')){
-		$debugFlag = Configure::DEBUG_ENABLED;
+	$loggingFlag = FALSE;
+	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::LOGGING_ENABLED')){
+		$loggingFlag = Configure::LOGGING_ENABLED;
 	}
 
-	// XXX ログローテートの実行
+	$debugFlag = FALSE;
+	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::DEBUG_ENABLED')){
+		$debugFlag = Configure::DEBUG_ENABLED;
+		$loggingFlag = 1;
+	}
 
 	if(NULL === $argLogName){
 		$argLogName = 'process';
@@ -1429,10 +1443,64 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 		$deftimezone = @date_default_timezone_get();
 		date_default_timezone_set('Asia/Tokyo');
 		$dateins = new DateTime();
+		$date = $dateins->format('Y/m/d');
 		$pdate = $dateins->format('Y-m-d H:i:s') . ' [UDate:'. microtime(TRUE).']';
 		$phour = $dateins->format('H');
 		date_default_timezone_set($deftimezone);
 	}
+
+	// ログローテートの実行
+	if (1 === (int)$loggingFlag){
+		// 最終ロギング時間の記録
+		if(!is_file($logpath.'date')){
+			@touch($logpath.'date');
+			@chmod($logpath.'date', 0666);
+			@file_put_contents($logpath.'date', $date);
+		}
+		else {
+			$beforeDate = @file_get_contents($logpath.'date');
+		}
+		// 日が変わったかどうか
+		if (NULL !== $beforeDate && $beforeDate != $date){
+			@file_put_contents($logpath.'date', $date);
+			// ログローテートの実行
+			if (is_dir($logpath) && $dh = @opendir($logpath)) {
+				while (($file = @readdir($dh)) !== false) {
+					if(is_file($logpath.$file) && 'date' !== $file){
+						if (!is_dir($logpath.'backup/'.$beforeDate)){
+							@mkdir($logpath.'backup/'.$beforeDate, 0755, true);
+						}
+						@rename($logpath.$file, $logpath.'backup/'.$beforeDate.'/'.$file);
+					}
+				}
+				@closedir($dh);
+				// XXX 3ヶ月以上前のファイルは全て削除(3ヶ月固定)
+				$beforeDates = explode('/', $beforeDate);
+				$beforeYear = (int)$beforeDates[0];
+				$beforeMonth = (int)$beforeDates[1]-3;
+				if (1 > $beforeMonth){
+					$beforeYear -= 1;
+					$beforeMonth = 12 + $beforeMonth;
+				}
+				$maxLoop = 0;
+				while (is_dir($logpath.'backup/'.$beforeYear.'/'.sprintf('%02d', $beforeMonth))){
+					@dir_delete($logpath.'backup/'.$beforeYear.'/'.sprintf('%02d', $beforeMonth));
+					// 1ヶ月減算
+					$beforeMonth -= 1;
+					if (1 > $beforeMonth){
+						$beforeYear -= 1;
+						$beforeMonth = 12 + $beforeMonth;
+					}
+					$maxLoop++;
+					if ($maxLoop > 1000){
+						// 1000ヶ月以上前には遡れない！無限ループ対策
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	if(is_array($arglog) || is_object($arglog)){
 		$arglog = var_export($arglog, TRUE);
 	}
@@ -1444,32 +1512,36 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 	// 改行コードは\rだけにして、一行で表現出来るようにする
 	$logstr = str_replace(PHP_CR,'[EOL]',$logstr);
 	$logstr = str_replace(PHP_LF,'[EOL]',$logstr);
-	if('process' !== $argLogName){
-		// process_logは常に出す
-		if(!is_file($logpath.'process_log')){
-			@touch($logpath.'process_log');
-			@chmod($logpath.'process_log', 0666);
+
+	// ログ出力
+	if (1 === (int)$loggingFlag){
+		if('process' !== $argLogName){
+			// process_logは常に出す
+			if(!is_file($logpath.'process_log')){
+				@touch($logpath.'process_log');
+				@chmod($logpath.'process_log', 0666);
+			}
+			if(!is_file($logpath.'process_'.$phour.'.log')){
+				@touch($logpath.'process_'.$phour.'.log');
+				@chmod($logpath.'process_'.$phour.'.log', 0666);
+			}
+			@file_put_contents($logpath.'process_log', $logstr.PHP_EOL, FILE_APPEND);
+			@file_put_contents($logpath.'process_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 		}
-		if(!is_file($logpath.'process_'.$phour.'.log')){
-			@touch($logpath.'process_'.$phour.'.log');
-			@chmod($logpath.'process_'.$phour.'.log', 0666);
+		if(!is_file($logpath.$argLogName.'_log')){
+			@touch($logpath.$argLogName.'_log');
+			@chmod($logpath.$argLogName.'_log', 0666);
 		}
-		@file_put_contents($logpath.'process_log', $logstr.PHP_EOL, FILE_APPEND);
-		@file_put_contents($logpath.'process_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
+		if(!is_file($logpath.$argLogName.'_'.$phour.'.log')){
+			@touch($logpath.$argLogName.'_'.$phour.'.log');
+			@chmod($logpath.$argLogName.'_'.$phour.'.log', 0666);
+		}
+		@file_put_contents($logpath.$argLogName.'_log', $logstr.PHP_EOL, FILE_APPEND);
+		@file_put_contents($logpath.$argLogName.'_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 	}
-	if(!is_file($logpath.$argLogName.'_log')){
-		@touch($logpath.$argLogName.'_log');
-		@chmod($logpath.$argLogName.'_log', 0666);
-	}
-	if(!is_file($logpath.$argLogName.'_'.$phour.'.log')){
-		@touch($logpath.$argLogName.'_'.$phour.'.log');
-		@chmod($logpath.$argLogName.'_'.$phour.'.log', 0666);
-	}
-	@file_put_contents($logpath.$argLogName.'_log', $logstr.PHP_EOL, FILE_APPEND);
-	@file_put_contents($logpath.$argLogName.'_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 
 	// $debugFlagが有効だったらdebugログに必ず出力
-	if('exception' != $argLogName && 'backtrace' != $argLogName && 'migration' != $argLogName && isset($debugFlag) && 1 === (int)$debugFlag && isset($_SERVER['REQUEST_URI']) && 'debug' != $argLogName){
+	if('exception' != $argLogName && 'backtrace' != $argLogName && 1 === (int)$debugFlag && isset($_SERVER['REQUEST_URI']) && 'debug' != $argLogName){
 		debug($arglog);
 	}
 
@@ -2016,7 +2088,7 @@ function getErrorReportEnabled($argProjectName=NULL){
 			$corefilename = corefilename();
 			$errorReportEnabledFilepath = dirname(dirname(__FILE__)).'/.error_report';
 			if(defined($corefilename . '_ERROR_REPORT_ENABLED')){
-				$errorReportEnabledFilepath = constant($corefilename . '_DEBUG_MODE_ENABLED');
+				$errorReportEnabledFilepath = constant($corefilename . '_ERROR_REPORT_ENABLED');
 			}
 		}
 		if(isset($errorReportEnabledFilepath)){
@@ -2051,6 +2123,68 @@ function getErrorReportEnabled($argProjectName=NULL){
 	}
 	return $enabled[$argProjectName];
 }
+
+/**
+ * 現在設定されているロギングフラグを返す
+ */
+function getLoggingEnabled($argProjectName=NULL){
+	static $enabled = NULL;
+	if(NULL === $enabled || !isset($enabled[$argProjectName])){
+		$loggingEnabled = NULL;
+		$enabled = array();
+		if(NULL !== $argProjectName){
+			$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.$argProjectName.'/.logging';
+			if(TRUE !== is_file($loggingEnabledFilepath)){
+				$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.$argProjectName.'Package/.logging';
+			}
+		}
+		elseif(NULL !== defined('PROJECT_NAME')){
+			// 併設されている事を前提とする！
+			$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.logging';
+			if(TRUE !== is_file($loggingEnabledFilepath)){
+				$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.logging';
+			}
+		}
+		else{
+			$corefilename = corefilename();
+			$loggingEnabledFilepath = dirname(dirname(__FILE__)).'/.logging';
+			if(defined($corefilename . '_LOGGING_ENABLED')){
+				$loggingEnabledFilepath = constant($corefilename . '_LOGGING_ENABLED');
+			}
+		}
+		if(isset($loggingEnabledFilepath)){
+			// フラグファイルからフラグをセット
+			$loggingEnabled = 0;
+			if(file_exists($loggingEnabledFilepath)){
+				$loggingEnabled = 1;
+			}
+			// 一応ファイル名をloggingで探してもみる
+			if(0 === $loggingEnabled){
+				if(file_exists(str_replace('.logging', '.errorreport', $loggingEnabledFilepath))){
+					$loggingEnabled = 1;
+				}
+			}
+		}
+		// 一応$_SERVERを探す
+		if(isset($_SERVER['logging']) && 1 === (int)$_SERVER['logging']){
+			// $_SERVERが最強 $_SERVERがあれば$_SERVERに必ず従う
+			$loggingEnabled = 1;
+		}
+		else if(isset($_SERVER['logging']) && 1 === (int)$_SERVER['logging']){
+			$loggingEnabled = 1;
+		}
+		else if(isset($_SERVER['logging']) || isset($_SERVER['logging'])){
+			$loggingEnabled = 0;
+		}
+		if(NULL === $loggingEnabled){
+			// フラグ設定が見つからなかったのでdisabledで設定
+			$loggingEnabled = 0;
+		}
+		$enabled[$argProjectName] = $loggingEnabled;
+	}
+	return $enabled[$argProjectName];
+}
+
 /**
  * 現在設定されている自動最適化キャッシュ生成フラグを返す
  */

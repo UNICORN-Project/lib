@@ -618,6 +618,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			$classHint = str_replace(' ', '', ucwords(str_replace(' ', '', $this->restResourceModel)));
 			debug('$classHint='.$classHint);
 			debug('whitelistcheck allowed='.var_export($this->allowed,TRUE));
+			if (isset($_SERVER['ALLOW_ALL_WHITE'])){
+				debug('whitelistcheck ALLOW_ALL_WHITE='.var_export($_SERVER['ALLOW_ALL_WHITE'],TRUE));
+			}
 			if(TRUE !== isTest() && !isset($this->AuthUser) && TRUE !== $this->allowed){
 				// アクセスエラー！
 				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
@@ -678,7 +681,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							$this->allowed = TRUE;
 						}
-						else {
+						else if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
 							debug("whitelistcheck new is??");
 							// ホワイトリストによるリソースアクセスチェック！
 							if (!(isset($whiteList[$resourcePath]) && isset($whiteList[$resourcePath]["Method ".$this->requestMethod]))){
