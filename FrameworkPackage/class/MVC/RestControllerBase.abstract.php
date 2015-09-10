@@ -918,7 +918,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			header('Comment: ' . json_encode($res['comment']));
 			$res = TRUE;
 		}
-		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'GET' === $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
+		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'DELETE' !== $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
 			// GETの時はHEADリクエストの結果を包括する為の処理
 			try{
 				$headRes = $this->head();
@@ -1073,13 +1073,13 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									$basehtml .= '<tr><td><input class="form-input" type="text" name="'.$key.'" value="'.htmlspecialchars($val).'"/></td></tr>'.PHP_EOL;
 								}
 							}
-							$basehtml .= '<tr><td><div class="submit-button put-button"><input type="submit"/ value="PUT"></div></td></tr>'.PHP_EOL;
+							$basehtml .= '<tr><td><div class="submit-button put-button"><input type="submit" value="PUT"/></div></td></tr>'.PHP_EOL;
 							$basehtml .= '<input class="form-input" type="hidden" name="_method_" value="PUT"/>'.PHP_EOL;
 							$basehtml .= '</table>'.PHP_EOL;
 							$basehtml .= '</form>'.PHP_EOL;
 							$basehtml .= '<form id="crud-form-delete" class="crud-form" method="POST">'.PHP_EOL;
-							$basehtml .= '<div class="submit-button delete-button"><input type="submit"/ value="DELETE"></div>'.PHP_EOL;
-							$basehtml .= '<inpu class="form-input" type="hidden" name="_method_" value="DELETE"/>'.PHP_EOL;
+							$basehtml .= '<div class="submit-button delete-button"><input type="submit" value="DELETE"/></div>'.PHP_EOL;
+							$basehtml .= '<input class="form-input" type="hidden" name="_method_" value="DELETE"/>'.PHP_EOL;
 							$basehtml .= '</form>'.PHP_EOL;
 							$basehtml .= '<div class="list-link"><a href="'.str_replace('/'.$this->restResourceModel.'/'.$id.'.html', '/'.$this->restResourceModel.'.html', $URIs[0]).'">'.$this->restResourceModel.' list</a></div>'.PHP_EOL;
 						}
