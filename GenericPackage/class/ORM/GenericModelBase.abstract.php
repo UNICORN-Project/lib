@@ -371,8 +371,13 @@ abstract class GenericModelBase {
 			for($replaceCLOBFieldsNum =0; count($replaceCLOBFields) > $replaceCLOBFieldsNum; $replaceCLOBFieldsNum++){
 				$key = $replaceCLOBFieldKeys[$replaceCLOBFieldsNum];
 				$where = "1=1";
-				for($pkeyNum=0; count($this->pkeys) > $pkeyNum; $pkeyNum++){
-					$where .= " AND `" . $this->pkeys[$pkeyNum] . "` = " . $this->{$this->pkeys[$pkeyNum]};
+				if (isset($pkey)){
+					$where .= " AND `" . $this->pkeyName . "` = " . $pkey;
+				}
+				else {
+					for($pkeyNum=0; count($this->pkeys) > $pkeyNum; $pkeyNum++){
+						$where .= " AND `" . $this->pkeys[$pkeyNum] . "` = " . $this->{$this->pkeys[$pkeyNum]};
+					}
 				}
 				if(FALSE === $this->_DBO->updateClob(strtolower($this->tableName), $key, $replaceCLOBFields[$key], $where)){
 					throw new Exception("");
@@ -383,8 +388,13 @@ abstract class GenericModelBase {
 			for($replaceBLOBFieldsNum =0; count($replaceBLOBFields) > $replaceBLOBFieldsNum; $replaceBLOBFieldsNum++){
 				$key = $replaceBLOBFieldKeys[$replaceBLOBFieldsNum];
 				$where = "1=1";
-				for($pkeyNum=0; count($this->pkeys) > $pkeyNum; $pkeyNum++){
-					$where .= " AND `" . $this->pkeys[$pkeyNum] . "` = " . $this->{$this->pkeys[$pkeyNum]};
+							if (isset($pkey)){
+					$where .= " AND `" . $this->pkeyName . "` = " . $pkey;
+				}
+				else {
+					for($pkeyNum=0; count($this->pkeys) > $pkeyNum; $pkeyNum++){
+						$where .= " AND `" . $this->pkeys[$pkeyNum] . "` = " . $this->{$this->pkeys[$pkeyNum]};
+					}
 				}
 				if(FALSE === $this->_DBO->updateBlob(strtolower($this->tableName), $key, $replaceBLOBFields[$key], $where)){
 					throw new Exception("");

@@ -911,6 +911,27 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 400);
 		}
 
+		if('HEAD' === $this->requestMethod && isset($res['describes'])){
+			header('Head: ' . json_encode($res['describes']));
+			header('Rules: ' . json_encode($res['rules']));
+			header('Records: ' . $res['count']);
+			header('Comment: ' . json_encode($res['comment']));
+			$res = TRUE;
+		}
+		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'GET' === $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
+			// GETの時はHEADリクエストの結果を包括する為の処理
+			try{
+				$headRes = $this->head();
+				header('Head: ' . json_encode($headRes['describes']));
+				header('Rules: ' . json_encode($headRes['rules']));
+				header('Records: ' . $headRes['count']);
+				header('Comment: ' . json_encode($headRes['comment']));
+			}
+			catch (Exception $Exception){
+				// 何もしない
+			}
+		}
+
 		if(TRUE === is_array($res) && 'HEAD' !== $this->requestMethod){
 			if('html' === $this->outputType){
 				debug('convert html');
@@ -926,6 +947,18 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				}
 				else {
 					$requestParams = $this->getRequestParams();
+					if (!isset($requestParams['LIKE'])){
+						$requestParams['LIKE'] = '';
+					}
+					if (!isset($requestParams['ORDER'])){
+						$requestParams['ORDER'] = '';
+					}
+					if (!isset($requestParams['LIMIT'])){
+						$requestParams['LIMIT'] = '';
+					}
+					if (!isset($requestParams['total'])){
+						$requestParams['total'] = '';
+					}
 					$basehtml .= '<h2>'.$this->restResourceModel.'</h2>'.PHP_EOL;
 					if(TRUE === $this->restResourceListed){
 						$basehtml .= '<h3><form id="crud-form-search" class="crud-form" method="GET"><input type="text" value="' . ((isset($requestParams['LIKE']))? $requestParams['LIKE'] : '') . '" name="LIKE"/><div class="submit-button search-button"><input type="submit" value="search"/></div></form></h3>'.PHP_EOL;
@@ -951,7 +984,19 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									if('' === $id){
 										$id = $val;
 									}
-									$basehtml .= '<td><a class="crudlink" id="crud_'.$this->restResourceModel.'_'.$id.'" target="_blank" href="'.str_replace('/'.$this->restResourceModel.'.html', '/'.$this->restResourceModel.'/'.$id.'.html', $URIs[0]).'">'.$val.'</a></td>';
+									$basehtml .= '<td><a class="crudlink" id="crud_'.$this->restResourceModel.'_'.$id.'" target="_blank" href="'.str_replace('/'.$this->restResourceModel.'.html', '/'.$this->restResourceModel.'/'.$id.'.html', $URIs[0]).'">';
+									if (isset($headRes) && isset($headRes['describes']) && isset($headRes['describes'][$key]['type']) && FALSE !== strpos($headRes['describes'][$key]['type'], 'blob')){
+										// XXX 動画との判別を入れる！
+										$basehtml .= '<img width="50"';
+										if (0 < strlen($val)){
+											$basehtml .= ' src="data:octet-stream;base64,'.base64_encode($val).'"';
+										}
+										$basehtml .= '/>';
+									}
+									else {
+										$basehtml .= nl2br($val);
+									}
+									$basehtml .= '</a></td>';
 								}
 								$basehtml .= '</tr>'.PHP_EOL;
 							}
@@ -996,12 +1041,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							$basehtml .= '<div class="csv-download-link"><a href="'.str_replace('.html', '.csv', $_SERVER['REQUEST_URI']).'">download csv</a></div>'.PHP_EOL;
 							$basehtml .= '<div class="csv-all-download-link"><a href="'.str_replace('.html', '.csv', $URIs[0]).'?ORDER='.rawurlencode($requestParams['ORDER']).'">download csv all records</a></div>'.PHP_EOL;
+							$basehtml .= '<div class="tsv-download-link"><a href="'.str_replace('.html', '.tsv', $_SERVER['REQUEST_URI']).'">download tsv</a></div>'.PHP_EOL;
+							$basehtml .= '<div class="tsv-all-download-link"><a href="'.str_replace('.html', '.tsv', $URIs[0]).'?ORDER='.rawurlencode($requestParams['ORDER']).'">download tsv all records</a></div>'.PHP_EOL;
 							$basehtml .= '<div class="tablelist-link"><a href="'.str_replace('/'.$this->restResourceModel.'.html', '/index.html', $URIs[0]).'">table list</a></div>'.PHP_EOL;
 						}
 					}
 					else {
 						if(isset($res[0])){
-							$basehtml .= '<form id="crud-form-put" class="crud-form" method="POST">'.PHP_EOL;
+							$basehtml .= '<form id="crud-form-put" class="crud-form" method="POST" enctype="multipart/form-data">'.PHP_EOL;
 							$basehtml .= '<table class="detail">'.PHP_EOL;
 							$id = '';
 							foreach($res[0] as $key => $val){
@@ -1009,15 +1056,30 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									$id = $val;
 								}
 								$basehtml .= '<tr><th class="crudkey">'.$key.'</th></tr>'.PHP_EOL;
-								$basehtml .= '<tr><td><input type="text" name="'.$key.'" value="'.htmlspecialchars($val).'"/></td></tr>'.PHP_EOL;
+								if (isset($headRes) && isset($headRes['describes']) && isset($headRes['describes'][$key]['type']) && FALSE !== strpos($headRes['describes'][$key]['type'], 'text')){
+									$basehtml .= '<tr><td><textarea class="form-input" name="'.$key.'">'.htmlspecialchars($val).'</textarea></td></tr>'.PHP_EOL;
+								}
+								elseif (isset($headRes) && isset($headRes['describes']) && isset($headRes['describes'][$key]['type']) && FALSE !== strpos($headRes['describes'][$key]['type'], 'blob')){
+									// XXX 動画との判別を入れる！
+									$basehtml .= '<tr><td>';
+									$basehtml .= '<img width="200"';
+									if (0 < strlen($val)){
+										$basehtml .= ' src="data:octet-stream;base64,'.base64_encode($val).'"';
+									}
+									$basehtml .= '/>';
+									$basehtml .= '<br/><input class="form-input" type="file" name="'.$key.'"/></td></tr>'.PHP_EOL;
+								}
+								else {
+									$basehtml .= '<tr><td><input class="form-input" type="text" name="'.$key.'" value="'.htmlspecialchars($val).'"/></td></tr>'.PHP_EOL;
+								}
 							}
 							$basehtml .= '<tr><td><div class="submit-button put-button"><input type="submit"/ value="PUT"></div></td></tr>'.PHP_EOL;
-							$basehtml .= '<input type="hidden" name="_method_" value="PUT"/>'.PHP_EOL;
+							$basehtml .= '<input class="form-input" type="hidden" name="_method_" value="PUT"/>'.PHP_EOL;
 							$basehtml .= '</table>'.PHP_EOL;
 							$basehtml .= '</form>'.PHP_EOL;
 							$basehtml .= '<form id="crud-form-delete" class="crud-form" method="POST">'.PHP_EOL;
 							$basehtml .= '<div class="submit-button delete-button"><input type="submit"/ value="DELETE"></div>'.PHP_EOL;
-							$basehtml .= '<input type="hidden" name="_method_" value="DELETE"/>'.PHP_EOL;
+							$basehtml .= '<inpu class="form-input" type="hidden" name="_method_" value="DELETE"/>'.PHP_EOL;
 							$basehtml .= '</form>'.PHP_EOL;
 							$basehtml .= '<div class="list-link"><a href="'.str_replace('/'.$this->restResourceModel.'/'.$id.'.html', '/'.$this->restResourceModel.'.html', $URIs[0]).'">'.$this->restResourceModel.' list</a></div>'.PHP_EOL;
 						}
@@ -1027,27 +1089,6 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					}
 				}
 				$res = $basehtml;
-			}
-		}
-
-		if('HEAD' === $this->requestMethod && isset($res['describes'])){
-			header('Head: ' . json_encode($res['describes']));
-			header('Rules: ' . json_encode($res['rules']));
-			header('Records: ' . $res['count']);
-			header('Comment: ' . json_encode($res['comment']));
-			$res = TRUE;
-		}
-		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'GET' === $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
-			// GETの時はHEADリクエストの結果を包括する為の処理
-			try{
-				$headRes = $this->head();
-				header('Head: ' . json_encode($headRes['describes']));
-				header('Rules: ' . json_encode($headRes['rules']));
-				header('Records: ' . $headRes['count']);
-				header('Comment: ' . json_encode($headRes['comment']));
-			}
-			catch (Exception $Exception){
-				// 何もしない
 			}
 		}
 
@@ -1229,7 +1270,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						}
 						$baseBinds[$fields[$fieldIdx]] = $bindValue;
 					}
-					else if(isset($requestParams['LIKE']) && strlen($requestParams['LIKE']) > 0){
+					else if(isset($requestParams['LIKE']) && strlen($requestParams['LIKE']) > 0 && isset($Model->describes[$fields[$fieldIdx]]) && isset($Model->describes[$fields[$fieldIdx]]['type']) && TRUE === ('string' === $Model->describes[$fields[$fieldIdx]]['type'] || FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'text'))){
 						$baseQuery .= ' OR `' . $Model->tableName . '`.`' . $fields[$fieldIdx] . '` LIKE \'%'.addslashes($requestParams['LIKE']).'%\' ';
 					}
 					// 有効フラグの自動参照制御
@@ -1482,7 +1523,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		else {
 			$requestParams = $argRequestParams;
 		}
-		debug('PUT param=');
+		debug($this->requestMethod . ' param=');
 		debug(array_keys($requestParams));
 		if(isset($requestParams['datas']) && isset($requestParams['datas'][0])){
 			// 配列のPOSTはリカーシブルで処理をする
@@ -1586,13 +1627,32 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									$datas[$fields[$fieldIdx]] = self::$nowGMT;
 								}
 								elseif($fields[$fieldIdx] == $Model->pkeyName){
-									// Pkeyも入れえておく(複合キーの為の処理)
+									// Pkeyも入れておく(複合キーの為の処理)
 									$datas[$fields[$fieldIdx]] = $this->restResource['ids'][$IDIdx];
 								}
 								elseif($fields[$fieldIdx] == $this->authUserIDFieldName){
 									// 自分自身のIDを入れる
 									$datas[$fields[$fieldIdx]] = $this->authUserID;
 								}
+								// blobの自動処理
+								elseif(FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'blob')){
+									// リアルなリクエストメソッドで処理を分岐
+									if ('PUT' === $_SERVER['REQUEST_METHOD']){
+										// PUTの場合
+										if ($PUT[$fields[$fieldIdx]]){
+											// ファイルが存在したので、更新データにセットする
+											$datas[$fields[$fieldIdx]] = $PUT[$fields[$fieldIdx]];
+										}
+									}
+									elseif ('POST' === $_SERVER['REQUEST_METHOD']){
+										// POSTの場合
+										if(isset($_FILES) && isset($_FILES[$fields[$fieldIdx]]) && is_array($_FILES[$fields[$fieldIdx]]) && isset($_FILES[$fields[$fieldIdx]]['tmp_name']) && isset($_FILES[$fields[$fieldIdx]]['type']) && isset($_FILES[$fields[$fieldIdx]]['size']) && isset($_FILES[$fields[$fieldIdx]]['error']) && 0 === $_FILES[$fields[$fieldIdx]]['error']){
+											// ファイルが存在したので、更新データにセットする
+											$datas[$fields[$fieldIdx]] = file_get_contents($_FILES[$fields[$fieldIdx]]["tmp_name"]);
+										}
+									}
+								}
+								// XXX S3オートアップロード処理はココに追加する予定
 								// Filterがあったらフィルター処理をする
 								$filerName = str_replace(' ', '', ucwords(str_replace('_', ' ', $this->restResourceModel. ' '. $fields[$fieldIdx]))) . 'Filter';
 								debug('$filerName='.$filerName);
@@ -1609,7 +1669,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										}
 									}
 									debug('original value='.$datas[$fields[$fieldIdx]]);
-									$filterMethod = 'filter'.ucfirst(strtolower($_SERVER['REQUEST_METHOD']));
+									$filterMethod = 'filter'.ucfirst(strtolower($this->requestMethod));
 									$datas[$fields[$fieldIdx]] = $Filter->$filterMethod($datas[$fields[$fieldIdx]]);
 									debug('$filered value='.$datas[$fields[$fieldIdx]]);
 								}
@@ -1712,6 +1772,25 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						// データ更新日付の自動補完
 						$datas[$fields[$fieldIdx]] = self::$nowGMT;
 					}
+					// blobの自動処理
+					elseif(FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'blob')){
+						// リアルなリクエストメソッドで処理を分岐
+						if ('PUT' === $_SERVER['REQUEST_METHOD']){
+							// PUTの場合
+							if ($PUT[$fields[$fieldIdx]]){
+								// ファイルが存在したので、更新データにセットする
+								$datas[$fields[$fieldIdx]] = $PUT[$fields[$fieldIdx]];
+							}
+						}
+						elseif ('POST' === $_SERVER['REQUEST_METHOD']){
+							// POSTの場合
+							if(isset($_FILES) && isset($_FILES[$fields[$fieldIdx]]) && is_array($_FILES[$fields[$fieldIdx]]) && isset($_FILES[$fields[$fieldIdx]]['tmp_name']) && isset($_FILES[$fields[$fieldIdx]]['type']) && isset($_FILES[$fields[$fieldIdx]]['size']) && isset($_FILES[$fields[$fieldIdx]]['error']) && 0 === $_FILES[$fields[$fieldIdx]]['error']){
+								// ファイルが存在したので、更新データにセットする
+								$datas[$fields[$fieldIdx]] = file_get_contents($_FILES[$fields[$fieldIdx]]["tmp_name"]);
+							}
+						}
+					}
+					// XXX S3オートアップロード処理はココに追加する予定
 					// Filterがあったらフィルター処理をする
 					$filerName = str_replace(' ', '', ucwords(str_replace('_', ' ', $this->restResourceModel. ' '. $fields[$fieldIdx]))) . 'Filter';
 					debug('$filerName='.$filerName);
@@ -1730,7 +1809,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								}
 							}
 							debug('original value='.$datas[$fields[$fieldIdx]]);
-							$filterMethod = 'filter'.ucfirst(strtolower($_SERVER['REQUEST_METHOD']));
+							$filterMethod = 'filter'.ucfirst(strtolower($this->requestMethod));
 							$datas[$fields[$fieldIdx]] = $Filter->$filterMethod($datas[$fields[$fieldIdx]]);
 							debug('$filered value='.$datas[$fields[$fieldIdx]]);
 						}
@@ -1921,7 +2000,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						}
 						$baseBinds[$fields[$fieldIdx]] = $bindValue;
 					}
-					else if(isset($requestParams['LIKE']) && strlen($requestParams['LIKE']) > 0){
+					else if(isset($requestParams['LIKE']) && strlen($requestParams['LIKE']) > 0 && isset($Model->describes[$fields[$fieldIdx]]) && isset($Model->describes[$fields[$fieldIdx]]['type']) && TRUE === ('string' === $Model->describes[$fields[$fieldIdx]]['type'] || FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'text'))){
 						$baseQuery .= ' OR `' . $Model->tableName . '`.`' . $fields[$fieldIdx] . '` LIKE \'%'.addslashes($requestParams['LIKE']).'%\' ';
 					}
 					// 有効フラグの自動参照制御

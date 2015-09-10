@@ -21,7 +21,8 @@ group: static navigation
 						var crudEnabled = true;
 						crud(crudBasePath, "target_project="+targetProject, function(mode){
 							// crudJS終了後に処理をしたい場合はココに記述
-							$("#crudmain input").attr("class", $("#crudmain input").attr("class") + " form-control");
+							$("#crudmain input").attr("class", classStr + " form-control");
+							$("#crudmain textarea").attr("class", classStr + " form-control");
 							$("#crudmain input[type='submit']").attr("class", $("#crudmain input").attr("class") + " btn btn-success");
 							if("tablelist" == mode){
 								$("#tablelist h2").parent().prepend("<p>" + $("#tablelist h2").text() + "</p>");

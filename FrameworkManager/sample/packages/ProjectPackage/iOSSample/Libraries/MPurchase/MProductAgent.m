@@ -1,3 +1,4 @@
+
 #import "MProductAgent.h"
 
 
@@ -13,7 +14,6 @@
     
 }
 @end
-
 
 @implementation MProductAgent
 
@@ -101,7 +101,7 @@ static NSMutableArray *_productDelegates;
                     {
                         NSError *error = [NSError errorWithDomain:@"ProductErrorDomain"
                                                              code:__LINE__
-                                                         userInfo:@{NSLocalizedDescriptionKey : @"対象のアイテムが存在しませんでした。"}];
+                                                         userInfo:@{NSLocalizedDescriptionKey : NSLocalizedString(STORE_NOTFOUND_ITEM_ERROR_KEY, @"対象のアイテムが存在しませんでした。")}];
                         eBlock(error);
                     }
                 }
@@ -169,9 +169,9 @@ static NSMutableArray *_productDelegates;
     {
         if (_errorBlock)
         {
-            NSError *error = [NSError errorWithDomain:@"ProductErrorDomain"
-                                                 code:__LINE__
-                                             userInfo:@{NSLocalizedDescriptionKey : NSLocalizedString(STORE_GET_ITEM_ERROR_KEY, @"アイテムを取得できませんでした。")}];
+//            NSError *error = [NSError errorWithDomain:@"ProductErrorDomain"
+//                                                 code:__LINE__
+//                                             userInfo:@{NSLocalizedDescriptionKey : NSLocalizedString(STORE_GET_ITEM_ERROR_KEY, @"アイテムを取得できませんでした。")}];
             _errorBlock(error);
         }
         _productsRequest.delegate = nil;

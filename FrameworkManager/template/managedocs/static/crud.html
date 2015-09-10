@@ -191,7 +191,8 @@
 						var crudEnabled = true;
 						crud(crudBasePath, "target_project="+targetProject, function(mode){
 							// crudJS終了後に処理をしたい場合はココに記述
-							$("#crudmain input").attr("class", classStr + " form-control");
+							$("#crudmain input").attr("class", $("#crudmain input").attr("class") + " form-control");
+							$("#crudmain textarea").attr("class", $("#crudmain textarea").attr("class") + " form-control");
 							var classStr = $("#crudmain input").attr("class");
 							$("#crudmain input[type='submit']").attr("class", classStr + " btn btn-success");
 							if ($("#crudmain input[type='submit'][value='DELETE']")){

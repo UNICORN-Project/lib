@@ -1,30 +1,18 @@
 //
 //  MPurchaseAgent.h
-//  Version:1.0
 //
 //  Created by saimushi on 2014/11/27.
-//  Copyright (c) 2014 saimushi. All rights reserved.
-//
+//  Version:1.0
 /**
- *  [How To Setup]
  * (!)
- * MPurchaseライブラリは
- * [プロジェクトルート] ---- xxx.xcodeproj
- *                    |
- *                    --- Libraries/ ---- MPurchase
- * の、ように設置するとスムーズに始められます。
- *
- * (!!)
  * プロジェクト設定のbuild settings -> Search Paths -> Header Search Paths
  * に
  * $(PROJECT_DIR)/Libraries/MPurchase/vendor/include
  * を、追加し
  * OpenSSLのライブラリを使える用にする必要があります！
- * そして、includeグループがプロジェクトに追加さている場合は、remove referenceして下さい！
- * さらに、オリジナルのVerifyStoreReceiptがプロジェクトに追加さている場合は、remove referenceして下さい！
  *
- * (!!!)
- * StoreKit.frameworkとSecurity.frameworkを「Link Binary with Librarise」に追加する必要があります！
+ * (!!)
+ * StoreKit.frameworkを「Link Binary with Librarise」に追加する必要があります！
  *
  *
  *

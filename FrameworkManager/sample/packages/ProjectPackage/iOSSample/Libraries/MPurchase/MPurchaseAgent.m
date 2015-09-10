@@ -1,3 +1,4 @@
+
 #import <StoreKit/StoreKit.h>
 #import "MPurchaseAgent.h"
 #import "SBJSON.h"
@@ -69,6 +70,10 @@
 
 
 @implementation MPurchaseAgent
+{
+    BOOL restoreExecuted;
+    BOOL restored;
+}
 
 @synthesize delegate;
 
@@ -100,6 +105,7 @@ static NSMutableDictionary *alerts = nil;
         self.delegate = nil;
         currentProduct = nil;
         startObserver = NO;
+        restoreExecuted = NO;
         purchaseFinishDic = [[NSMutableDictionary alloc] init];
         restoreFinishDic = [[NSMutableDictionary alloc] init];
         productTypeDic = [[NSMutableDictionary alloc] init];
@@ -242,17 +248,7 @@ static NSMutableDictionary *alerts = nil;
                 // 和暦回避
                 [dateFormatter setLocale:[NSLocale systemLocale]];
                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-                if([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending){
-                    // i0S7以前の処理
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
-#pragma clang diagnostic pop
-                }
-                else {
-                    // i0S8以前の処理
-                    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
-                }
+                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
                 // 出力フォーマット指定
                 [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                 // 保存用に文字列に変換
@@ -267,24 +263,16 @@ static NSMutableDictionary *alerts = nil;
                 [dateFormatter setLocale:[NSLocale systemLocale]];
                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                 [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                if([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending){
-                    // i0S7以前の処理
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
-#pragma clang diagnostic pop
-                }
-                else {
-                    // i0S8以前の処理
-                    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
-                }
+                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
                 NSDate *nowdate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[NSDate date]]];
                 NSTimeInterval now = [[NSDate date] timeIntervalSinceDate:nowdate];
                 NSLog(@"old=%f %@", old, [lastExpiredDate description]);
                 NSLog(@"now=%f %@", now, [nowdate description]);
                 if (old > now){
                     // リストア成功のカウントに入れるのをヤメ
-                    restoredCnt--;
+                    if (YES != restored) {
+                        restoredCnt--;
+                    }
                     // 期限切れ
                     [dic setValue:@"1" forKey:@"expired"];
                 }
@@ -351,7 +339,7 @@ static NSMutableDictionary *alerts = nil;
                         // 購読アイテムだったら購読期間の確認を行う
                         NSDateFormatter *dateFormatter;
                         NSDate *lastExpiredDate;
-                        NSTimeInterval expires = 0.0;
+                        NSTimeInterval expires;
                         for (NSDictionary *inApp in result) {
                             // NSDate変換
                             lastExpiredDate =[MPurchaseAgent getNSDateFromRFC3339String:[inApp objectForKey:@"SubExpDate"]];
@@ -367,17 +355,7 @@ static NSMutableDictionary *alerts = nil;
                         // 和暦回避
                         [dateFormatter setLocale:[NSLocale systemLocale]];
                         [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-                        if([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending){
-                            // i0S7以前の処理
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                            [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
-#pragma clang diagnostic pop
-                        }
-                        else {
-                            // i0S8以前の処理
-                            [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
-                        }
+                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
                         // 出力フォーマット指定
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                         // 保存用に文字列に変換
@@ -392,27 +370,20 @@ static NSMutableDictionary *alerts = nil;
                         [dateFormatter setLocale:[NSLocale systemLocale]];
                         [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                        if([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending){
-                            // i0S7以前の処理
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-                            [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
-#pragma clang diagnostic pop
-                        }
-                        else {
-                            // i0S8以前の処理
-                            [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
-                        }
+                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
                         NSDate *nowdate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[NSDate date]]];
                         NSTimeInterval now = [[NSDate date] timeIntervalSinceDate:nowdate];
                         NSLog(@"old=%f %@", old, [lastExpiredDate description]);
                         NSLog(@"now=%f %@", now, [nowdate description]);
                         if (old > now){
                             // リストア成功のカウントに入れるのをヤメ
-                            restoredCnt--;
-                            if(NO == refreshed) {
+                            if (YES != restored) {
+                                restoredCnt--;
+                            }
+                            if(NO == refreshed && YES != argRestored) {
                                 refreshed = YES;
                                 // 該当レシートがローカルで見つからないので、レシートのリフレッシュリクエストをしてみる
+                                // XXX ただし、restoreCompletedTransactionsの時は不要なのでやらない。
                                 [[[MSKReceiptRefreshRequest alloc] init:sharedInstance :argTransaction :argRestored :argCompletion] start];
                                 return;
                             }
@@ -574,7 +545,8 @@ static NSMutableDictionary *alerts = nil;
 
     // 購入前のリストアチェック
     currentProduct = argProduct;
-    
+    restored = NO;
+
     // 購読アイテムかどうか
     NSString *productType = (NSString *)[productTypeDic objectForKey:argProduct.productIdentifier];
     if(nil != productType && ![productType isEqualToString:[NSString stringWithFormat:@"%d", MProductConsumable]]){
@@ -769,6 +741,7 @@ static NSMutableDictionary *alerts = nil;
     // オブザーバーが未スタートだったらスタートさせる
     [self startPaymentTransactionObserver];
     // リストアキューを登録し、リストア処理を開始して貰う
+    restored = YES;
     [[SKPaymentQueue defaultQueue] restoreCompletedTransactions];
 }
 
@@ -953,7 +926,7 @@ static NSMutableDictionary *alerts = nil;
             }
             // リストア完了ブロックを実行
             MPurchaseDelegateBlock block = (MPurchaseDelegateBlock)[restoreFinishDic objectForKey:transaction.payment.productIdentifier];
-            if (block){
+            if ((YES == restored || ![[receiptDic objectForKey:@"expired"] isEqualToString:@"1"]) && block){
                 dispatch_async(dispatch_get_main_queue(), ^ {
                     NSBlockOperation *op = [NSBlockOperation blockOperationWithBlock:^{
                         block(transaction, [receiptDic objectForKey:@"status"], [[NSData dataWithContentsOfURL:[[NSBundle mainBundle] appStoreReceiptURL]] base64EncodedStringWithOptions:0], ((nil ==[receiptDic objectForKey:@"expired"] || [[receiptDic objectForKey:@"expired"] isEqualToString:@"1"]) ? YES : NO), [receiptDic objectForKey:@"last_expired_date"], ^{
@@ -1030,7 +1003,11 @@ static NSMutableDictionary *alerts = nil;
     else {
         // 通知先のメソッドが無い場合は、ステータスアラートを取り敢えず出しておいてあげる
 //        [MPurchaseAgent showAlert:transaction.error.localizedDescription :YES];
-        [MPurchaseAgent showAlert:NSLocalizedString(PURCHASE_CHANCEL_KEY, @"購入処理がキャンセルされました。再度お手続きをしてください。") :YES];
+        NSString *errorMsg = NSLocalizedString(PURCHASE_CHANCEL_KEY, @"購入処理がキャンセルされました。再度お手続きをしてください。");
+        if (nil != transaction && nil != transaction.error && nil != transaction.error.localizedDescription && 0 < [transaction.error.localizedDescription length]){
+            errorMsg = transaction.error.localizedDescription;
+        }
+        [MPurchaseAgent showAlert:errorMsg :YES];
     }
     // 失敗ブロックを実行
     MPurchaseDelegateBlock block = (MPurchaseDelegateBlock)[purchaseFinishDic objectForKey:transaction.payment.productIdentifier];
@@ -1357,17 +1334,7 @@ static NSMutableDictionary *alerts = nil;
     // 和暦回避
     [dateFormatter setLocale:[NSLocale systemLocale]];
     [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-    if([[[UIDevice currentDevice] systemVersion] compare:@"8.0" options:NSNumericSearch] == NSOrderedAscending){
-        // i0S7以前の処理
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
-#pragma clang diagnostic pop
-    }
-    else {
-        // i0S8以前の処理
-        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
-    }
+    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
     [dateFormatter setDateFormat:[NSString stringWithFormat:@"yyyy-MM-dd HH:mm:ss %@%@%@", tzSignPart, tzHourPart, tzMinPart]];
 
     return [dateFormatter dateFromString:dateStr];

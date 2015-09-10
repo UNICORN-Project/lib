@@ -1,8 +1,16 @@
+//
+//  MProductAgent.h
+//
+//  Created by saimushi on 2014/11/27.
+//  Version:1.0
+
+
 #import <StoreKit/StoreKit.h>
 
 
 // ローカライズ用のキー定義
-#define STORE_GET_ITEM_ERROR_KEY @"このアイテムは購入出来ません。"
+#define STORE_NOTFOUND_ITEM_ERROR_KEY @"対象のアイテムが存在しませんでした。"
+#define STORE_GET_ITEM_ERROR_KEY @"このアイテムは現在購入出来ません。"
 
 
 // 課金アイテム種別

@@ -16,7 +16,7 @@ class FlowManager
 	public static function reverseRewriteURL($argAction, $argQuery=''){
 		$action= $argAction;
 		if(isset($_SERVER['ReverseRewriteRule'])){
-			$reverseRules = explode(' ', $_SERVER['ReverseRewriteRule']);
+			$reverseRules = explode(' ', str_replace('＄', '$', $_SERVER['ReverseRewriteRule']));
 			if(count($reverseRules) == 2){
 				debug("flow reverseRules=".$reverseRules[0]);
 				$reverseAction = preg_replace('/' . $reverseRules[0] . '/', $reverseRules[1], $action);

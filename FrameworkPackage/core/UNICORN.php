@@ -1122,6 +1122,9 @@ function _systemError($argMsg, $argStatusCode=500, $argHtml='', $argTrace=NULL){
 			if (404 === (int)$argStatusCode){
 				$errorName = 'Not Found';
 			}
+			if (405 === (int)$argStatusCode){
+				$errorName = 'Access Denied';
+			}
 			if (503 === (int)$argStatusCode){
 				$errorName = 'Service Unavailable';
 			}
@@ -1206,6 +1209,9 @@ function _systemError($argMsg, $argStatusCode=500, $argHtml='', $argTrace=NULL){
 		}
 		if (404 === (int)$argStatusCode){
 			$errorName = 'Not Found';
+		}
+		if (405 === (int)$argStatusCode){
+			$errorName = 'Access Denied';
 		}
 		if (503 === (int)$argStatusCode){
 			$errorName = 'Service Unavailable';
@@ -1420,6 +1426,9 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 	static $loggingLineNum = 1;
 
 	$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/log/';
+	if(NULL !== defined('PROJECT_NAME')){
+		$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/' . PROJECT_NAME . '/log/';
+	}
 	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::LOG_PATH')){
 		$logpath = Configure::LOG_PATH;
 	}
@@ -1515,6 +1524,9 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 
 	// ログ出力
 	if (1 === (int)$loggingFlag){
+		if (!is_dir($logpath)){
+			@mkdir($logpath, 0755, true);
+		}
 		if('process' !== $argLogName){
 			// process_logは常に出す
 			if(!is_file($logpath.'process_log')){
@@ -1541,7 +1553,7 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 	}
 
 	// $debugFlagが有効だったらdebugログに必ず出力
-	if('exception' != $argLogName && 'backtrace' != $argLogName && 1 === (int)$debugFlag && isset($_SERVER['REQUEST_URI']) && 'debug' != $argLogName){
+	if('debug' != $argLogName && 'backtrace' != $argLogName && 1 === (int)$debugFlag && isset($_SERVER['REQUEST_URI'])){
 		debug($arglog);
 	}
 

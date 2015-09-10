@@ -236,6 +236,7 @@ class MVCCore {
 					$allowed = $PrependFilter->execute ();
 					if (FALSE === $allowed) {
 						// XXX フィルターエラー
+						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
 					elseif (TRUE !== $allowed){
@@ -280,6 +281,7 @@ class MVCCore {
 					$allowed = $AppendFilter->execute ();
 					if (FALSE === $allowed) {
 						// XXX フィルターエラー
+						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
 				}
@@ -294,6 +296,7 @@ class MVCCore {
 					$allowed = $PrependFilter->execute ();
 					if (FALSE === $allowed) {
 						// XXX フィルターエラー
+						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
 				}
@@ -319,6 +322,7 @@ class MVCCore {
 					$allowed = $AppendFilter->execute ();
 					if (FALSE === $allowed) {
 						// XXX フィルターエラー
+						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
 				}
@@ -440,12 +444,18 @@ class MVCCore {
 					if (is_array ( $res )) {
 						$res = '<?xml version="1.0" encoding="UTF-8" ?>' . convertObjectToXML ( $res );
 					}
-				} elseif ('csv' === $outputType) {
+				}
+				elseif ('csv' === $outputType || 'tsv' === $outputType) {
 					// csvヘッダー出力
 					header ( 'Content-type: application/octet-stream; charset=SJIS' );
 					if (is_array ( $res )) {
-						// XXX csvといいつつtsvを吐き出す
-						$res = mb_convert_encoding ( convertObjectToCSV ( $res, PHP_TAB ), 'SJIS', 'UTF-8' );
+						// csvといいつつtsvを吐き出す
+						$delimitor = PHP_TAB;
+						if ('csv' === $outputType){
+							// csvにする
+							$delimitor = ',';
+						}
+						$res = mb_convert_encoding ( convertObjectToCSV ( $res, $delimitor ), 'SJIS', 'UTF-8' );
 					}
 				} elseif ('jpg' === $outputType || 'jpeg' === $outputType) {
 					// jpgヘッダー出力
@@ -820,10 +830,7 @@ class MVCCore {
 			}
 			// ターゲットを抜いて見る
 			if (NULL === $HtmlView) {
-				$basePath = $version . '/';
-				if ('' === $targetPath && '/' === $basePath) {
-					$basePath = $targetPath;
-				}
+				$basePath =  '';
 				if (TRUE === file_exists_ip ( $basePath . $controlerClassName . $argViewType )) {
 					if (TRUE === $argFileExistsCalled) {
 						return $basePath . $controlerClassName . $argViewType;
@@ -850,12 +857,14 @@ class MVCCore {
 				if (TRUE === $argFileExistsCalled) {
 					return $basePath . $controlerClassName . $argViewType;
 				}
+				debug('is?'.$basePath . $controlerClassName . $argViewType);
 				// Viewインスタンスの生成
 				$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
 			} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 				if (TRUE === $argFileExistsCalled) {
 					return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 				}
+				debug('is??'.$basePath . strtolower($controlerClassName) . $argViewType);
 				// Viewインスタンスの生成
 				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
 			} else {
@@ -867,12 +876,14 @@ class MVCCore {
 						if (TRUE === $argFileExistsCalled) {
 							return $basePath . $controlerClassName . $argViewType;
 						}
+						debug('is???'.$basePath . $controlerClassName . $argViewType);
 						// Viewインスタンスの生成
 						$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
 					} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 						if (TRUE === $argFileExistsCalled) {
 							return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 						}
+						debug('is????'.$basePath . strtolower ( $controlerClassName ) . $argViewType);
 						// Viewインスタンスの生成
 						$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
 					} else {

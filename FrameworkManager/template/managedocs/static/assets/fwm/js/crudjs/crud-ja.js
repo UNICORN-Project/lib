@@ -14,6 +14,7 @@ var headers;
 var rules;
 var records = 0;
 var comment;
+var mode;
 
 function crud(baseCRUDURL, baseQuery, callback) {
 	var crudlinkbaseURL = "";
@@ -35,7 +36,7 @@ function crud(baseCRUDURL, baseQuery, callback) {
 			});
 		});
 	});
-	var mode = getParameterByName("mode");
+	mode = getParameterByName("mode");
 	var table = getParameterByName("table");
 	var limit = getParameterByName("limit");
 	var offset = getParameterByName("offset");
@@ -115,9 +116,19 @@ function crud(baseCRUDURL, baseQuery, callback) {
 						if(fiendObj["pkey"] || fiendObj["null"]){
 							required = "";
 						}
-						newRecordHtmlBase += "<tr><th class=\"crudkey\">"+key+" \""+fiendObj.comment+required+"\"</th></tr><tr><td><input type=\"text\" name=\""+key+"\" value=\"" + ((typeof fiendObj["default"] != "undefined" && "NULL" != fiendObj["default"])? fiendObj["default"] : "") +"\"/></td></td>";
+						newRecordHtmlBase += "<tr><th class=\"crudkey\">"+key+" \""+fiendObj.comment+required+"\"</th></tr><tr><td>";
+						if (0 <= fiendObj["type"].indexOf("text")){
+							newRecordHtmlBase += "<textarea class=\"form-input\" name=\""+key+"\">"+((typeof fiendObj["default"] != "undefined" && "NULL" != fiendObj["default"])? fiendObj["default"] : "")+"</textarea>";
+						}
+						else if (0 <= fiendObj["type"].indexOf("blob")){
+							newRecordHtmlBase += "<input class=\"form-input\" type=\"file\" name=\""+key+"\"/>";
+						}
+						else {
+							newRecordHtmlBase += "<input class=\"form-input\" type=\"text\" name=\""+key+"\" value=\""+((typeof fiendObj["default"] != "undefined" && "NULL" != fiendObj["default"])? fiendObj["default"] : "")+"\"/>";
+						}
+						newRecordHtmlBase += "</td></td>";
 					});
-					newRecordHtmlBase += "</table><div class=\"submit-button buttonarea\"><input type=\"submit\" value=\"POST\"/></div><input type=\"hidden\" name=\"_method_\" value=\"POST\"/></form>";
+					newRecordHtmlBase += "</table><div class=\"submit-button buttonarea\"><input type=\"submit\" value=\"POST\"/></div><input class=\"form-input\" type=\"hidden\" name=\"_method_\" value=\"POST\"/></form>";
 					newRecordHtmlBase += "<div class=\"list-link\"><a href=\""+tablelinkbaseURL+"&table="+table+"&limit="+limit+"&offset="+getParameterByName("offset")+"&ORDER="+encodeURIComponent(order)+"&LIKE="+encodeURIComponent(like)+"\">"+table+" list</a></div>";
 					// 新規作成画面を描画
 					$("#crudmain").html(newRecordHtmlBase).ready(function() {
@@ -203,20 +214,33 @@ function crudSubmit(argFormInstance, argEvent, callback){
 	argEvent.preventDefault();
 	if(true == $(argFormInstance).valid()){
 		// 未入力のformは送らない
-		var data = "";
-		$(argFormInstance).find("input").each(function(){
+		var data = new FormData();
+//		$.each(context.prototype.fileData, function(i, obj) { data.append(i, obj.value.files[0]); });
+		$(argFormInstance).find(".form-input").each(function(){
 			if(typeof $(this).attr("name") != "undefined" && "" != $(this).val()){
-				if("" != data){
-					data += "&";
+				var name = $(this).attr("name");
+				if ("file" == $(this).attr("type")){
+					var files = this.files;
+					$.each(files, function(i, file){
+						data.append(name, file);
+					});
 				}
-				data += $(this).attr("name") + "=" + encodeURIComponent($(this).val());
+				else {
+//					data.append(name, encodeURIComponent($(this).val()));
+					data.append(name, $(this).val());
+				}
+				console.log(name + "&" + $(this).val());
 			}
 		}).ready(function(){
+			console.log(data);
 			$.ajax({
 				url: $(argFormInstance).attr("action"),
-				type: $(argFormInstance).find("input[name='_method_']").val(),
-				dataType: "html",
+				type: 'POST',
+				//type: $(argFormInstance).find("input[name='_method_']").val(),
+				processData: false,
+				contentType: false,
 				data: data,
+				dataType: "html",
 				// 送信前
 				beforeSend: function(xhr, settings) {
 					// ボタンを無効化し、二重送信を防止

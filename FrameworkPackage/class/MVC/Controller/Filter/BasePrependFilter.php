@@ -55,7 +55,7 @@ class BasePrependFilter {
 			debug('MVCPrependFilter denyALLIP='.$denyALLIP);
 			// ローカルIPでは無い
 			// XXX ネットマスクで許可設定をしたい場合はこの辺りを拡張する
-			if('::1' !== $_SERVER['REMOTE_ADDR'] && '127.0.0.1' !== $_SERVER['REMOTE_ADDR'] && FALSE === strpos($denyALLIP, $_SERVER['REMOTE_ADDR'])){
+			if('::1' !== $_SERVER['REMOTE_ADDR'] && '127.0.0.1' !== $_SERVER['REMOTE_ADDR'] && FALSE === strpos($denyALLIP, $_SERVER['REMOTE_ADDR']) && '*' !== $denyALLIP){
 				$allow = FALSE;
 			}
 			else {

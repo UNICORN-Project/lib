@@ -94,7 +94,7 @@ a:active {
 	padding: 5px;
 }
 
-input.form-control[type="text"], input.form-control[type="password"] {
+input.form-control[type="text"], input.form-control[type="password"], input.form-control[type="file"], textarea.form-control {
 	color: #333333;
 }
 
