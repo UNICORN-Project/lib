@@ -46,39 +46,7 @@
 		<SESSION_DATA_DATE_KEY_NAME>modified</SESSION_DATA_DATE_KEY_NAME>
 		<SESSION_EXPIRED_TIME>3600</SESSION_EXPIRED_TIME>
 		<!-- オートRESTの定義 -->
-		<REST_RESOURCE_WHITE_LIST><![CDATA[
-			{"me.fwmuser":
-				{"Method GET":
-					{"fwmuser":["_c_","_a_","_r_","_o_","_deep_","_"]}
-				}
-			,"project.list":
-				{"Method GET":
-					{"fwmuser":["_c_","_a_","_r_","_o_","_deep_","_"]}
-				}
-			,"index.list":
-				{"Method GET":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","_"]}
-				}
-			,"device.list":
-				{"Method HEAD":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIKE","_"]}
-				,"Method GET":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIMIT","OFFSET","total","ORDER","LIKE","_"]}
-				}
-			,"fwmuser.list":
-				{"Method HEAD":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIKE","_"]}
-				,"Method GET":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIMIT","OFFSET","total","ORDER","LIKE","_"]}
-				}
-			,"profile.list":
-				{"Method HEAD":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIKE","_"]}
-				,"Method GET":
-					{"127.0.0.1":["_c_","_a_","_r_","_o_","_p_","_deep_","LIMIT","OFFSET","total","ORDER","LIKE","_"]}
-				}
-			}
-		]]></REST_RESOURCE_WHITE_LIST>
+		<REST_RESOURCE_WHITE_LIST></REST_RESOURCE_WHITE_LIST>
 		<REST_UIDAUTH_USER_TBL_NAME>user</REST_UIDAUTH_USER_TBL_NAME>
 		<REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME>created</REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME>
 		<REST_UIDAUTH_USER_MODIFY_DATE_KEY_NAME>modified</REST_UIDAUTH_USER_MODIFY_DATE_KEY_NAME>
