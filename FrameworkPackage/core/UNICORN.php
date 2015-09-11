@@ -1357,6 +1357,7 @@ function dir_copy($dir_name, $new_dir, $permission = 0755) {
 		if(!$res){
 			return FALSE;
 		}
+		@exec('chmod -R '.sprintf('%04d', $permission).' ' .$new_dir);
 	}
 	if (is_dir($dir_name)) {
 		if ($dh = opendir($dir_name)) {
@@ -1477,23 +1478,25 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 				while (($file = @readdir($dh)) !== false) {
 					if(is_file($logpath.$file) && 'date' !== $file){
 						if (!is_dir($logpath.'backup/'.$beforeDate)){
-							@mkdir($logpath.'backup/'.$beforeDate, 0755, true);
+							@mkdir($logpath.'backup/'.$beforeDate, 0777, true);
+							// XXX root実行されている場合用
 						}
 						@rename($logpath.$file, $logpath.'backup/'.$beforeDate.'/'.$file);
+						@exec('chmod -R 0777 ' . $logpath.'backup');
 					}
 				}
 				@closedir($dh);
-				// XXX 3ヶ月以上前のファイルは全て削除(3ヶ月固定)
+				// LOG_ROTATE_CYCLEヶ月以上前のファイルは全て削除
 				$beforeDates = explode('/', $beforeDate);
 				$beforeYear = (int)$beforeDates[0];
-				$beforeMonth = (int)$beforeDates[1]-3;
+				$beforeMonth = (int)$beforeDates[1]-getConfig('LOG_ROTATE_CYCLE');
 				if (1 > $beforeMonth){
 					$beforeYear -= 1;
 					$beforeMonth = 12 + $beforeMonth;
 				}
 				$maxLoop = 0;
 				while (is_dir($logpath.'backup/'.$beforeYear.'/'.sprintf('%02d', $beforeMonth))){
-					@dir_delete($logpath.'backup/'.$beforeYear.'/'.sprintf('%02d', $beforeMonth));
+					dir_delete($logpath.'backup/'.$beforeYear.'/'.sprintf('%02d', $beforeMonth));
 					// 1ヶ月減算
 					$beforeMonth -= 1;
 					if (1 > $beforeMonth){
@@ -1525,7 +1528,8 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 	// ログ出力
 	if (1 === (int)$loggingFlag){
 		if (!is_dir($logpath)){
-			@mkdir($logpath, 0755, true);
+			@mkdir($logpath, 0777, true);
+			@exec('chmod -R 0777 ' .$logpath);
 		}
 		if('process' !== $argLogName){
 			// process_logは常に出す
@@ -2435,6 +2439,9 @@ function getAutoMigrationPath(){
 function getConfig($argKey, $argConfigName=''){
 	static $values = array();
 	$value = NULL;
+	if (0 === strlen($argConfigName) && defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0){
+		$argConfigName = PROJECT_NAME;
+	}
 	if(!isset($values[$argConfigName])){
 		$values[$argConfigName] = array();
 	}
@@ -2607,6 +2614,7 @@ if(TRUE === $_consoled){
 						echo PHP_TAB . ' 例) php UNICORN NT-D '.dirname(dirname(dirname(dirname(__FILE__)))).'/htdocs/ http://mydomian.com/unicorn/' . PHP_EOL;
 						$valid = FALSE;
 					}
+					@exec('chmod -R 0777 ' .$_SERVER['argv'][2]);
 				}
 				elseif(FALSE === strpos($_SERVER['argv'][3], 'http')){
 					echo ' (!)エラー : installerの公開URLは、「http」から指定して下さい'.PHP_EOL;

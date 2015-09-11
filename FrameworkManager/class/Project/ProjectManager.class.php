@@ -2,7 +2,7 @@
 
 class ProjectManager
 {
-	public static function createProject($argProjectName=''){
+	public static function createProject($argProjectName='', $argProjectUser='', $argProjectGroup=''){
 		$conName = PROJECT_NAME."Configure";
 		debug('$argProjectName='.$argProjectName);
 		$samplePackage = $conName::SAMPLE_PROJECT_PACKAGE_PATH;
@@ -11,8 +11,17 @@ class ProjectManager
 		// 移動先のパス
 		$movePath = dirname($conName::PROJECT_ROOT_PATH).'/'.$newProjectName.'Package';
 		debug('$movePath='.$movePath);
-		if(!dir_copy($samplePackage, $movePath)){
+		if(!dir_copy($samplePackage, $movePath, 0777)){
 			return FALSE;
+		}
+		@exec('chmod -R 0777 '.$movePath);
+		if (0 < strlen($argProjectUser)){
+			if(0 < strlen($argProjectGroup)){
+				@exec('chown -R '.$argProjectUser.':'.$argProjectGroup.' ' .$movePath);
+			}
+			else {
+				@exec('chown -R '.$argProjectUser.' ' .$movePath);
+			}
 		}
 		// プロジェクト名が指定されている場合は、デフォルトの定義を書き換えて上げる為の処理
 		if('' !== $argProjectName){

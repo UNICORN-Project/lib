@@ -14,7 +14,7 @@
 		<execute>
 			<if condition="true === Auth::isCertification()">
 				<if var="autoValidated" val="true">
-					<assign var="res" class="ProjectManager" method="createProject" arg1="Flow::$params['post']['project_name_must']"/>
+					<assign var="res" class="ProjectManager" method="createProject" arg1="Flow::$params['post']['project_name_must']" arg2="Flow::$params['post']['project_user']" arg3="Flow::$params['post']['project_group']"/>
 					<if var="res" val="true">
 						<view/>
 					</if>

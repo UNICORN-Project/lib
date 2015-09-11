@@ -20,4 +20,5 @@
 	<DB_DSN>mysqli://root:root@localhost/mysql</DB_DSN>
 	<DENY_HTTP>false</DENY_HTTP>
 	<DENY_ALL_IP>false</DENY_ALL_IP>
+	<LOG_ROTATE_CYCLE>3</LOG_ROTATE_CYCLE>
 </xml>
