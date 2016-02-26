@@ -7,7 +7,7 @@ class StaticPrependFilter extends BasePrependFilter {
 			return FALSE;
 		}
 		// フローが有効な場合のスタティックフィルターかどうか
-		if ('' === MVCCore::$flowXMLBasePath) {
+		if ('' === Core::$flowXMLBasePath) {
 			// フロー以外は無視
 			return TRUE;
 		}

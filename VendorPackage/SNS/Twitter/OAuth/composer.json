@@ -1,0 +1,8 @@
+{
+    "require": {
+        "abraham/twitteroauth": "^0.6.2"
+    },
+    "config": {
+        "vendor-dir": "./"
+    }
+}

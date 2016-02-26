@@ -14,6 +14,8 @@
 		<execute>
 			<if var="autoValidated" val="true">
 				<if var="Auth::certify()" val="true">
+					<!-- 各種AJAX用にRefreshトークンを払い出しする -->
+					<execute val="AccessTokenAuth::generate(Auth::getCertifiedUser()->permission, TRUE, NULL, NULL, PROJECT_NAME)"/>
 					<flow section="backflow"/>
 				</if>
 				<else>

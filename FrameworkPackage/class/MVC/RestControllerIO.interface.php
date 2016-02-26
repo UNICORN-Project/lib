@@ -5,22 +5,32 @@ interface RestControllerIO {
 	/**
 	 * GETメソッド
 	 */
-	public function get();
+	public function get($argRequestParams=NULL);
 
 	/**
 	 * POSTメソッド
 	 */
-	public function post();
+	public function post($argRequestParams=NULL);
 
 	/**
 	 * PUTメソッド
 	 */
-	public function put();
+	public function put($argRequestParams=NULL);
 
 	/**
 	 * DELETEメソッド
 	 */
-	public function delete();
+	public function delete($argRequestParams=NULL);
+
+	/**
+	 * HEADメソッド
+	 */
+	public function head($argRequestParams=NULL);
+
+	/**
+	 * Restコントローラであるかの確認メソッド
+	 */
+	public static function isRestController();
 }
 
 ?>

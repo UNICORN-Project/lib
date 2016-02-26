@@ -115,9 +115,16 @@ abstract class GenericModelBase {
 			}
 			else{
 				$join = "";
+				$fields = array();
 				if(TRUE === is_array($argExtractionCondition)){
 					if(isset($argExtractionCondition["JOIN"]) && isset($argExtractionCondition["QUERY"])){
 						// JOIN情報を分解
+						if (FALSE !== strpos($argExtractionCondition["JOIN"],":")){
+							$joins = explode(":", $argExtractionCondition["JOIN"]);
+							$argExtractionCondition["JOIN"] = $joins[count($joins)-1];
+							unset($joins[count($joins)-1]);
+							$fields = $joins;
+						}
 						$join = $argExtractionCondition["JOIN"]." ";
 						$argExtractionCondition = $argExtractionCondition["QUERY"];
 					}
@@ -588,23 +595,23 @@ abstract class GenericModelBase {
 	public function validateType($argKey,$argValue){
 		if("string" === $this->describes[$argKey]["type"] && FALSE === is_string($argValue)){
 			// 文字列型チェック
-			throw new Exception("TYPE MISSMATCH STRING");
+			throw new Exception("TYPE MISSMATCH STRING:".$argKey."&".$argValue);
 		}
 		elseif(FALSE !== strpos($this->describes[$argKey]["type"], "blob") && FALSE === is_string($argValue)){
 			// BLOB型チェック
-			throw new Exception("TYPE MISSMATCH BLOB");
+			throw new Exception("TYPE MISSMATCH BLOB".$argKey);
 		}
 		elseif("clob" === $this->describes[$argKey]["type"] && FALSE === is_string($argValue)){
 			// CLOB型チェック
-			throw new Exception("TYPE MISSMATCH CLOB");
+			throw new Exception("TYPE MISSMATCH CLOB".$argKey);
 		}
 		elseif("bigint" === $this->describes[$argKey]["type"] && 0 === preg_match("/^[0-9]{1,20}$/", $argValue)){
 			// BIGINT型チェック
-			throw new Exception("TYPE MISSMATCH BIGINT");
+			throw new Exception("TYPE MISSMATCH BIGINT".$argKey."&".$argValue);
 		}
 		elseif("date" === $this->describes[$argKey]["type"] && 0 === preg_match("/^[1-9][0-9]{3}\-[0-9]{2}\-[0-9]{2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}$/", $argValue)){
 			// 日付型チェック
-			throw new Exception("TYPE MISSMATCH DATE");
+			throw new Exception("TYPE MISSMATCH DATE".$argKey."&".$argValue);
 		}
 		elseif("int" === $this->describes[$argKey]["type"] && FALSE === is_numeric($argValue)){
 			// 数値型チェック
@@ -634,10 +641,12 @@ abstract class GenericModelBase {
 	public function validate($argKey,$argValue){
 		// NULLチェック
 		$this->validateNULL($argKey,$argValue);
-		// 型チェック
-		$this->validateType($argKey,$argValue);
-		// 桁チェック
-		$this->validateLength($argKey,$argValue);
+		if (NULL !== $argValue){
+			// 型チェック
+			$this->validateType($argKey,$argValue);
+			// 桁チェック
+			$this->validateLength($argKey,$argValue);
+		}
 		// XXX システム依存のバリデーションチェックの実装
 		// 1.ユニークID(ユニークネーム)
 		// 2.メールアドレス

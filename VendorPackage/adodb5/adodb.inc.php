@@ -1013,7 +1013,7 @@ if (!defined('_ADODB_LAYER')) {
 						} else if ($v === null)
 							$sql .= 'NULL';
 						else
-							$sql .= $v;
+							@$sql .= $v;
 						$i += 1;
 
 						if ($i == $nparams) break;

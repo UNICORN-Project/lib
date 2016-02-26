@@ -281,7 +281,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 					logging('cookie delete!', 'session');
 					// 二度処理しない為に削除する
 					unset($_COOKIE[self::$_tokenKeyName]);
-					setcookie(self::$_tokenKeyName, '', time() - 3600);
+					setcookie(self::$_tokenKeyName, '', time() - 3600, '/');
 				}
 				else{
 					// 固有識別子をセットする
@@ -370,6 +370,14 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 	}
 
 	/**
+	 * セッションを明示的に適用する(dummy)
+	 * ※memcacheの場合は常にflushされるので、空のメソッド
+	 * @param string cookieの対象ドメイン指定
+	 */
+	public static function flush($argDomain=NULL, $argExpiredtime=NULL, $argDSN=NULL){
+	}
+
+	/**
 	 * セッションの指定のキー名で保存されたデータを返す
 	 * セッションが初期化されていなければ初期化する
 	 * @param string キー名
@@ -386,7 +394,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.Utilities::getBacktraceExceptionLine());
 		}
 		// XXX 標準ではセッションデータのPKeyはセッションの固有識別子
-		return parent::get(self::$_identifier);
+		return parent::get(self::$_identifier, $argKey);
 	}
 
 	/**
@@ -416,7 +424,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 		return parent::set(self::$_identifier, $argKey, $argment);
 	}
 
-	public static function clear(){
+	public static function clear($argPKey=NULL){
 		if(FALSE === self::$_initialized){
 			// 自動セッションスタート
 			self::_init();
@@ -425,6 +433,9 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 		if(isset($_COOKIE[self::$_tokenKeyName]) && strlen($_COOKIE[self::$_tokenKeyName]) > 8){
 			// Cookieが在る場合はCookieからトークンと固有識別子を初期化する
 			$token = $_COOKIE[self::$_tokenKeyName];
+			if (NULL !== $argPKey){
+				$token = $argPKey;
+			}
 			// SESSIONレコードの削除
 			@MCO::delete($token, 0, self::$_DSN);
 			// check無しの$identifierの特定
@@ -436,8 +447,18 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 			logging('cookie clear!', 'session');
 			// 二度処理しない為に削除する
 			unset($_COOKIE[self::$_tokenKeyName]);
-			setcookie(self::$_tokenKeyName, '', time() - 3600);
+			setcookie(self::$_tokenKeyName, '', time() - 3600, '/');
 		}
+		return TRUE;
+	}
+
+	/**
+	 * Expiredの切れたSessionレコードをDeleteする
+	 * @param int 有効期限の直指定
+	 * @param mixed DBDSN情報の直指定
+	 */
+	public static function clean($argExpiredtime=NULL){
+		// XXX 何もしない
 		return TRUE;
 	}
 }

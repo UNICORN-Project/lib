@@ -303,7 +303,7 @@ function sendEMail($smtp_host, $to = null, $subject = null, $message = null, $fr
 		$bccArray = array_merge($bccArray, $bcc);
 	}
 	else {
-		$rcptToArray = array_merge($rcptToArray, split(",", $bcc));
+		$rcptToArray = array_merge($rcptToArray, explode(",", $bcc));
 		$bccArray = array_merge($bccArray, preg_split("/,/", $bcc));
 	}
 	foreach ($rcptToArray as $rcptTo) {
@@ -499,7 +499,7 @@ function httpRequest($argURLStr, $argContextArr = array (), $argTimeNum = 120, $
 		fclose($fp);
 
 		/* ヘッダ部分とボディ部分を分離 */
-		$DATA = split("\r\n\r\n", $response, 2);
+		$DATA = explode("\r\n\r\n", $response, 2);
 
 		/* メッセージボディを返却 */
 		return $DATA[1];
@@ -525,9 +525,8 @@ function httpRequest($argURLStr, $argContextArr = array (), $argTimeNum = 120, $
 			$options = array (
 					CURLOPT_URL=>$argURLStr,
 					CURLOPT_HEADER=>TRUE,
-					CURLOPT_POST=>TRUE,
-					CURLOPT_POSTFIELDS=>$content,
-					CURLOPT_SSLVERSION=>3,
+					// XXX SSLバージョンはデフォルトに依存するようにした
+					//CURLOPT_SSLVERSION=>3,
 					CURLOPT_SSL_VERIFYPEER=>FALSE,
 					CURLOPT_SSL_VERIFYHOST=>FALSE,
 					CURLOPT_USERAGENT=>$useragent,
@@ -535,6 +534,10 @@ function httpRequest($argURLStr, $argContextArr = array (), $argTimeNum = 120, $
 					CURLOPT_TIMEOUT=>$argTimeNum,
 					CURLOPT_RETURNTRANSFER=>TRUE,
 			);
+			if (is_array($post) && 0 < count($post)) {
+				$options[CURLOPT_POST] = TRUE;
+				$options[CURLOPT_POSTFIELDS] = $content;
+			}
 
 			/* Basic認証突破用 */
 			if ( isset ($URL['user']) && isset ($URL['pass'])) {
@@ -631,6 +634,65 @@ function isOdd($argNum){
 	return TRUE;
 }
 
+function checkIP($argTargetIP, $argCheckPattern) {
+	if ('*' === $argCheckPattern || '0.0.0.0/0' === $argCheckPattern){
+		// 全てのIPが許可されている
+		return TRUE;
+	}
+	// もし、IPv4環境で、IPv6のローカルIPが来ちゃったら取り敢えず変換
+	if ('::1' === $argTargetIP){
+		$argTargetIP = '127.0.0.1';
+	}
+	if (preg_match('/^\d\.\d\.\d\.\d/', $argCheckPattern)){
+		// IPアドレスの形式になっていない！
+		return FALSE;
+	}
+	if (preg_match('/^\d\.\d\.\d\.\d/', $argTargetIP)){
+		// IPアドレスの形式になっていない！
+		return FALSE;
+	}
+	// アドレスの完全一致チェック
+	if (FALSE !== strpos($argCheckPattern, '/')){
+		// アドレスの完全一致チェック
+		return $argTargetIP ===  $argCheckPattern;
+	}
+	list($network, $mask_bit_len) = explode('/', $argCheckPattern);
+	$host = 32 - $mask_bit_len;
+	$net = ip2long($network) >> $host << $host; // 11000000101010000000000000000000
+	$ip_net = ip2long($argTargetIP) >> $host << $host; // 11000000101010000000000000000000
+	return $net === $ip_net;
+}
+
+function getFirstHirakana($argHirakana, $argEncode='utf-8'){
+	return mb_substr(trim($argHirakana), 0, 1, $argEncode);
+}
+
+function getLineHirakana($argHirakana, $argEncode='utf-8'){
+	$dic=array(
+			'あ'=>'あ','い'=>'あ','う'=>'あ','え'=>'あ','お'=>'あ','ゔ'=>'あ',
+			'ぁ'=>'あ','ぃ'=>'あ','ぅ'=>'あ','ぇ'=>'あ','ぉ'=>'あ',
+			'か'=>'か','き'=>'か','く'=>'か','け'=>'か','こ'=>'か',
+			'が'=>'か','ぎ'=>'か','ぐ'=>'か','げ'=>'か','ご'=>'か',
+			'さ'=>'さ','し'=>'さ','す'=>'さ','せ'=>'さ','そ'=>'さ',
+			'ざ'=>'さ','じ'=>'さ','ず'=>'さ','ぜ'=>'さ','ぞ'=>'さ',
+			'た'=>'た','ち'=>'た','つ'=>'た','て'=>'た','と'=>'た',
+			'だ'=>'た','ぢ'=>'た','づ'=>'た','で'=>'た','ど'=>'た',
+			'な'=>'な','に'=>'な','ぬ'=>'な','ね'=>'な','の'=>'な',
+			'は'=>'は','ひ'=>'は','ふ'=>'は','へ'=>'は','ほ'=>'は',
+			'ば'=>'は','び'=>'は','ぶ'=>'は','べ'=>'は','ぼ'=>'は',
+			'ぱ'=>'は','ぴ'=>'は','ぷ'=>'は','ぺ'=>'は','ぽ'=>'は',
+			'ま'=>'ま','み'=>'ま','む'=>'ま','め'=>'ま','も'=>'ま',
+			'や'=>'や','ゐ'=>'や','ゆ'=>'や','ゑ'=>'や','よ'=>'や',
+			'ら'=>'ら','り'=>'ら','る'=>'ら','れ'=>'ら','ろ'=>'ら',
+			'わ'=>'わ','を'=>'わ','ん'=>'わ',
+	);
+	$firstStr = mb_substr(trim($argHirakana), 0, 1, $argEncode);
+	if (isset($dic[$firstStr])){
+		return $dic[$firstStr];
+	}
+	return NULL;
+}
+
 /**
  * pathInfoの拡張版
  * PHP6相当のpathInfo動作をする
@@ -639,7 +701,11 @@ function pathInfoEX($argPath, $argKey) {
 	$pathInfo = pathinfo($argPath);
 	//if("filename" == $argKey && 5 > phpversion()){
 	if ("filename" == $argKey) {
-		return basename("/a/".$pathInfo["basename"], ".".$pathInfo["extension"]);
+		$extension = ".".$pathInfo["extension"];
+		if ("." === $extension){
+			return basename("/a/".$pathInfo["basename"]);
+		}
+		return basename("/a/".$pathInfo["basename"], $extension);
 	}
 	else {
 		return $pathInfo[$argKey];
@@ -802,6 +868,19 @@ function parse_phpinput_str(){
 		}
 	}
 	return $data;
+}
+
+function array_keys_recursive($myArray, $MAXDEPTH = INF, $depth = 0, $arrayKeys = array()){
+	if($depth < $MAXDEPTH){
+		$depth++;
+		$keys = array_keys($myArray);
+		foreach($keys as $key){
+			if(is_array($myArray[$key])){
+				$arrayKeys[$key] = array_keys_recursive($myArray[$key], $MAXDEPTH, $depth);
+			}
+		}
+	}
+	return $arrayKeys;
 }
 
 /**

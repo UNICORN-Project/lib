@@ -3,7 +3,8 @@
 abstract class RestControllerBase extends APIControllerBase implements RestControllerIO {
 
 	protected $_initialized = FALSE;
-	public $requestMethod = 'GET';
+	public $requestMethod = NULL;
+	protected static $_requestMethod = NULL;
 	public $restResource = '';
 	public $restResourceModel = '';
 	public $restResourceListed = NULL;
@@ -23,7 +24,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	public $virtualREST = FALSE;
 	public $responceData = FALSE;
 	public static $nowGMT = NULL;
-
+	
 	public function __construct(){
 		if(NULL === self::$nowGMT){
 			self::$nowGMT = Utilities::date('Y-m-d H:i:s', NULL, NULL, 'GMT');
@@ -168,31 +169,46 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 		return FALSE;
 	}
-	public static function resolveRequestParams(){
+
+	public static function resolveRequestParams($argRequestMethod=NULL){
 		$requestParams = array();
-		debug('method='.$_SERVER['REQUEST_METHOD']);
-		if('PUT' === $_SERVER['REQUEST_METHOD'] || 'DELETE' === $_SERVER['REQUEST_METHOD']){
+		if (NULL === $argRequestMethod){
+			$argRequestMethod = $_SERVER['REQUEST_METHOD'];
+		}
+		if (NULL !== self::$_requestMethod){
+			$argRequestMethod = self::$_requestMethod;
+		}
+		if ('PUT' === $argRequestMethod || 'DELETE' === $argRequestMethod){
 			static $putParam = NULL;
 			if(NULL === $putParam){
 				$putParam = parse_phpinput_str();
 			}
 			$requestParams = $putParam;
 		}
-		else if('POST' === $_SERVER['REQUEST_METHOD']){
+		else if ('POST' === $argRequestMethod){
 			// XXX multipart/form-dataもPOSTなので、PHPに任せます
 			$requestParams = $_POST;
 		}
-		else if('GET' === $_SERVER['REQUEST_METHOD'] || 'HEAD' === $_SERVER['REQUEST_METHOD']){
+		else if ('GET' === $argRequestMethod || 'HEAD' === $argRequestMethod){
 			$requestParams = $_GET;
 		}
 		else {
 			// 未知のメソッド
 		}
+		// 完全に永続的に不要なゴミリクエストパラメータの排除はココ
+		if (is_array($requestParams)){
+			if(isset($requestParams['_'])){
+				unset($requestParams['_']);
+			}
+			if(isset($requestParams['_p_'])){
+				unset($requestParams['_p_']);
+			}
+		}
 		return $requestParams;
 	}
 
-	public function getRequestParams(){
-		return self::resolveRequestParams();
+	public function getRequestParams($argRequestMethod=NULL){
+		return self::resolveRequestParams($argRequestMethod);
 	}
 
 	/**
@@ -263,13 +279,15 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				debug('$deviceID='.$deviceID);
 				if(30 >= strlen($deviceID)){
 					// UIDエラー！ 認証エラー
-					throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 401);
+					$this->httpStatus = 401;
+					throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 				}
 				$Device = Auth::registration($deviceID, $deviceID, self::$nowGMT);
 				// 強制認証で証明を得る
 				if(TRUE !== Auth::certify($Device->{Auth::$authIDField}, $Device->{Auth::$authPassField}, NULL, TRUE)){
 					// 認証NG(401)
-					throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 401);
+					$this->httpStatus = 401;
+					throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 				}
 				// user情報の更新
 				$userAdded = FALSE;
@@ -513,14 +531,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 
 		// XXX ココを通るのは相当なイレギュラー！
 		$this->httpStatus = 500;
-		throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 500);
+		throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 	}
 
 	/**
 	 * フレームワーク標準のAuth機能を利用した認証を行って、RESTする
 	 * @return array 配列構造のリソースデータ
 	 */
-	public function authAndExecute(){
+	public function authAndExecute($argResourceHint=NULL, $argRequestParams=NULL, $argRequestMethod=NULL, $argGETParams=NULL){
 		$this->_init();
 		$DBO = NULL;
 		try{
@@ -529,7 +547,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			$User = Auth::getCertifiedUser();
 			if(FALSE === $User){
 				// 認証NG(401)
-				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 401);
+				$this->httpStatus = 401;
+				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 			}
 		}
 		catch (Exception $Exception){
@@ -550,27 +569,27 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			$this->AuthUser = $User;
 			$this->authUserID = $User->pkey;
 			// XXX xxx_xxと言うAuthユーザー判定法は固定です！使用は任意になります。
-			$this->authUserIDFieldName = strtolower($User->tableName) . '_' . $User->pkeyName;
+			if(NULL === $this->authUserIDFieldName){
+				$this->authUserIDFieldName = strtolower($User->tableName) . '_' . $User->pkeyName;
+			}
 			$this->authUserQuery = ' ' . $this->authUserIDFieldName . ' = \'' . $User->pkey . '\'';
-			return $this->execute();
+			return $this->execute($argResourceHint, $argRequestParams, $argRequestMethod, $argGETParams);
 		}
 
 		// XXX ココを通るのは相当なイレギュラー！
 		// 恐らく実装の問題
 		$this->httpStatus = 500;
-		throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 500);
+		throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 	}
 
 	/**
 	 * RESTする
 	 * @return array 配列構造のリソースデータ
 	 */
-	public function execute($argResourceHint=NULL, $argRequestParams=NULL){
+	public function execute($argResourceHint=NULL, $argRequestParams=NULL, $argRequestMethod=NULL, $argGETParams=NULL){
 		static $prepend = FALSE;
 		static $append = FALSE;
-
 		$this->_init();
-		debug($this->restResource);
 		// RESTアクセスされるリソースの特定
 		$this->restResource = $argResourceHint;
 		if(NULL === $argResourceHint){
@@ -583,9 +602,17 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 		if(isset($_SERVER['REQUEST_METHOD'])){
 			$this->requestMethod = strtoupper($_SERVER['REQUEST_METHOD']);
-			if(isset($_POST['_method_']) && strlen($_POST['_method_']) > 0){
-				$this->requestMethod = strtoupper($_POST['_method_']);
-			}
+		}
+		if(isset($_POST['_method_']) && strlen($_POST['_method_']) > 0){
+			$this->requestMethod = strtoupper($_POST['_method_']);
+		}
+		if (NULL !== $argRequestMethod){
+			$this->requestMethod = $argRequestMethod;
+			self::$_requestMethod = $this->requestMethod;
+		}
+		// 内部RESTのDEEP用
+		if (NULL !== self::$_requestMethod){
+			$this->requestMethod = self::$_requestMethod;
 		}
 		debug($this->restResource);
 		debug('rest method='.strtolower($this->requestMethod));
@@ -594,12 +621,12 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		if(NULL === $resource){
 			// リソースの指定が無かったのでエラー終了
 			$this->httpStatus = 400;
-			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 400);
+			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 		}
-		if('GET' !== $this->requestMethod && 'HEAD' !== $this->requestMethod && 'POST' !== $this->requestMethod && NULL === $resource['ids']){
-			// GET,POST以外のメソッドの場合はリソースID指定は必須
+		if('PUT' === $this->requestMethod && NULL === $resource['ids']){
+			// PUTメソッドの場合はリソースID指定は必須
 			$this->httpStatus = 400;
-			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 400);
+			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 		}
 
 		$res = FALSE;
@@ -613,20 +640,38 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				$this->restResourceListed = $resource['listed'];
 			}
 			$this->restResource = $resource;
-
+			// アクセストークンチェック
+			if (isset($_COOKIE['refresh_token']) && 0 < strlen($_COOKIE['refresh_token'])){
+				debug('whitelistcheck refresh_token check '.$_COOKIE['refresh_token']);
+				// アクセストークンでの認証
+				if (AccessTokenAuth::validate('9', $_COOKIE['refresh_token'])){
+					debug('whitelistcheck refresh_token permission='.AccessTokenAuth::$permission);
+					// 認証元がパーミッション9以上(実質9)の場合はエンドユーザーなのでホワイトリストフィルターでAPIのアクセス認証をさらにきつくする
+					if (9 > (int)AccessTokenAuth::$permission){
+						// 8以上は管理ユーザーのパーミッションなので、オールホワイトとする
+						$_SERVER['ALLOW_ALL_WHITE'] = 1;
+						debug('whitelistcheck refresh_token ALLOW_ALL_WHITE');
+					}
+				}
+				debug('whitelistcheck refresh_token checked');
+			}
 			// ホワイトリストフィルター
 			$classHint = str_replace(' ', '', ucwords(str_replace(' ', '', $this->restResourceModel)));
 			debug('$classHint='.$classHint);
-			debug('whitelistcheck allowed='.var_export($this->allowed,TRUE));
-			if (isset($_SERVER['ALLOW_ALL_WHITE'])){
+			debug('whitelistcheck allowed='.var_export($this->allowed, TRUE));
+			if (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === (TRUE === $_SERVER['ALLOW_ALL_WHITE'] || 1 === (int)$_SERVER['ALLOW_ALL_WHITE'])){
 				debug('whitelistcheck ALLOW_ALL_WHITE='.var_export($_SERVER['ALLOW_ALL_WHITE'],TRUE));
+				$this->allowed = TRUE;
 			}
-			if(TRUE !== isTest() && !isset($this->AuthUser) && TRUE !== $this->allowed){
+			//if(TRUE !== isTest() && !isset($this->AuthUser) && TRUE !== $this->allowed){
+			if(1 !== (int)getLocalEnabled() && TRUE !== (TRUE === $this->allowed || NULL === $this->allowed)){
 				// アクセスエラー！
-				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+				// フィルターを通り抜けてしまったイレギュラーなので、ココを遠たらおそらくフレームワークバグです・・・
+				$this->httpStatus = 405;
+				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 			}
 			else{
-				if (TRUE === $this->rootREST){
+				if (TRUE === $this->rootREST && TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
 					// 現在のホワイトリストの一覧を取得
 					$nowWhiteList = stripslashes(trim(getConfig('REST_RESOURCE_WHITE_LIST')));
 					debug("whitelistcheck now whiteList=". $nowWhiteList);
@@ -641,7 +686,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					debug("whitelistcheck resourcePath=". $resourcePath);
 					if (NULL === $nowWhiteList && 0 === strlen($nowWhiteList)){
 						// アクセスエラー！
-						throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+						$this->httpStatus = 405;
+						throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 					}
 					else {
 						debug("whitelistcheck isTest=". var_export(isTest(), true));
@@ -651,8 +697,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						if (isset($this->AuthUser) && NULL !== $this->AuthUser && 0 < strlen($this->AuthUser->tableName)){
 							$allowUser = $this->AuthUser->tableName;
 						}
-						if (isTest()){
-							// テスト環境の場合は、ホワイトフィルターを育てる処理
+						// ローカル環境の場合は、ホワイトフィルターを育てる処理
+						// XXX テストテスト環境でもホワイトフィルターを育てたい場合はコメントアウトを書き換える
+						//if (isTest()){
+						if (1 === (int)getLocalEnabled()){
 							$updateWhiteList = FALSE;
 							if (!isset($whiteList[$resourcePath])){
 								$whiteList[$resourcePath] = array("Method ".$this->requestMethod => NULL);
@@ -660,9 +708,25 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (!isset($whiteList[$resourcePath]["Method ".$this->requestMethod])){
 								$whiteList[$resourcePath]["Method ".$this->requestMethod] = array();
 							}
+							// アクセスを許可するユーザー(IPフィルター又は認証ユーザー)のデフォルト値を設定
+							if ($allowUser === $_SERVER['REMOTE_ADDR']){
+								// デフォルトは全てのIP・ユーザーを許可する
+								$allowUser = '*';
+								$IPFilter = getConfig('ALLOW_IP_FILTER');
+								if (FALSE !== $IPFilter && NULL !== $IPFilter){
+									// ALLOW_IP_FILTERの値をIPフィルターのデフォルト値として採用する
+									$allowUser = $IPFilter;
+								}
+								$IPFilter = getConfig('REST_ALLOW_IP_FILTER');
+								if (FALSE !== $IPFilter && NULL !== $IPFilter){
+									// REST_ALLOW_IP_FILTERの値をIPフィルターのデフォルト値として採用する
+									$allowUser = $IPFilter;
+								}
+							}
 							// ホワイトリストに追加
 							if (isset($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser])){
 								$paramKeys = array_merge($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser], array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser]));
+								debug('whitelistcheckdiff '.var_export(array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser]), TRUE));
 							}
 							$whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser] = $paramKeys;
 							$newWhiteList = json_encode($whiteList);
@@ -681,26 +745,63 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							$this->allowed = TRUE;
 						}
-						else if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+						else {
 							debug("whitelistcheck new is??");
 							// ホワイトリストによるリソースアクセスチェック！
 							if (!(isset($whiteList[$resourcePath]) && isset($whiteList[$resourcePath]["Method ".$this->requestMethod]))){
 								// アクセスエラー！
-								throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+								$this->httpStatus = 405;
+								throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 							}
 							else if(is_array($whiteList[$resourcePath]["Method ".$this->requestMethod])){
-								if(isset($whiteList[$resourcePath]["Method ".$this->requestMethod]["*"]) && 0 < count(array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod]["*"]))){
-									// アクセスエラー！
-									throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+								// リクエストユーザーの整合性チェック
+								if ($_SERVER['REMOTE_ADDR'] === $allowUser){
+									// IPアドレスによるアクセスチェック
+									$IPAllowed = FALSE;
+									$allowIPs = array_keys($whiteList[$resourcePath]["Method ".$this->requestMethod]);
+									// 　逆から評価
+									for ($IPIdx = count($allowIPs) - 1; $IPIdx >= 0; $IPIdx--){
+										if (TRUE === (preg_match('/^\d\.\d\.\d\.\d/', $allowIPs[$IPIdx]) || '*' === $allowIPs[$IPIdx]) && TRUE === checkIP($_SERVER['REMOTE_ADDR'], $allowIPs[$IPIdx])){
+											$IPAllowed = TRUE;
+											$allowUser = $allowIPs[$IPIdx];
+											break;
+										}
+									}
+									if (FALSE === $IPAllowed){
+										// IPアドレスが許可されていない！
+										// アクセスエラー！
+										$this->httpStatus = 405;
+										throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
+									}
 								}
-								else if(0 < count(array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser]))){
-									// アクセスエラー！
-									throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+								// リクエストメソッドとリクエストパラメータの整合性チェック
+								if(isset($whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser])){
+									$diffs = array_diff($paramKeys, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser]);
+									if (0 < count($diffs)){
+										$notFoundDiffKey = FALSE;
+										foreach ($diffs as $diffKey){
+											if (!in_array($diffKey, $whiteList[$resourcePath]["Method ".$this->requestMethod][$allowUser])){
+												// ホントに無かったので即エラー
+												$notFoundDiffKey = TRUE;
+												break;
+											}
+										}
+										// ホントにキーが足らないのでエラー確定
+										if (TRUE === $notFoundDiffKey){
+											// 許可されたメソッド内でパラメータが多い(許可されていないパラメータをリクエストに含めている)
+											// アクセスエラー！
+											debug('whitelistcheck diffkey error'.var_export($diffs, TRUE));
+											$this->httpStatus = 405;
+											throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
+										}
+									}
 								}
 							}
 							else if ("*" !== $whiteList[$resourcePath]["Method ".$this->requestMethod]){
+								// 外部からのアクセスを完全に拒絶されているメソッドへのアクセス
 								// アクセスエラー！
-								throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 405);
+								$this->httpStatus = 405;
+								throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 							}
 							// 許可されたRESTへのアクセス
 							debug("whitelistcheck new is ok!");
@@ -748,8 +849,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				// Filterがあったらフィルター処理をする
 				$filerName = 'RestPrependFilter';
 				debug('$filerName='.$filerName);
-				if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-					$filterClass = MVCCore::loadMVCFilter($filerName);
+				if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+					$filterClass = Core::loadMVCFilter($filerName);
 					$Filter = new $filterClass();
 					$Filter->REST = $this;
 					$Filter->execute($argRequestParams);
@@ -759,23 +860,27 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			// 指定リソースの絶対的なPrepend
 			$filerName = $classHint . 'PrependFilter';
 			debug('resoruce='.$filerName);
-			if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-				$filterClass = MVCCore::loadMVCFilter($filerName);
-				$Filter = new $filterClass();
-				$Filter->REST = $this;
-				// リクエストメソッドで分岐する
-				if('POST' === $this->requestMethod || 'PUT' === $this->requestMethod){
-					$Filter->{strtolower($this->requestMethod)}($argRequestParams);
-				}
-				else {
-					$Filter->{strtolower($this->requestMethod)}();
+			debug('$argRequestMethod='.$argRequestMethod);
+			debug('$this->requestMethod='.$this->requestMethod);
+			if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+				$filterClass = Core::loadMVCFilter($filerName);
+				if (TRUE === method_exists($filterClass, strtolower($this->requestMethod))){
+					$Filter = new $filterClass();
+					$Filter->REST = $this;
+					// リクエストメソッドで分岐する
+					if('POST' === $this->requestMethod || 'PUT' === $this->requestMethod){
+						$Filter->{strtolower($this->requestMethod)}($argRequestParams);
+					}
+					else {
+						$Filter->{strtolower($this->requestMethod)}($argGETParams);
+					}
 				}
 			}
 
-			if(FALSE !== MVCCore::loadMVCModule($classHint, TRUE)){
+			if(FALSE !== Core::loadMVCModule($classHint, TRUE, '', TRUE)){
 				debug('RestClassLoaded');
 				// オーバーライドされたModelへのリソース操作クラスが在る場合は、それをnewして実行する
-				$className = MVCCore::loadMVCModule($classHint);
+				$className = Core::loadMVCModule($classHint, FALSE, '', TRUE);
 				debug('RestClassLoaded='.$className);
 				$RestController = new $className();
 				// 自分自身の持っているパブリックパラメータをブリッジ先のRestControllerに引き渡す
@@ -814,7 +919,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					$res = $RestController->{strtolower($this->requestMethod)}($argRequestParams);
 				}
 				else {
-					$res = $RestController->{strtolower($this->requestMethod)}();
+					$res = $RestController->{strtolower($this->requestMethod)}($argGETParams);
 				}
 				$this->responceData = &$res;
 				// 結果のパラメータを受け取り直す
@@ -847,23 +952,31 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			}
 			else {
 				// リクエストメソッドで分岐する
-				$res = $this->{strtolower($this->requestMethod)}();
+							// リクエストメソッドで分岐する
+				if('POST' === $this->requestMethod || 'PUT' === $this->requestMethod){
+					$res = $this->{strtolower($this->requestMethod)}($argRequestParams);
+				}
+				else {
+					$res = $this->{strtolower($this->requestMethod)}($argGETParams);
+				}
 				$this->responceData = &$res;
 			}
 
 			// 指定リソースの絶対的なAppend
 			$filerName = $classHint . 'AppendFilter';
 			debug('resoruce='.$filerName);
-			if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-				$filterClass = MVCCore::loadMVCFilter($filerName);
-				$Filter = new $filterClass();
-				$Filter->REST = $this;
-				// リクエストメソッドで分岐する
-				if('POST' === $this->requestMethod || 'PUT' === $this->requestMethod){
-					$Filter->{strtolower($this->requestMethod)}($argRequestParams);
-				}
-				else {
-					$Filter->{strtolower($this->requestMethod)}();
+			if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+				$filterClass = Core::loadMVCFilter($filerName);
+				if (TRUE === method_exists($filterClass, strtolower($this->requestMethod))){
+					$Filter = new $filterClass();
+					$Filter->REST = $this;
+					// リクエストメソッドで分岐する
+					if('POST' === $this->requestMethod || 'PUT' === $this->requestMethod){
+						$Filter->{strtolower($this->requestMethod)}($argRequestParams);
+					}
+					else {
+						$Filter->{strtolower($this->requestMethod)}($argGETParams);
+					}
 				}
 			}
 
@@ -873,8 +986,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				// Filterがあったらフィルター処理をする
 				$filerName = 'RestAppendFilter';
 				debug('$filerName='.$filerName);
-				if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-					$filterClass = MVCCore::loadMVCFilter($filerName);
+				if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+					$filterClass = Core::loadMVCFilter($filerName);
 					$Filter = new $filterClass();
 					$Filter->REST = $this;
 					$Filter->execute($argRequestParams);
@@ -904,11 +1017,11 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			$res = array('success' => TRUE);
 		}
 
-		if(FALSE === $res || TRUE !== is_array($res)){
+		if(FALSE === $res){
 			// XXX ココを通るのは相当なイレギュラー！
 			// 恐らく実装の問題
 			$this->httpStatus = 500;
-			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, 400);
+			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 		}
 
 		if('HEAD' === $this->requestMethod && isset($res['describes'])){
@@ -921,11 +1034,11 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'DELETE' !== $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
 			// GETの時はHEADリクエストの結果を包括する為の処理
 			try{
-				$headRes = $this->head();
-				header('Head: ' . json_encode($headRes['describes']));
-				header('Rules: ' . json_encode($headRes['rules']));
-				header('Records: ' . $headRes['count']);
-				header('Comment: ' . json_encode($headRes['comment']));
+				$headRes = $this->head($argGETParams);
+				@header('Head: ' . json_encode($headRes['describes']));
+				@header('Rules: ' . json_encode($headRes['rules']));
+				@header('Records: ' . $headRes['count']);
+				@header('Comment: ' . json_encode($headRes['comment']));
 			}
 			catch (Exception $Exception){
 				// 何もしない
@@ -1093,7 +1206,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 
 		// MVCCoreのアクセス時間をRESTが持っている現在時刻で差し替える
-		MVCCore::$accessed = self::$nowGMT;
+		Core::$accessed = self::$nowGMT;
 
 		// 正常終了(のハズ！)
 		return $res;
@@ -1133,7 +1246,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				// pkey指定があるかどうか
 				if(isset($hints[$hintIdx]) && strlen($hints[$hintIdx]) > 0){
 					$ids = array($hints[$hintIdx]);
-					if(',' === $hints[$hintIdx]){
+					// XXX strposでいいのか？？
+					if(FALSE !== strpos($hints[$hintIdx], ',')){
 						$ids = explode(',', $hints[$hintIdx]);
 					}
 					if(count($ids) <= 1){
@@ -1152,7 +1266,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	 * XXX モデルの位置付けが、テーブルリソースで無い場合は、継承して、RESTの”冪等性”に従って実装して下さい
 	 * @return mixed 成功時は最新のリソース配列 失敗時はFALSE
 	 */
-	public function get(){
+	public function get($argRequestParams=NULL){
+		$this->_init();
 		$resources = array();
 		$requestParams = array();
 		$baseQuery = ' 1=1 ';
@@ -1239,9 +1354,38 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 					$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 				}
+				Auth::init();
+				// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化・マスク化を自動処理してあげる
+				if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+					// IDフィールド用
+					if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+						$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+						if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+							// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+							$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+						}
+					}
+					// パスフィールド用
+					if (isset($resources[count($resources)-1][Auth::$authPassField])){
+						$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+						if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+							// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+							unset($resources[count($resources)-1][Auth::$authPassField]);
+						}
+					}
+				}
 			}
 			else {
-				$requestParams = $this->getRequestParams();
+				debug('is????');
+				debug($argRequestParams);
+				$requestParams = array();
+				if(NULL === $argRequestParams){
+					$requestParams = $this->getRequestParams();
+				}
+				else {
+					$requestParams = $argRequestParams;
+				}
+				debug('isa????');
 				$Model = $this->_getModel($this->restResourceModel);
 				$fields = $Model->getFieldKeys();
 				debug($fields);
@@ -1342,6 +1486,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								if(isset($requestParams['OFFSET']) && is_numeric($requestParams['OFFSET']) && 0 < (int)$requestParams['OFFSET']){
 									$query .= ' ' . $requestParams['OFFSET'] . ',';
 								}
+								else {
+									$query .= ' 0,';
+								}
 								$query .= ' ' . $requestParams['LIMIT'] . ' ';
 							}
 							if (isset($requestParams['JOIN'])){
@@ -1390,6 +1537,26 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
+							Auth::init();
+							// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+							if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+								// IDフィールド用
+								if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+									$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+									if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+										// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+										$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+									}
+								}
+								// パスフィールド用
+								if (isset($resources[count($resources)-1][Auth::$authPassField])){
+									$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+									if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+										// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+										unset($resources[count($resources)-1][Auth::$authPassField]);
+									}
+								}
+							}
 						}
 						else if(TRUE === $this->rootREST && TRUE !== $this->restResourceListed){
 							// ROOT-RESTで且つLIST指定で無い時は、素直にリソースが無かったエラー
@@ -1426,7 +1593,6 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					else {
 						$query .= ' ORDER BY `' . $Model->tableName . '`.`' . $Model->pkeyName . '` DESC ';
 					}
-
 					// LIMIT句指定があれば付け足す
 					if(TRUE === $this->rootREST){
 						if(isset($requestParams['LIMIT']) && is_numeric($requestParams['LIMIT']) && 0 < (int)$requestParams['LIMIT']){
@@ -1434,6 +1600,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							// OFFSET句指定があれば付け足す
 							if(isset($requestParams['OFFSET']) && is_numeric($requestParams['OFFSET']) && 0 < (int)$requestParams['OFFSET']){
 								$query .= ' ' . $requestParams['OFFSET'] . ',';
+							}
+							else {
+								$query .= ' 0,';
 							}
 							$query .= ' ' . $requestParams['LIMIT'] . ' ';
 						}
@@ -1485,6 +1654,25 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
+							Auth::init();
+							// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+							if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+								if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+									$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+									if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+										// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+										$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+									}
+								}
+								// パスフィールド用
+								if (isset($resources[count($resources)-1][Auth::$authPassField])){
+									$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+									if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+										// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+										unset($resources[count($resources)-1][Auth::$authPassField]);
+									}
+								}
 							}
 						} while (FALSE !== $Model->next());
 					}
@@ -1555,6 +1743,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					// 空のモデルを先ず作る
 					try{
 						if(TRUE === $this->restResource['me'] && NULL !== $this->AuthUser && is_object($this->AuthUser) && strtolower($this->restResourceModel) == strtolower($this->AuthUser->tableName) && $this->restResource['ids'][$IDIdx] == $this->AuthUser->pkeyName){
+							if (0 < $IDIdx){
+								// Me Authは1件しかないのでbreakする
+								break;
+							}
 							// 自分自身のAuthモデルに対しての処理とする
 							$Model = $this->AuthUser;
 							$fields = $Model->getFieldKeys();
@@ -1565,6 +1757,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							}
 						}
 						else {
+							$Model = NULL;
 							$Model = $this->_getModel($this->restResourceModel);
 							$fields = $Model->getFieldKeys();
 							if(TRUE === $this->restResource['me'] && FALSE === in_array($this->authUserIDFieldName, $fields)){
@@ -1591,7 +1784,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						break;
 					}
 					// 最初の一回目はバリデーションを必ず実行
-					if(0 === $IDIdx){
+					//if(0 === $IDIdx){
 						$datas = array();
 						if(FALSE === in_array($this->authUserIDFieldName, $fields)){
 							// フィールドが無いなら$baseQueryを再初期化
@@ -1601,12 +1794,31 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						// オートバリデート
 						try{
 							for($fieldIdx = 0; $fieldIdx < count($fields); $fieldIdx++){
-								if(isset($requestParams[$fields[$fieldIdx]])){
+								if(array_key_exists($fields[$fieldIdx], $requestParams)){
 									try{
 										// XXX intのincrementとdecrimentは許可する
 										if(FALSE === ('int' === $Model->describes[$fields[$fieldIdx]]['type'] && TRUE === ('increment' === strtolower($requestParams[$fields[$fieldIdx]]) || 'decrement' === strtolower($requestParams[$fields[$fieldIdx]])))){
 											// exec系以外はオートバリデート
 											$Model->validate($fields[$fieldIdx], $requestParams[$fields[$fieldIdx]]);
+											Auth::init();
+											// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+											if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable) && 0 < strlen($requestParams[$fields[$fieldIdx]])){
+												// IDフィールド用
+												if ($fields[$fieldIdx] === Auth::$authIDField){
+													$requestParams[$fields[$fieldIdx]] = Auth::resolveEncrypted($requestParams[$fields[$fieldIdx]], Auth::$authIDEncrypted);
+												}
+												// パスフィールド用
+												else if ($fields[$fieldIdx] === Auth::$authPassField){
+													// 空パスワードの上書きは許可しない！
+													if (FALSE === (0 < strlen($requestParams[$fields[$fieldIdx]])) || '********' === $requestParams[$fields[$fieldIdx]]){
+														$requestParams[$fields[$fieldIdx]] = $Model->{$fields[$fieldIdx]};
+													}
+													else if ($Model->{$fields[$fieldIdx]} !== $requestParams[$fields[$fieldIdx]]){
+														// 値が変わっていた時だけ差し替える
+														$requestParams[$fields[$fieldIdx]] = Auth::resolveEncrypted($requestParams[$fields[$fieldIdx]], Auth::$authPassEncrypted);
+													}
+												}
+											}
 										}
 										// バリデートに成功したので更新値として認める
 										$datas[$fields[$fieldIdx]] = $requestParams[$fields[$fieldIdx]];
@@ -1630,7 +1842,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									// Pkeyも入れておく(複合キーの為の処理)
 									$datas[$fields[$fieldIdx]] = $this->restResource['ids'][$IDIdx];
 								}
-								elseif($fields[$fieldIdx] == $this->authUserIDFieldName){
+								elseif($fields[$fieldIdx] == $this->authUserIDFieldName && 0 < (int)$this->authUserID && 0 >= @(int)$datas[$fields[$fieldIdx]] && $this->authUserID !== $datas[$fields[$fieldIdx]]){
 									// 自分自身のIDを入れる
 									$datas[$fields[$fieldIdx]] = $this->authUserID;
 								}
@@ -1656,22 +1868,24 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								// Filterがあったらフィルター処理をする
 								$filerName = str_replace(' ', '', ucwords(str_replace('_', ' ', $this->restResourceModel. ' '. $fields[$fieldIdx]))) . 'Filter';
 								debug('$filerName='.$filerName);
-								if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-									$filterClass = MVCCore::loadMVCFilter($filerName);
-									$Filter = new $filterClass();
-									$Filter->REST = $this;
-									$Filter->Model = $Model;
-									if(!isset($datas[$fields[$fieldIdx]]) ){
-										// 初期化
-										$datas[$fields[$fieldIdx]] = NULL;
-										if(0 < strlen($Model->{$fields[$fieldIdx]})){
-											$datas[$fields[$fieldIdx]] = $Model->{$fields[$fieldIdx]};
-										}
-									}
-									debug('original value='.$datas[$fields[$fieldIdx]]);
+								if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+									$filterClass = Core::loadMVCFilter($filerName);
 									$filterMethod = 'filter'.ucfirst(strtolower($this->requestMethod));
-									$datas[$fields[$fieldIdx]] = $Filter->$filterMethod($datas[$fields[$fieldIdx]]);
-									debug('$filered value='.$datas[$fields[$fieldIdx]]);
+									if (TRUE === method_exists($filterClass, $filterMethod)){
+										$Filter = new $filterClass();
+										$Filter->REST = $this;
+										$Filter->Model = $Model;
+										if(!isset($datas[$fields[$fieldIdx]]) ){
+											// 初期化
+											$datas[$fields[$fieldIdx]] = NULL;
+											if(0 < strlen($Model->{$fields[$fieldIdx]})){
+												$datas[$fields[$fieldIdx]] = $Model->{$fields[$fieldIdx]};
+											}
+										}
+										debug('original value='.$datas[$fields[$fieldIdx]]);
+										$datas[$fields[$fieldIdx]] = $Filter->$filterMethod($datas[$fields[$fieldIdx]]);
+										debug('$filered value='.$datas[$fields[$fieldIdx]]);
+									}
 								}
 							}
 						}
@@ -1679,7 +1893,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							throw new RESTException($Exception->getMessage(), $this->httpStatus);
 							break;
 						}
-					}
+					//}
 					// POSTに従ってModelを更新する
 					$Model->save($datas);
 					// 更新の完了した新しいモデルのデータをレスポンスにセット
@@ -1713,12 +1927,41 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				}
 				// オートバリデート
 				for($fieldIdx = 0; $fieldIdx < count($fields); $fieldIdx++){
-					if(isset($requestParams[$fields[$fieldIdx]])){
+					if(array_key_exists($fields[$fieldIdx], $requestParams)){
 						try{
 							// XXX intのincrementとdecrimentは許可する
 							if(FALSE === ('int' === $Model->describes[$fields[$fieldIdx]]['type'] && TRUE === ('increment' === strtolower($requestParams[$fields[$fieldIdx]]) || 'decrement' === strtolower($requestParams[$fields[$fieldIdx]])))){
 								// exec系以外はオートバリデート
 								$Model->validate($fields[$fieldIdx], $requestParams[$fields[$fieldIdx]]);
+								Auth::init();
+								// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+								if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable) && 0 < strlen($requestParams[$fields[$fieldIdx]])){
+									// IDフィールド用
+									if ($fields[$fieldIdx] === Auth::$authIDField){
+										$requestParams[$fields[$fieldIdx]] = Auth::resolveEncrypted($requestParams[$fields[$fieldIdx]], Auth::$authIDEncrypted);
+										// ユニークバリデートの自動実行
+										$query = $fields[$fieldIdx].' = :'.$fields[$fieldIdx].' ';
+										$binds = array($fields[$fieldIdx] => $requestParams[$fields[$fieldIdx]]);
+										// 有効フラグの自動参照制御
+										if(0 < strlen($this->restResourceAvailableKeyName)){
+											$query .= ' AND `' . $this->restResourceAvailableKeyName . '` = :' . $this->restResourceAvailableKeyName . ' ';
+											$binds[$this->restResourceAvailableKeyName] = '1';
+										}
+										debug('authcheck:'.$query.' : '.var_export($binds, true));
+										$Model->load($query, $binds);
+										if (0 < $Model->count){
+											// 重複エラー
+											// バリデーションエラー(必須パラメータチェックエラー)
+											$this->httpStatus = 400;
+											throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
+											break;
+										}
+									}
+									// パスフィールド用
+									else if ($fields[$fieldIdx] === Auth::$authPassField){
+										$requestParams[$fields[$fieldIdx]] = Auth::resolveEncrypted($requestParams[$fields[$fieldIdx]], Auth::$authPassEncrypted);
+									}
+								}
 							}
 							// バリデートに成功したので更新値として認める
 							$datas[$fields[$fieldIdx]] = $requestParams[$fields[$fieldIdx]];
@@ -1737,7 +1980,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						if(TRUE === $this->restResource['me']){
 							$deepResourcePath = 'me/'.$deepResource;
 						}
-						debug(__LINE__.'deep??'.$deepResourcePath.' & '.$this->authUserIDFieldName.' & '.$fields[$fieldIdx].' & '.(strlen($fields[$fieldIdx]) -3).' & '.strpos($fields[$fieldIdx], '_id'));
+						debug(__LINE__.'deep??'.$deepResourcePath.' & '.$this->authUserIDFieldName.' & '.$fields[$fieldIdx].' = '.(strlen($fields[$fieldIdx]) -3).' & '.strpos($fields[$fieldIdx], '_id'));
 						$isDeepModel = TRUE;
 						try{
 							$deepModel = $this->_getModel($deepResource);
@@ -1795,8 +2038,8 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					$filerName = str_replace(' ', '', ucwords(str_replace('_', ' ', $this->restResourceModel. ' '. $fields[$fieldIdx]))) . 'Filter';
 					debug('$filerName='.$filerName);
 					try {
-						if(FALSE !== MVCCore::loadMVCFilter($filerName, TRUE)){
-							$filterClass = MVCCore::loadMVCFilter($filerName);
+						if(FALSE !== Core::loadMVCFilter($filerName, TRUE)){
+							$filterClass = Core::loadMVCFilter($filerName);
 							debug($filterClass);
 							$Filter = new $filterClass();
 							$Filter->REST = $this;
@@ -1846,8 +2089,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	 * XXX モデルの位置付けが、テーブルリソースで無い場合は、継承してRESTの”冪等性”に従って実装して下さい(冪等性を持ちます)
 	 * @return boolean
 	 */
-	public function delete(){
-		$requestParams = $this->getRequestParams();
+	public function delete($argRequestParams=NULL){
+		$this->_init();
+		if(NULL === $argRequestParams){
+			$requestParams = $this->getRequestParams();
+		}
+		else {
+			$requestParams = $argRequestParams;
+		}
 		$baseQuery = ' 1=1 ';
 		$baseBinds = NULL;
 		$isDeepModel = FALSE;
@@ -1903,7 +2152,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					}
 				}
 				// GETパラメータでbaseクエリを書き換える
-				if(is_array($requestParams[$fields[$fieldIdx]]) && isset($requestParams[$fields[$fieldIdx]]['mark']) && isset($requestParams[$fields[$fieldIdx]]['value'])){
+				if(isset($requestParams[$fields[$fieldIdx]]) && is_array($requestParams[$fields[$fieldIdx]]) && isset($requestParams[$fields[$fieldIdx]]['mark']) && isset($requestParams[$fields[$fieldIdx]]['value'])){
 					// =以外の条件を指定したい場合の特殊処理
 					$baseQuery .= ' AND `' . $fields[$fieldIdx] . '` ' . $requestParams[$fields[$fieldIdx]]['mark'] . ' :' . $fields[$fieldIdx] . ' ';
 					$bindValue = $requestParams[$fields[$fieldIdx]]['value'];
@@ -1960,9 +2209,15 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	 * HEADメソッド
 	 * @return boolean
 	 */
-	public function head(){
+	public function head($argRequestParams=NULL){
+		$this->_init();
 		$count = '0';
-		$requestParams = $this->getRequestParams();
+		if(NULL === $argRequestParams){
+			$requestParams = $this->getRequestParams();
+		}
+		else {
+			$requestParams = $argRequestParams;
+		}
 		$baseQuery = ' 1=1 ';
 		$baseBinds = NULL;
 		$rules = array('rules'=>array());;
@@ -2047,7 +2302,11 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			}
 			// JSバリデートで使えるようのRuleオブジェクトをおまけで作って上げる
 			foreach($Model->describes as $key => $val){
-				$rules['rules'][$key] = array('required'=>(($val['pkey'] || $val['null'])? FALSE : TRUE), 'email'=>((FALSE === strpos(strtolower($key),'mail')) ? FALSE : TRUE), 'url'=>((FALSE === strpos(strtolower($key),'url')) ? FALSE : TRUE));
+				$rules['rules'][$key] = array('required'=>(((isset($val['pkey']) && $val['pkey']) || (isset($val['null']) && $val['null']))? FALSE : TRUE), 'email'=>((FALSE === strpos(strtolower($key),'mail')) ? FALSE : TRUE), 'url'=>((FALSE === strpos(strtolower($key),'url')) ? FALSE : TRUE));
+				if (TRUE === $rules['rules'][$key]['required'] && isset($val['default'])){
+					// デフォルト値がある場合は、JSValidate上は未入力を許可する
+					$rules['rules'][$key]['required'] = FALSE;
+				}
 				$rules['rules'][$key]['digits'] = FALSE;
 				if(isset($val['type']) && 'int' === $val['type']){
 					$rules['rules'][$key]['digits'] = TRUE;
@@ -2074,6 +2333,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 
 		// 定義一覧をヘッダに詰めて返す
 		return array('describes' => $Model->describes, 'count'=>$count, 'rules'=>$rules, 'comment'=>$Model->tableComment);
+	}
+
+	/**
+	 * Restコントローラであるかの確認メソッド
+	 */
+	public static function isRestController(){
+		// Restコントローラである
+		return TRUE;
 	}
 }
 

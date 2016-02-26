@@ -6,8 +6,8 @@ class Rest extends RestControllerBase {
 	 * リソースの参照
 	 * @return mixed 成功時は最新のリソース配列 失敗時はFALSE
 	 */
-	public function get(){
-		return parent::get();
+	public function get($argRequestParams = NULL){
+		return parent::get($argRequestParams);
 	}
 
 	/**
@@ -30,16 +30,16 @@ class Rest extends RestControllerBase {
 	 * リソースの削除
 	 * @return boolean
 	 */
-	public function delete(){
-		return parent::delete();
+	public function delete($argRequestParams = NULL){
+		return parent::delete($argRequestParams);
 	}
 
 	/**
 	 * リソースの情報の取得
 	 * @return boolean
 	 */
-	public function head(){
-		return parent::head();
+	public function head($argRequestParams = NULL){
+		return parent::head($argRequestParams);
 	}
 }
 

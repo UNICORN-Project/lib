@@ -42,11 +42,14 @@ class GenericValidations {
 	/**
 	 * メールアドレスがRFC2822(+DoCoMoの拡張)に従っているかをチェックする
 	 */
-	public static function isEmail($argEmail){
+	public static function isEmail($argEmail, $argUseBool=FALSE){
 
 		// メアドは全体で256文字まで
 		if(strlen($argEmail) > 256){
 			self::$_message = 'lengthover,email';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 		}
 
@@ -55,6 +58,9 @@ class GenericValidations {
 		$mailParts = explode('@', $argEmail);
 		if(count($mailParts) < 2){
 			self::$_message = 'countshort,email';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 		}
 
@@ -67,6 +73,9 @@ class GenericValidations {
 			try {
 				self::isEmailLocalPart($mailParts[0]);
 			}catch (Exception $Exception){
+				if (FALSE !== $argUseBool){
+					return FALSE;
+				}
 				//self::$_message = 'missmatch,localpart';
 				throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.$Exception->__toString());
 			}
@@ -78,6 +87,9 @@ class GenericValidations {
 		}catch (Exception $Exception){
 			// エラー部位識別に「part」を追記
 			self::$_message .= 'part';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.$Exception->__toString());
 		}
 
@@ -89,11 +101,14 @@ class GenericValidations {
 	 * RFC2822では 末尾の '.' は許されていないが, DoCoMoは許すので
 	 * ここでも許している.
 	 */
-	public static function isEmailLocalPart ($argLocalPart){
+	public static function isEmailLocalPart ($argLocalPart, $argUseBool=FALSE){
 		// '.' を除く利用してもよい文字
 		$atext = "a-z0-9@!#\$%&'\"*+\-\/=?^_`{|}~";
 		if (!preg_match('/^[' . $atext . '][\.' . $atext . ']*$/iD', $argLocalPart)) {
 			self::$_message = 'missmatch,localpart';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 		}
 		return TRUE;
@@ -102,11 +117,14 @@ class GenericValidations {
 	/**
 	 * ドメイン名がRFC1035に従っているかをチェックする
 	 */
-	public static function isDomain($argDomain){
+	public static function isDomain($argDomain, $argUseBool=FALSE){
 
 		// domainの長さは255文字まで
 		if (strlen($argDomain) > 255) {
 			self::$_message = 'lengthover,domain';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 		}
 
@@ -115,6 +133,9 @@ class GenericValidations {
 		// 2つ以上の部分にわかれることを確認
 		if ($domainLabels === FALSE || count($domainLabels) < 2) {
 			self::$_message = 'countshort,domain';
+			if (FALSE !== $argUseBool){
+				return FALSE;
+			}
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 		}
 
@@ -122,10 +143,16 @@ class GenericValidations {
 			//ラベルの長さは1文字から63文字まで
 			if (strlen($label) < 1){
 				self::$_message = 'lengthshort,domain';
+				if (FALSE !== $argUseBool){
+					return FALSE;
+				}
 				throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 			}
 			elseif (strlen($label) > 63) {
 				self::$_message = 'lengthover,domain';
+				if (FALSE !== $argUseBool){
+					return FALSE;
+				}
 				throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 			}
 			/*
@@ -136,11 +163,17 @@ class GenericValidations {
 			if (strlen($label) === 1) {
 				if (preg_match('/^[a-z0-9]$/iD', $label) === 0) {
 					self::$_message = 'missmatch,domain';
+					if (FALSE !== $argUseBool){
+						return FALSE;
+					}
 					throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 				}
 			} else {
 				if (preg_match('/^([a-z0-9][a-z0-9-]*[a-z0-9])$/iD', $label) === 0) {
 					self::$_message = 'missmatch,domain';
+					if (FALSE !== $argUseBool){
+						return FALSE;
+					}
 					throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);
 				}
 			}

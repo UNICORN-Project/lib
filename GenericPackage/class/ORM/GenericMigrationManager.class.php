@@ -163,7 +163,7 @@ class GenericMigrationManager {
 						}
 						else {
 							// ADDする箇所の指定
-							$upAlterDef .= '$alter["'.$feldKey.'"]["after"] = "' . $beforeFieldKey . '";';
+							$upAlterDef .= '$alter["'.$feldKey.'"]["after"] = "' . $beforeFieldKey . '"; ';
 						}
 					}
 					$beforeFieldKey = $feldKey;

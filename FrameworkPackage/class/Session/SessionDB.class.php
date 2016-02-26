@@ -153,6 +153,9 @@ class SessionDB extends SessionDataDB implements SessionIO {
 
 			// 初期化済み
 			self::$_initialized = TRUE;
+
+			// 不要レコードの削除
+			self::clean();
 		}
 	}
 
@@ -236,7 +239,7 @@ class SessionDB extends SessionDataDB implements SessionIO {
 					$token = $_COOKIE[self::$_tokenKeyName];
 					$identifier = self::_tokenToIdentifier($token);
 					logging('is identifier? '.$identifier, 'session');
-					if(FALSE !== $identifier){
+					if(FALSE !== $identifier && NULL !== $identifier && 0 < strlen($identifier)){
 						logging('is identifier! '.$identifier, 'session');
 						// SESSIONレコードを走査
 						$binds = array(self::$_sessionPKeyName => $token, 'expierddate' => Utilities::modifyDate('-' . (string)self::$_expiredtime . 'sec', 'Y-m-d H:i:s', NULL, NULL, 'GMT'));
@@ -254,7 +257,7 @@ class SessionDB extends SessionDataDB implements SessionIO {
 					logging('cookie delete!', 'session');
 					// 二度処理しない為に削除する
 					unset($_COOKIE[self::$_tokenKeyName]);
-					setcookie(self::$_tokenKeyName, '', time() - 3600);
+					setcookie(self::$_tokenKeyName, '', time() - 3600, '/');
 				}
 				else{
 					// 固有識別子をセットする
@@ -343,6 +346,17 @@ class SessionDB extends SessionDataDB implements SessionIO {
 	}
 
 	/**
+	 * セッションを明示的に適用する
+	 * @param string cookieの対象ドメイン指定
+	 */
+	public static function flush($argDomain=NULL, $argExpiredtime=NULL, $argDSN=NULL){
+		if(FALSE !== self::$_initialized){
+			// 明示的なflushはトランザクションをコミットする！
+			self::$_DBO->commit();
+		}
+	}
+	
+	/**
 	 * セッションの指定のキー名で保存されたデータを返す
 	 * セッションが初期化されていなければ初期化する
 	 * @param string キー名
@@ -359,7 +373,7 @@ class SessionDB extends SessionDataDB implements SessionIO {
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.Utilities::getBacktraceExceptionLine());
 		}
 		// XXX 標準ではセッションデータのPKeyはセッションの固有識別子
-		return parent::get(self::$_identifier);
+		return parent::get(self::$_identifier, $argKey);
 	}
 
 	/**
@@ -379,6 +393,12 @@ class SessionDB extends SessionDataDB implements SessionIO {
 			// エラー
 			throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.Utilities::getBacktraceExceptionLine());
 		}
+		if (NULL === self::$_identifier){
+			// セッションIDを自動生成して初期化
+			self::sessionID();
+			self::$_tokenInitialized = FALSE;
+			self::_initializeToken();
+		}
 		if(FALSE === $replaced){
 			// Cookieの書き換えがまだなら書き換える
 			self::setTokenToCookie(self::$_tokenKeyName);
@@ -389,7 +409,7 @@ class SessionDB extends SessionDataDB implements SessionIO {
 		return parent::set(self::$_identifier, $argKey, $argment);
 	}
 
-	public static function clear(){
+	public static function clear($argPKey=NULL){
 		if(FALSE === self::$_initialized){
 			// 自動セッションスタート
 			self::_init();
@@ -398,6 +418,9 @@ class SessionDB extends SessionDataDB implements SessionIO {
 		if(isset($_COOKIE[self::$_tokenKeyName]) && strlen($_COOKIE[self::$_tokenKeyName]) > 8){
 			// Cookieが在る場合はCookieからトークンと固有識別子を初期化する
 			$token = $_COOKIE[self::$_tokenKeyName];
+			if (NULL !== $argPKey){
+				$token = $argPKey;
+			}
 			// SESSIONレコードを走査
 			$binds = array(self::$_sessionPKeyName => $token);
 			$Session = ORMapper::getModel(self::$_DBO, self::$_sessionTblName, '`' . self::$_sessionPKeyName . '` = :' . self::$_sessionPKeyName. ' limit 1', $binds, FALSE);
@@ -414,9 +437,28 @@ class SessionDB extends SessionDataDB implements SessionIO {
 			logging('cookie clear!', 'session');
 			// 二度処理しない為に削除する
 			unset($_COOKIE[self::$_tokenKeyName]);
-			setcookie(self::$_tokenKeyName, '', time() - 3600);
+			setcookie(self::$_tokenKeyName, '', time() - 3600, '/');
 		}
 		self::$_identifier = NULL;
+		return TRUE;
+	}
+
+	/**
+	 * Expiredの切れたSessionレコードをDeleteする
+	 * @param int 有効期限の直指定
+	 * @param mixed DBDSN情報の直指定
+	 */
+	public static function clean($argExpiredtime=NULL){
+		if(FALSE === self::$_initialized){
+			self::_init($argExpiredtime);
+		}
+		$query = 'DELETE FROM `' . self::$_sessionTblName . '` WHERE `' . self::$_sessionDateKeyName . '` <= :' . self::$_sessionDateKeyName . ' ';
+		$date = Utilities::modifyDate('-' . (string)self::$_expiredtime . 'sec', 'Y-m-d H:i:s', NULL, NULL, 'GMT');
+		$response = self::$_DBO->execute($query, array(self::$_sessionDateKeyName => $date));
+		if (!$response) {
+			// XXX cleanの失敗は、エラーとはしない！
+			logging(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.self::$_DBO->getLastErrorMessage(), 'exception');
+		}
 		return TRUE;
 	}
 }

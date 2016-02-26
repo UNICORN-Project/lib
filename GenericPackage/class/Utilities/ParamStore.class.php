@@ -45,7 +45,7 @@ class ParamStore {
 		if(FALSE !== $argSearchFlag){
 			// 検索
 			$tmpArr = array('hint'=>$argKey,'data'=>array());
-			array_walk(self::$__store,'ParamStore::_search',&$tmpArr);
+			array_walk(self::$__store,'ParamStore::_search',$tmpArr);
 			if(count($tmpArr['data'])>0){
 				return $tmpArr['data'];
 			}

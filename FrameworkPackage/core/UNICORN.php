@@ -54,9 +54,19 @@ define('PHP_LF', "\n");
  * クラス使用時、ロードされてないと実行される
  * @param string $className
 */
-function _autoloadFramework($className){
+function _autoloadFramework($className, $argSetAutoloadEnabled=NULL){
+	static $_autoloaderEnabled = TRUE;
+	if (NULL !== $argSetAutoloadEnabled){
+		$_autoloaderEnabled = $argSetAutoloadEnabled;
+		// オートロードじゃないのでセットして終わり
+		return;
+	}
+	if (TRUE !== $_autoloaderEnabled){
+		return;
+	}
 	// namespaceだったらフレームワークのpackeageロードで無いことが確定なので無視する
-	if(FALSE === strpos($className, '\\')){
+	// XXX PMA_(PHPMyAdmin)も無視！
+	if(FALSE === strpos($className, '\\') && FALSE === strpos($className, 'PMA_') && FALSE === strpos($className, 'PHPExcel')){
 		// クラスが既に利用かのうかどうか
 		if(!class_exists($className, FALSE)){
 			// class_existsから呼びだされたのかの判定
@@ -72,8 +82,18 @@ function _autoloadFramework($className){
 	}
 }
 
+function autoloadUnregisterFramework(){
+	_autoloadFramework(NULL, FALSE);
+	// オートローダへの登録を解除(他のフレームワーク向け)
+	spl_autoload_unregister('_autoloadFramework');
+}
+function autoloadRegisterFramework(){
+	_autoloadFramework(NULL, TRUE);
+	// オートローダへ登録
+	spl_autoload_register('_autoloadFramework');
+}
 // オートローダへ登録
-spl_autoload_register('_autoloadFramework');
+autoloadRegisterFramework();
 
 $functions = <<<_METHODS_
 if (!function_exists('filemtime_ip')){
@@ -1092,6 +1112,8 @@ eval('function init' . $corefilename . '($argment = NULL){ return _initFramework
  * フレームワーク内のエラー処理
 */
 function _systemError($argMsg, $argStatusCode=500, $argHtml='', $argTrace=NULL){
+	debug(">>>>>>>>>>> system error >>>>>>>>>>");
+	debug("argMsg:{$argMsg}, argStatusCode:{$argStatusCode}, argHtml:{$argHtml}");
 	$corefilename = strtoupper(substr(basename(__FILE__), 0, strpos(basename(__FILE__), '.')));
 	$errorHtml = $argHtml;
 	// ココを通るのは相当なイレギュラー
@@ -1426,9 +1448,9 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 	static $phour = NULL;
 	static $loggingLineNum = 1;
 
-	$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/log/';
+	$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/logs/';
 	if(NULL !== defined('PROJECT_NAME')){
-		$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/' . PROJECT_NAME . '/log/';
+		$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/' . PROJECT_NAME . '/logs/';
 	}
 	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::LOG_PATH')){
 		$logpath = Configure::LOG_PATH;
@@ -1533,27 +1555,27 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 		}
 		if('process' !== $argLogName){
 			// process_logは常に出す
-			if(!is_file($logpath.'process_log')){
-				@touch($logpath.'process_log');
-				@chmod($logpath.'process_log', 0666);
+			if(!is_file($logpath.'process.log')){
+				@touch($logpath.'process.log');
+				@chmod($logpath.'process.log', 0666);
 			}
-			if(!is_file($logpath.'process_'.$phour.'.log')){
-				@touch($logpath.'process_'.$phour.'.log');
-				@chmod($logpath.'process_'.$phour.'.log', 0666);
+			if(!is_file($logpath.'process'.$phour.'.log')){
+				@touch($logpath.'process'.$phour.'.log');
+				@chmod($logpath.'process'.$phour.'.log', 0666);
 			}
-			@file_put_contents($logpath.'process_log', $logstr.PHP_EOL, FILE_APPEND);
-			@file_put_contents($logpath.'process_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
+			@file_put_contents($logpath.'process.log', $logstr.PHP_EOL, FILE_APPEND);
+			@file_put_contents($logpath.'process'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 		}
-		if(!is_file($logpath.$argLogName.'_log')){
-			@touch($logpath.$argLogName.'_log');
-			@chmod($logpath.$argLogName.'_log', 0666);
+		if(!is_file($logpath.$argLogName.'.log')){
+			@touch($logpath.$argLogName.'.log');
+			@chmod($logpath.$argLogName.'.log', 0666);
 		}
-		if(!is_file($logpath.$argLogName.'_'.$phour.'.log')){
-			@touch($logpath.$argLogName.'_'.$phour.'.log');
-			@chmod($logpath.$argLogName.'_'.$phour.'.log', 0666);
+		if(!is_file($logpath.$argLogName.$phour.'.log')){
+			@touch($logpath.$argLogName.$phour.'.log');
+			@chmod($logpath.$argLogName.$phour.'.log', 0666);
 		}
-		@file_put_contents($logpath.$argLogName.'_log', $logstr.PHP_EOL, FILE_APPEND);
-		@file_put_contents($logpath.$argLogName.'_'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
+		@file_put_contents($logpath.$argLogName.'.log', $logstr.PHP_EOL, FILE_APPEND);
+		@file_put_contents($logpath.$argLogName.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 	}
 
 	// $debugFlagが有効だったらdebugログに必ず出力
@@ -2439,6 +2461,9 @@ function getAutoMigrationPath(){
 function getConfig($argKey, $argConfigName=''){
 	static $values = array();
 	$value = NULL;
+	if (NULL === $argConfigName){
+		$argConfigName = '';
+	}
 	if (0 === strlen($argConfigName) && defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0){
 		$argConfigName = PROJECT_NAME;
 	}

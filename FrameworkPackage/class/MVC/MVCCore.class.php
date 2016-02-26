@@ -187,7 +187,7 @@ class MVCCore {
 			$version = $_GET ['_v_'];
 		}
 		debug ( 'mvccore version=' . $version );
-
+		
 		$dispversion = NULL;
 		if (isset ( $_GET ['_dv_'] ) && strlen ( $_GET ['_dv_'] ) > 0) {
 			$dispversion = $_GET ['_dv_'];
@@ -200,12 +200,13 @@ class MVCCore {
 		
 		// 強制メンテナンスモードの判定
 		$maintenance = FALSE;
-		if (NULL !== $ProjectConfigure && TRUE === defined ( $ProjectConfigure . '::MAINTENANCE_FLAG_FILE' )) {
+		if (NULL !== $ProjectConfigure && TRUE === defined ($ProjectConfigure . '::MAINTENANCE_FLAG_FILE')) {
 			debug ( 'mvccore ' . $ProjectConfigure::MAINTENANCE_FLAG_FILE );
 			if (TRUE === is_file ( $ProjectConfigure::MAINTENANCE_FLAG_FILE )) {
 				$maintenance = TRUE;
 			}
-		} else if (TRUE === Configure::constant ( 'MAINTENANCE_FLAG_FILE' )) {
+		}
+		else if (TRUE === defined('Configure::MAINTENANCE_FLAG_FILE')) {
 			debug ( 'mvccore ' . Configure::MAINTENANCE_FLAG_FILE );
 			if (TRUE === is_file ( Configure::MAINTENANCE_FLAG_FILE )) {
 				$maintenance = TRUE;
@@ -225,7 +226,6 @@ class MVCCore {
 				self::$maintenanceNow = $maintenance;
 				throw new Exception ( 'maintenace now.' );
 			}
-			
 			$httpStatus = 200;
 			// コントロール対象を取得
 			$res = self::loadMVCModule ();
@@ -239,17 +239,32 @@ class MVCCore {
 						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
-					elseif (TRUE !== $allowed){
+					elseif (FALSE !== $allowed){
 						$res = $allowed;
 					}
 				}
-				if (FALSE === $res) {
+				if (FALSE !== $res) {
+					$_tmpRes = NULL;
+					if (is_string($res) && 0 < strlen($res)) {
+						$_tmpRes = $res;
+					}
 					// ただのhtml表示かも知れないのを調べる
 					$paths = parse_url($_SERVER ['REQUEST_URI']);
 					debug('DOCUMENT_ROOT='. $_SERVER ['DOCUMENT_ROOT']);
 					debug('pasths=');
 					debug($paths);
-					debug($_SERVER ['DOCUMENT_ROOT'] . 'static/' . $paths ['path']);
+					// XXX サニタイズ
+					$matches = NULL;
+					if (isset($_SERVER ['QUERY_STRING']) && FALSE !== strpos($_SERVER ['QUERY_STRING'], 'id=') && 0 < count($_GET) && preg_match('/\/[^0-9]+([0-9]+)\./',$_SERVER ['REQUEST_URI'], $matches) && is_array($matches) && isset($matches[1])){
+						foreach($_GET as $val){
+							if ((string)$matches[1] === (string)$val){
+								// 数字はアプリケーションパラメータなので除いてしまう
+								$paths ['path'] = str_replace($matches[1].'.', '.', $paths ['path']);
+								break;
+							}
+						}
+					}
+					debug($_SERVER ['DOCUMENT_ROOT'] . '/static/' . $paths ['path']);
 					if (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] )) {
 						// そのままスタティックファイルとして表示
 						$res = file_get_contents ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] );
@@ -274,6 +289,10 @@ class MVCCore {
 						$httpStatus = 404;
 						throw new Exception ( 'controller class faild.' );
 					}
+					if (NULL !== $_tmpRes){
+						// スタティックファイルが存在しつつ、フィルターに引っかかっているので、フィルターの結果を採用する
+						$res = $_tmpRes;
+					}
 				}
 				// フィルター処理
 				if (self::loadMVCFilter ( 'StaticAppendFilter' )) {
@@ -285,7 +304,8 @@ class MVCCore {
 						throw new Exception ( 'access denied.' );
 					}
 				}
-			} else {
+			}
+			else {
 				$controlerClassName = $res;
 				// フィルター処理
 				$allowed = NULL;
@@ -294,27 +314,33 @@ class MVCCore {
 				if (FALSE !== $filres && 0 < strlen ( $filres )) {
 					$PrependFilter = new MVCPrependFilter ();
 					$allowed = $PrependFilter->execute ();
+					debug ( 'mvccore filtered allow=' . var_export($allowed, TRUE));
 					if (FALSE === $allowed) {
 						// XXX フィルターエラー
 						$httpStatus = 405;
 						throw new Exception ( 'access denied.' );
 					}
+					elseif (FALSE !== $allowed){
+						$res = $allowed;
+					}
 				}
-				self::$CurrentController = new $controlerClassName ();
-				debug ( 'mvccore method=' . $_SERVER ['REQUEST_METHOD'] );
-				if (isset ( $_SERVER ['REQUEST_METHOD'] )) {
-					self::$CurrentController->requestMethod = strtoupper ( $_SERVER ['REQUEST_METHOD'] );
-				}
-				self::$CurrentController->controlerClassName = $controlerClassName;
-				self::$CurrentController->outputType = $outputType;
-				self::$CurrentController->deviceType = self::$deviceType;
-				self::$CurrentController->appVersion = self::$appVersion;
-				self::$CurrentController->appleReviewd = self::$appleReviewd;
-				self::$CurrentController->mustAppVersioned = self::$mustAppVersioned;
-				self::$CurrentController->allowed = $allowed;
-				$res = self::$CurrentController->$actionMethodName ();
-				if (FALSE === $res) {
-					throw new Exception ( $actionMethodName . ' executed faild.' );
+				if (FALSE !== $res) {
+					self::$CurrentController = new $controlerClassName ();
+					debug ( 'mvccore method=' . $_SERVER ['REQUEST_METHOD'] );
+					if (isset ( $_SERVER ['REQUEST_METHOD'] )) {
+						self::$CurrentController->requestMethod = strtoupper ( $_SERVER ['REQUEST_METHOD'] );
+					}
+					self::$CurrentController->controlerClassName = $controlerClassName;
+					self::$CurrentController->outputType = $outputType;
+					self::$CurrentController->deviceType = self::$deviceType;
+					self::$CurrentController->appVersion = self::$appVersion;
+					self::$CurrentController->appleReviewd = self::$appleReviewd;
+					self::$CurrentController->mustAppVersioned = self::$mustAppVersioned;
+					self::$CurrentController->allowed = $allowed;
+					$res = self::$CurrentController->$actionMethodName ();
+					if (FALSE === $res) {
+						throw new Exception ( $actionMethodName . ' executed faild.' );
+					}
 				}
 				// フィルター処理
 				if (self::loadMVCFilter ( 'MVCAppendFilter' )) {
@@ -327,15 +353,21 @@ class MVCCore {
 					}
 				}
 			}
-		} catch ( Exception $Exception ) {
+		}
+		catch ( Exception $Exception ) {
 			// リターンは強制的にFALSE
 			$res = FALSE;
 			// statusコードがアレバそれを使う
-			if (isset ( self::$CurrentController->httpStatus ) && $httpStatus != self::$CurrentController->httpStatus) {
+			if (isset ( self::$CurrentController->httpStatus ) && 200 != self::$CurrentController->httpStatus && $httpStatus != self::$CurrentController->httpStatus) {
 				$httpStatus = self::$CurrentController->httpStatus;
-			} else if (200 === $httpStatus) {
+			}
+			else if (200 === $httpStatus) {
 				// インターナルサーバエラー
 				$httpStatus = 500;
+				if (is_numeric($Exception->getCode()) && 3 === strlen($Exception->getCode())) {
+					// Exceptionからステータスコードが拾えたなら拾う
+					$httpStatus = $Exception->getCode();
+				}
 			}
 		}
 		
@@ -382,14 +414,15 @@ class MVCCore {
 							$res ['validate_error'] = self::$CurrentController->validateError;
 						}
 						$res = json_encode ( $res );
-						if (TRUE == self::$CurrentController->jsonUnescapedUnicode) {
+						if (isset(self::$CurrentController->jsonUnescapedUnicode) && TRUE == self::$CurrentController->jsonUnescapedUnicode) {
 							$res = unicode_encode ( $res );
 							// スラッシュのエスケープをアンエスケープする
 							$res = preg_replace ( '/\\\\\//', '/', $res );
 						}
 						debug ( 'mvccore ' . var_export ( $res, TRUE ) );
 						exit ( $res );
-					} elseif ('xml' === $outputType) {
+					}
+					elseif ('xml' === $outputType) {
 						// exceptionのログ出力
 						if (! class_exists ( 'PHPUnit_Framework_TestCase', FALSE )) {
 							logging ( $Exception->getMessage () . PATH_SEPARATOR . var_export ( debug_backtrace (), TRUE ), 'backtrace' );
@@ -400,17 +433,27 @@ class MVCCore {
 						exit ( '<?xml version="1.0" encoding="UTF-8" ?>' . convertObjectToXML ( array (
 								'error' => $Exception->getMessage () 
 						) ) );
-					} elseif ('html' === $outputType) {
-						$Tpl = self::loadTemplate ( 'error' );
+					}
+					elseif ('html' === $outputType) {
+						$Tpl = self::loadTemplate ( 'error'.$httpStatus );
 						if (is_object ( $Tpl )) {
+							// ステータスに応じた専用のエラーhtmlが在る場合
 							$dispatch = false;
 							$html = $Tpl->execute ();
 						}
-						// XXX メンテナンス中のhtml振り分けはココで実装！
+						else {
+							// 無いなら共通のエラーhtmlを探す
+							$Tpl = self::loadTemplate ( 'error' );
+							if (is_object ( $Tpl )) {
+								$dispatch = false;
+								$html = $Tpl->execute ();
+							}
+						}
 					}
 					_systemError ( 'Exception :' . $Exception->getMessage (), $httpStatus, $html, $Exception->getTrace());
 				}
-			} else {
+			}
+			else {
 				$isBinary = FALSE;
 				if (isset ( self::$CurrentController->outputType )) {
 					$outputType = self::$CurrentController->outputType;
@@ -421,13 +464,15 @@ class MVCCore {
 					if (is_array ( $res )) {
 						// html出力なのに配列は出力テンプレートの自動判別を試みる
 					}
-				} elseif ('txt' === $outputType) {
+				}
+				elseif ('txt' === $outputType) {
 					// textヘッダー出力
 					header ( 'Content-type: text/plain; charset=UTF-8' );
 					if (is_array ( $res )) {
 						$res = var_export ( $res, TRUE );
 					}
-				} elseif ('json' === $outputType) {
+				}
+				elseif ('json' === $outputType) {
 					// jsonヘッダー出力
 					header ( 'Content-type: text/javascript; charset=UTF-8' );
 					if (is_array ( $res )) {
@@ -438,7 +483,8 @@ class MVCCore {
 						// スラッシュのエスケープをアンエスケープする
 						$res = preg_replace ( '/\\\\\//', '/', $res );
 					}
-				} elseif ('xml' === $outputType) {
+				}
+				elseif ('xml' === $outputType) {
 					// jsonヘッダー出力
 					header ( 'Content-type:Content- type: application/xml; charset=UTF-8' );
 					if (is_array ( $res )) {
@@ -457,19 +503,23 @@ class MVCCore {
 						}
 						$res = mb_convert_encoding ( convertObjectToCSV ( $res, $delimitor ), 'SJIS', 'UTF-8' );
 					}
-				} elseif ('jpg' === $outputType || 'jpeg' === $outputType) {
+				}
+				elseif ('jpg' === $outputType || 'jpeg' === $outputType) {
 					// jpgヘッダー出力
 					header ( 'Content-type: image/jpeg' );
 					$isBinary = TRUE;
-				} elseif ('png' === $outputType) {
+				}
+				elseif ('png' === $outputType) {
 					// pngヘッダー出力
 					header ( 'Content-type: image/png' );
 					$isBinary = TRUE;
-				} elseif ('gif' === strtolower ( $outputType )) {
+				}
+				elseif ('gif' === strtolower ( $outputType )) {
 					// gifヘッダー出力
 					header ( 'Content-type: image/gif' );
 					$isBinary = TRUE;
-				} elseif ('bmp' === strtolower ( $outputType )) {
+				}
+				elseif ('bmp' === strtolower ( $outputType )) {
 					// bmpヘッダー出力
 					header ( 'Content-type: image/bmp' );
 					$isBinary = TRUE;
@@ -478,7 +528,7 @@ class MVCCore {
 				if (TRUE === $isBinary && is_string ( $res )) {
 					header ( 'Content-length: ' . strlen ( $res ) );
 				}
-				debug ( 'mvccore returned lastRES' );
+				debug ( 'mvccore returned lastRES');
 				echo $res;
 				if (TRUE === self::$isConsoleMode) {
 					// コンソールモード時は、最後に改行して終わる
@@ -491,7 +541,8 @@ class MVCCore {
 					logging ( $res, 'responce' );
 				}
 			}
-		} catch ( Exception $Exception ) {
+		}
+		catch ( Exception $Exception ) {
 			// かなりのイレギュラー！ 普通はココを通らない！！
 			_systemError ( 'Exception :' . $Exception->getMessage () );
 		}
@@ -499,6 +550,7 @@ class MVCCore {
 		// 明示的終了
 		exit ();
 	}
+
 	public static function consolemain($argFlowXMLBasePath = '') {
 		debug ( 'mvccore is console' );
 		self::$isConsoleMode = TRUE;
@@ -556,7 +608,7 @@ class MVCCore {
 		}
 		self::webmain ( $argFlowXMLBasePath = '' );
 	}
-	
+
 	/**
 	 * MVCクラスモジュールの読み込み処理
 	 *
@@ -564,13 +616,16 @@ class MVCCore {
 	 *        	string クラス名
 	 * @param
 	 *        	string クラスの読み込事にエラーが在る場合にbooleanを返すかどうか
-	 * @param
-	 *        	string クラスの読み込事にエラーが在る場合にbooleanを返すかどうか
 	 * @return mixed 成功時は対象のクラス名 失敗した場合はFALSEを返す
 	 */
-	public static function loadMVCModule($argClassName = NULL, $argClassExistsCalled = FALSE, $argTargetPath = '') {
-		static $currentTargetPath = '';
-		
+	public static function loadMVCModule($argClassName = NULL, $argClassExistsCalled = FALSE, $argTargetPath = '', $argIsRestController=NULL) {
+		//ParamStore::set('currentTargetPath', '');
+		$currentTargetPath = ParamStore::get('currentTargetPath');
+		if (NULL === $currentTargetPath){
+			ParamStore::set('currentTargetPath', '');
+			$currentTargetPath = '';
+		}
+		debug ( 'mvccore target pathsave0=' . $currentTargetPath .' &'.$argClassName);
 		$targetPath = '';
 		if (NULL !== $argClassName) {
 			$controlerClassName = $argClassName;
@@ -586,7 +641,9 @@ class MVCCore {
 						if (isset ( $matches [1] ) && strlen ( $matches [1] ) > 0) {
 							$targetPath = $matches [1] . '/';
 							if ('' === $currentTargetPath) {
-								$currentTargetPath = $targetPath;
+								//$currentTargetPath = $targetPath;
+								ParamStore::set('currentTargetPath', $targetPath);
+							debug ( 'mvccore target pathsave1=' . $targetPath .' &'.$controlerClassName);
 							}
 						}
 					}
@@ -597,7 +654,18 @@ class MVCCore {
 			$targetPath = $argTargetPath;
 		}
 		if ('' === $targetPath) {
-			$targetPath = $currentTargetPath;
+			$currentTargetPath = ParamStore::get('currentTargetPath');
+			if (NULL !== $currentTargetPath){
+				$targetPath = $currentTargetPath;
+			}
+			debug ( 'mvccore target pathsave2=' . $targetPath .' &'.$controlerClassName);
+		}
+		if ('' !== $targetPath && '' === $argTargetPath) {
+			$res = self::loadMVCModule($argClassName, $argClassExistsCalled, $targetPath, $argIsRestController);
+			if (FALSE !== $res){
+				return $res;
+			}
+			$targetPath = '';
 		}
 		$version = '';
 		if (isset ( $_GET ['_v_'] ) && strlen ( $_GET ['_v_'] ) > 0) {
@@ -605,26 +673,59 @@ class MVCCore {
 		}
 		debug ( 'mvccore path=' . $targetPath );
 		debug ( 'mvccore class=' . $controlerClassName );
-		
+		if (NULL !== $argIsRestController && '' === $argTargetPath){
+			// Restの場合APIのパスっぽいところから探してみる
+			$res = self::loadMVCModule($argClassName, $argClassExistsCalled, 'api/', $argIsRestController);
+			if (FALSE === $res){
+				// パスを変えてみる
+				$res = self::loadMVCModule($argClassName, $argClassExistsCalled, 'rest/', $argIsRestController);
+			}
+			if (FALSE === $res){
+				// パスをさらに変えてみる
+				$res = self::loadMVCModule($argClassName, $argClassExistsCalled, 'virtualrest/', $argIsRestController);
+			}
+			if (FALSE !== $res){
+				// 結果があればココで終了
+				return $res;
+			}
+		}
+		debug ( 'mvccore isa?');
 		if (! class_exists ( $controlerClassName, FALSE )) {
+		debug ( 'mvccore is?');
 			// コントローラを読み込み
 			if ('' !== $version) {
 				// バージョン一致のファイルを先ず走査する
 				loadModule ( 'default.controlmain.' . $targetPath . $version . '/' . $controlerClassName, TRUE );
 			}
 			if (! class_exists ( $controlerClassName, FALSE )) {
+		debug ( 'mvccore is='.'default.controlmain.' . $targetPath . $controlerClassName);
 				loadModule ( 'default.controlmain.' . $targetPath . $controlerClassName, TRUE );
 			}
 			if (! class_exists ( $controlerClassName, FALSE )) {
 				loadModule ( 'default.controlmain.' . $controlerClassName, TRUE );
 			}
+		debug ( 'mvccore is??');
 			if (class_exists ( $controlerClassName, FALSE )) {
-				// FlowGenerateする必要がなさそうなのでココで終了
-				return $controlerClassName;
-			} else if ('' === self::$flowXMLBasePath) {
+		debug ( 'mvccore is????');
+				// Restコントローラであるか無いかを明示的にチェックする
+				$checked = TRUE;
+				if (NULL !== $argIsRestController){
+					$checked = FALSE;
+					if ($argIsRestController === (TRUE === $argIsRestController && method_exists($controlerClassName, 'isRestController') && TRUE === $controlerClassName::isRestController())){
+						$checked = TRUE;
+					}
+				}
+				if (TRUE === $checked){
+					// FlowGenerateする必要がなさそうなのでココで終了
+					return $controlerClassName;
+				}
+			}
+			else if ('' === self::$flowXMLBasePath) {
 				// エラー終了
 				return FALSE;
-			} else {
+			}
+			else {
+				debug ( 'mvccore flow load start');
 				// ココからはFlow処理
 				if (TRUE === self::$flowXMLBasePath) {
 					// self::$flowXMLBasePathがTRUEとなっていた場合はConfigureにFLOWXML_PATH定義が無いか調べる
@@ -657,7 +758,7 @@ class MVCCore {
 						$flowXMLPath = self::$flowXMLBasePath . '/' . $targetPath . $classXMLName . '.flow.xml';
 					}
 				}
-				debug ( 'mvccore ' . $flowXMLPath );
+				debug ( 'mvccore $flowXMLPath=' . $flowXMLPath );
 				if ('' === $flowXMLPath) {
 					// エラー終了
 					return FALSE;
@@ -667,18 +768,34 @@ class MVCCore {
 						'class' => $controlerClassName,
 						'xml' => $flowXMLPath 
 				);
+				debug ( 'mvccore class=' . $controlerClassName );
 				// Flowに応じたクラス定義の自動生成を委任
 				loadModule ( 'Flow' );
 				if (FALSE === Flow::generate ( $flowXMLPath, $controlerClassName, $targetPath )) {
 					// エラー終了
 					return FALSE;
 				}
+				$controlerClassName = $controlerClassName.'Flow';
 				if (! class_exists ( $controlerClassName, FALSE )) {
+					// エラー終了
+					return FALSE;
+				}
+				// Restコントローラであるか無いかを明示的にチェックする
+				$checked = TRUE;
+				if (NULL !== $argIsRestController){
+					$checked = FALSE;
+					// Restコントローラであるか無いかを明示的にチェックする
+					if ($argIsRestController === (TRUE === $argIsRestController && method_exists($controlerClassName, 'isRestController') && TRUE === $controlerClassName::isRestController())){
+						$checked = TRUE;
+					}
+				}
+				if (FALSE === $checked){
 					// エラー終了
 					return FALSE;
 				}
 			}
 		}
+		debug ( 'mvccore isa??');
 		
 		return $controlerClassName;
 	}
@@ -820,13 +937,13 @@ class MVCCore {
 					return $basePath . $controlerClassName . $argViewType;
 				}
 				// Viewインスタンスの生成
-				$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
+				$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType, $controlerClassName);
 			} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 				if (TRUE === $argFileExistsCalled) {
 					return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 				}
 				// Viewインスタンスの生成
-				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
+				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
 			}
 			// ターゲットを抜いて見る
 			if (NULL === $HtmlView) {
@@ -836,13 +953,13 @@ class MVCCore {
 						return $basePath . $controlerClassName . $argViewType;
 					}
 					// Viewインスタンスの生成
-					$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
+					$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType, $controlerClassName);
 				} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 					if (TRUE === $argFileExistsCalled) {
 						return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 					}
 					// Viewインスタンスの生成
-					$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
+					$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
 				}
 			}
 		}
@@ -853,21 +970,25 @@ class MVCCore {
 				$basePath = $targetPath;
 			}
 			// バージョンを抜いてインクルード
+			debug('is?'.$basePath . $controlerClassName . $argViewType);
+			debug('is??'.$basePath . strtolower($controlerClassName) . $argViewType);
 			if (TRUE === file_exists_ip ( $basePath . $controlerClassName . $argViewType )) {
 				if (TRUE === $argFileExistsCalled) {
 					return $basePath . $controlerClassName . $argViewType;
 				}
-				debug('is?'.$basePath . $controlerClassName . $argViewType);
+				debug('is!'.$basePath . $controlerClassName . $argViewType);
 				// Viewインスタンスの生成
-				$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
-			} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
+				$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType, $controlerClassName);
+			}
+			elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 				if (TRUE === $argFileExistsCalled) {
 					return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 				}
-				debug('is??'.$basePath . strtolower($controlerClassName) . $argViewType);
+				debug('is!!'.$basePath . strtolower($controlerClassName) . $argViewType);
 				// Viewインスタンスの生成
-				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
-			} else {
+				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
+			}
+			else {
 				// ターゲットを抜いて見る
 				if (NULL === $HtmlView) {
 					$basePath =  '';
@@ -878,15 +999,17 @@ class MVCCore {
 						}
 						debug('is???'.$basePath . $controlerClassName . $argViewType);
 						// Viewインスタンスの生成
-						$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType );
-					} elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
+						$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType, $controlerClassName);
+					}
+					elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
 						if (TRUE === $argFileExistsCalled) {
 							return $basePath . strtolower ( $controlerClassName ) . $argViewType;
 						}
 						debug('is????'.$basePath . strtolower ( $controlerClassName ) . $argViewType);
 						// Viewインスタンスの生成
-						$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType );
-					} else {
+						$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
+					}
+					else {
 						// エラー終了
 						return FALSE;
 					}

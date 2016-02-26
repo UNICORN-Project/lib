@@ -3297,7 +3297,7 @@ elseif(isset($_GET["a"])){
 				$modified = true;
 			}
 			if(isset($_POST["ipaddress"]) &&  8 < strlen($_POST["ipaddress"])){
-				$fwmConfXML->FrameworkManager->DENY_ALL_IP = $_POST["ipaddress"];
+				$fwmConfXML->FrameworkManager->ALLOW_IP_FILTER = $_POST["ipaddress"];
 				$modified = true;
 			}
 			if(true === $modified){

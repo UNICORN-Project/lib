@@ -8,6 +8,7 @@ class Auth
 	protected static $_authCryptIV = NULL;
 	protected static $_DBO = NULL;
 	protected static $_initialized = FALSE;
+
 	public static $authTable = 'user_table';
 	public static $authPKeyField = 'id';
 	public static $authIDField = 'mailaddress';
@@ -16,6 +17,7 @@ class Auth
 	public static $authModifiedField = 'modify_date';
 	public static $authIDEncrypted = 'AES128CBC';
 	public static $authPassEncrypted = 'SHA256';
+	public static $authAutoRefreshKey = 'autoauthorize';
 
 	protected static function _init($argDSN=NULL){
 		if(FALSE === self::$_initialized){
@@ -180,6 +182,11 @@ class Auth
 					self::$_authCryptIV = $ProjectConfigure::AUTH_CRYPT_IV;
 				}
 			}
+			$authAutoRefreshKey = getConfig('AUTH_AUTOREFRESH_KEY');
+			if(NULL !== $authAutoRefreshKey && 0 < strlen($authAutoRefreshKey)){
+				// 定義から暗号化キーを設定
+				self::$authAutoRefreshKey = $authAutoRefreshKey;
+			}
 
 			// DBOを初期化
 			if(NULL === self::$_DBO){
@@ -239,11 +246,19 @@ class Auth
 		debug("decrypted userID=".$userID);
 		if(strlen($userID) > 0){
 			$User = ORMapper::getModel(self::$_DBO, self::$authTable, $userID, NULL, FALSE);
-			debug("DBGet userID=".$User->{self::$authPKeyField});
-			if(isset($User->{self::$authPKeyField}) && NULL !== $User->{self::$authPKeyField} && FALSE === is_object($User->{self::$authPKeyField}) && strlen((string)$User->{self::$authPKeyField}) > 0){
-				// UserIDが特定出来た
-				debug("Authlized");
-				return $User;
+			debug("decrypted DBGet userID=".$User->{self::$authPKeyField});
+			try {
+				if(isset($User->{self::$authPKeyField}) && NULL !== $User->{self::$authPKeyField} && FALSE === is_object($User->{self::$authPKeyField}) && strlen((string)$User->{self::$authPKeyField}) > 0 && (string)$userID === (string)$User->{self::$authPKeyField}){
+					// 型チェック
+					// XXX セッションIDが偶然数値スタートのハッシュ値の時に、暗黙型変換でIDセレクトされてデータが返って来てしまっているバグが発生！
+					$User->validateType(self::$authPKeyField, $userID);
+					// UserIDが特定出来た
+					debug("Authlized");
+					return $User;
+				}
+			}
+			catch (Exception $Exception) {
+				// おそらくIDのバリデートエラーで落ちた
 			}
 		}
 		// 認証出来ない！
@@ -256,12 +271,23 @@ class Auth
 	 * @param string DB接続情報
 	 */
 	public static function isCertification($argDSN = NULL){
+		static $cookieReplaced = FALSE;
 		if(FALSE === self::$_initialized){
 			self::_init($argDSN);
 		}
 		if(FALSE === self::getCertifiedUser()){
 			Session::clear();
 			return FALSE;
+		}
+		// 自動ログインリフレッシュカウンターを上げてセッションIDを更新する
+		if (1 === (int)Session::get('autoRefreshed')){
+			$autoRefreshedCount = 1+(int)Session::get('autoRefreshedCount');
+			Session::set('autoRefreshedCount', $autoRefreshedCount);
+			if(FALSE === $cookieReplaced){
+				// 少なくとも最初の一回目は明示的にコミット
+				self::$_DBO->commit();
+				$cookieReplaced = TRUE;
+			}
 		}
 		return TRUE;
 	}
@@ -276,45 +302,88 @@ class Auth
 	public static function certify($argID = NULL, $argPass = NULL, $argDSN = NULL, $argExecut = FALSE){
 		debug('start certify auth');
 		if(TRUE === $argExecut || FALSE === self::isCertification($argDSN)){
-			// ログインセッションが無かった場合に処理を実行
-			$id = $argID;
-			$pass = $argPass;
-			if(NULL === $id){
-				if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authIDField])){
-					// Flowに格納されているPOSTパラメータを自動で使う
-					$id = Flow::$params['post'][self::$authIDField];
-				}
-				if(isset($_REQUEST) && isset($_REQUEST[self::$authIDField])){
-					// リクエストパラメータから直接受け取る
-					$id = $_REQUEST[self::$authIDField];
-				}
-			}
-			if(NULL === $pass){
-				if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authPassField])){
-					// Flowに格納されているPOSTパラメータを自動で使う
-					$pass = Flow::$params['post'][self::$authPassField];
-				}
-				if(isset($_REQUEST) && isset($_REQUEST[self::$authPassField])){
-					// リクエストパラメータから直接受け取る
-					$pass = $_REQUEST[self::$authPassField];
+			$usePost = FALSE;
+			$autoRefreshed = FALSE;
+			if (is_object($argID) && property_exists($argID, 'id') && 0 < (int)$argID->id){
+				$User = $argID;
+				if(FALSE === $autoRefreshed){
+					if(isset($_REQUEST) && isset($_REQUEST[self::$authAutoRefreshKey]) && 1 === (int)$_REQUEST[self::$authAutoRefreshKey]){
+						// リクエストパラメータから直接受け取る
+						$autoRefreshed = TRUE;
+					}
+					if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authAutoRefreshKey]) && 1 === (int)Flow::$params['post'][self::$authAutoRefreshKey]){
+						// Flowに格納されているPOSTパラメータを自動で使う
+						$autoRefreshed = TRUE;
+					}
 				}
 			}
-			// ユーザーモデルを取得
-			$User = self::getRegisteredUser($id, $pass);
+			else {
+				// ログインセッションが無かった場合に処理を実行
+				$id = $argID;
+				$pass = $argPass;
+				if(NULL === $id){
+					if(isset($_REQUEST) && isset($_REQUEST[self::$authIDField])){
+						// リクエストパラメータから直接受け取る
+						$id = $_REQUEST[self::$authIDField];
+						$usePost = TRUE;
+					}
+					if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authIDField])){
+						// Flowに格納されているPOSTパラメータを自動で使う
+						$id = Flow::$params['post'][self::$authIDField];
+						$usePost = TRUE;
+					}
+				}
+				if(NULL === $pass){
+					if(isset($_REQUEST) && isset($_REQUEST[self::$authPassField])){
+						// リクエストパラメータから直接受け取る
+						$pass = $_REQUEST[self::$authPassField];
+					}
+					if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authPassField])){
+						// Flowに格納されているPOSTパラメータを自動で使う
+						$pass = Flow::$params['post'][self::$authPassField];
+					}
+				}
+				if(FALSE === $autoRefreshed){
+					if(isset($_REQUEST) && isset($_REQUEST[self::$authAutoRefreshKey]) && 1 === (int)$_REQUEST[self::$authAutoRefreshKey]){
+						// リクエストパラメータから直接受け取る
+						$autoRefreshed = TRUE;
+					}
+					if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authAutoRefreshKey]) && 1 === (int)Flow::$params['post'][self::$authAutoRefreshKey]){
+						// Flowに格納されているPOSTパラメータを自動で使う
+						$autoRefreshed = TRUE;
+					}
+				}
+				// ユーザーモデルを取得
+				$User = self::getRegisteredUser($id, $pass);
+			}
 			if(FALSE === $User){
 				// 証明失敗
 				return FALSE;
 			}
+			// 認証に成功したら、ログインパラメータは消してしまう
+			if (TRUE === $usePost){
+				if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authIDField])){
+					// Flowに格納されているPOSTパラメータを自動で使う
+					unset(Flow::$params['post'][self::$authIDField]);
+				}
+				if(isset($_REQUEST) && isset($_REQUEST[self::$authIDField])){
+					// リクエストパラメータから直接受け取る
+					unset($_REQUEST[self::$authIDField]);
+				}
+			}
 			// セッションを発行
 			Session::start();
-			debug('self::$authPKeyField='.self::$authPKeyField);
+			debug('auth self::$authPKeyField='.self::$authPKeyField);
 			$sessionIdentifier = self::getEncryptedAuthIdentifier($User->{self::$authPKeyField});
-			debug('new identifier='.$sessionIdentifier);
+			debug('auth new identifier='.$sessionIdentifier);
 			Session::sessionID($sessionIdentifier);
 			// ログインした固有識別子をSessionに保存して、Cookieの発行を行う
 			Session::set('identifier', $User->{self::$authPKeyField});
+			// 自動ログインリフレッシュを有効にするかどうかのフラグを取っておく
+			Session::set('autoRefreshed', $autoRefreshed);
+			self::$_DBO->commit();
 		}
-		debug('end certify auth');
+		debug('auth end certify auth');
 		return TRUE;
 	}
 
@@ -343,28 +412,28 @@ class Auth
 		$id = $argID;
 		$pass = $argPass;
 		if(NULL === $id){
-			if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authIDField])){
-				// Flowに格納されているPOSTパラメータを自動で使う
-				$id = Flow::$params['post'][self::$authIDField];
-			}
 			if(isset($_REQUEST) && isset($_REQUEST[self::$authIDField])){
 				// リクエストパラメータから直接受け取る
 				$id = $_REQUEST[self::$authIDField];
 			}
+			if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authIDField])){
+				// Flowに格納されているPOSTパラメータを自動で使う
+				$id = Flow::$params['post'][self::$authIDField];
+			}
 		}
 		if(NULL === $pass){
-			if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authPassField])){
-				// Flowに格納されているPOSTパラメータを自動で使う
-				$pass = Flow::$params['post'][self::$authPassField];
-			}
 			if(isset($_REQUEST) && isset($_REQUEST[self::$authPassField])){
 				// リクエストパラメータから直接受け取る
 				$pass = $_REQUEST[self::$authPassField];
 			}
+			if(TRUE === class_exists('Flow', FALSE) && isset(Flow::$params) && isset(Flow::$params['post']) && TRUE === is_array(Flow::$params['post']) && isset(Flow::$params['post'][self::$authPassField])){
+				// Flowに格納されているPOSTパラメータを自動で使う
+				$pass = Flow::$params['post'][self::$authPassField];
+			}
 		}
 		debug($id.':'.$pass);
 		$query = '`' . self::$authIDField . '` = :' . self::$authIDField . ' AND `' . self::$authPassField . '` = :' . self::$authPassField . ' ';
-		$binds = array(self::$authIDField => self::_resolveEncrypted($id, self::$authIDEncrypted), self::$authPassField => self::_resolveEncrypted($pass, self::$authPassEncrypted));
+		$binds = array(self::$authIDField => self::resolveEncrypted($id, self::$authIDEncrypted), self::$authPassField => self::resolveEncrypted($pass, self::$authPassEncrypted));
 		$User = ORMapper::getModel(self::$_DBO, self::$authTable, $query, $binds, FALSE);
 		if(isset($User->{self::$authPKeyField}) && NULL !== $User->{self::$authPKeyField} && FALSE === is_object($User->{self::$authPKeyField}) && strlen((string)$User->{self::$authPKeyField}) > 0){
 			// 登録済みのユーザーIDを返す
@@ -418,8 +487,8 @@ class Auth
 				$pass = $_REQUEST[self::$authPassField];
 			}
 		}
-		$id = self::_resolveEncrypted($id, self::$authIDEncrypted);
-		$pass = self::_resolveEncrypted($pass, self::$authPassEncrypted);
+		$id = self::resolveEncrypted($id, self::$authIDEncrypted);
+		$pass = self::resolveEncrypted($pass, self::$authPassEncrypted);
 		if(NULL === $argDate){
 			$argDate = Utilities::date('Y-m-d H:i:s', NULL, NULL, 'GMT');
 		}
@@ -438,10 +507,9 @@ class Auth
 	}
 
 	/**
-	 * 登録済みかどうか
 	 * @param string $argDSN
 	 */
-	protected static function _resolveEncrypted($argString, $argAlgorism = NULL){
+	public static function resolveEncrypted($argString, $argAlgorism = NULL){
 		debug('EncryptAlg='.$argAlgorism);
 		$string = $argString;
 		if('sha1' === strtolower($argAlgorism)){
@@ -452,6 +520,18 @@ class Auth
 		}
 		elseif(FALSE !== strpos(strtolower($argAlgorism), 'aes')){
 			$string = Utilities::doHexEncryptAES($argString, self::$_authCryptKey, self::$_authCryptIV);
+		}
+		return $string;
+	}
+
+	/**
+	 * @param string $argDSN
+	 */
+	public static function resolveDecrypted($argString, $argAlgorism = NULL){
+		debug('DecryptAlg='.$argAlgorism);
+		$string = $argString;
+		if(FALSE !== strpos(strtolower($argAlgorism), 'aes')){
+			$string = Utilities::doHexDecryptAES($argString, self::$_authCryptKey, self::$_authCryptIV);
 		}
 		return $string;
 	}

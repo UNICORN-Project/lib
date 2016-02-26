@@ -24,7 +24,7 @@ abstract class GenericMigrationBase {
 			elseif('string' === $propaty['type']){
 				$fieldDef .= ' CHAR(' . $propaty['length'] . ')';
 			}
-			elseif('int' === $propaty['type']){
+			elseif('int' === $propaty['type'] || 'decimal' === $propaty['type']){
 				if(FALSE !== strpos($propaty['length'], ',')){
 					// 小数点が在る場合
 					$fieldDef .= ' DECIMAL(' . $propaty['length'] . ')';

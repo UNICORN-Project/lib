@@ -264,25 +264,6 @@ abstract class SessionDataDB {
 		$Session->remove();
 		return TRUE;
 	}
-
-	/**
-	 * Expiredの切れたSessionレコードをDeleteする
-	 * @param int 有効期限の直指定
-	 * @param mixed DBDSN情報の直指定
-	 */
-	public static function clean($argExpiredtime=NULL, $argDSN=NULL){
-		if(FALSE === self::$_initialized){
-			self::_init($argExpiredtime, $argDSN);
-		}
-		$query = 'DELETE FROM `' . self::$_sessionDataTblName . '` WHERE `' . self::$_sessionDataDateKeyName . '` <= :' . self::$_sessionDataDateKeyName . ' ';
-		$date = Utilities::modifyDate('-' . (string)self::$_expiredtime . 'sec', 'Y-m-d H:i:s', NULL, NULL, 'GMT');
-		$response = self::$_DBO->execute($query, array(self::$_sessionDataDateKeyName => $date));
-		if (!$response) {
-			// XXX cleanの失敗は、エラーとはしない！
-			logging(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__.PATH_SEPARATOR.self::$_DBO->getLastErrorMessage(), 'exception');
-		}
-		return TRUE;
-	}
 }
 
 ?>

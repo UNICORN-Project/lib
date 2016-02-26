@@ -17,10 +17,10 @@ group: static navigation
 					$("#menu-tablelist").attr("style", "");
 					$("#tablelistss").ready(function(){
 						var crudBasePath = "crud/" + targetProject;
-						// crud.jsを動かす為の前準備のDOM操作を担う
+						// crud.js繧貞虚縺九☆轤ｺ縺ｮ蜑肴ｺ門ｙ縺ｮDOM謫堺ｽ懊ｒ諡�≧
 						var crudEnabled = true;
 						crud(crudBasePath, "target_project="+targetProject, function(mode){
-							// crudJS終了後に処理をしたい場合はココに記述
+							// crudJS邨ゆｺ�ｾ後↓蜃ｦ逅�ｒ縺励◆縺��蜷医�繧ｳ繧ｳ縺ｫ險倩ｿｰ
 							$("#crudmain input").attr("class", classStr + " form-control");
 							$("#crudmain textarea").attr("class", classStr + " form-control");
 							$("#crudmain input[type='submit']").attr("class", $("#crudmain input").attr("class") + " btn btn-success");
@@ -33,8 +33,7 @@ group: static navigation
 							}
 							$("#crudmain form").append("<input type='hidden' name='target_project' value='" + targetProject + "'>");
 							if("submit" == mode){
-								// 元の一覧にリダイレクトする
-								if($(".list-link a").attr("href").length > 0){
+								// 蜈��荳�ｦｧ縺ｫ繝ｪ繝�う繝ｬ繧ｯ繝医☆繧�								if($(".list-link a").attr("href").length > 0){
 									location.href = $(".list-link a").attr("href");
 								}
 							}
@@ -44,6 +43,6 @@ group: static navigation
 			</script>
 			<div id="crudmain" class="maincontents">
 				<h2>CRUD</h2>
-				<br />
-				<p>Table Listから操作したいテーブルを選んで下さい。</p>
+				<br/>
+				<p>Table List縺九ｉ謫堺ｽ懊＠縺溘＞繝��繝悶Ν繧帝∈繧薙〒荳九＆縺��</p>
 			</div>

@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<xml>
+	<section id="Fwm">
+		<execute>
+			<if val="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<flowviewparam selector="#fwm-contents" val="HtmlViewAssignor::buildSetAttribute('src', getConfig('BASE_URL', Flow::$params['get']['target_project']).str_replace('=', '/', str_replace('_', '.', Flow::$params['get']['target_url'])).'?access_token='.AccessTokenAuth::generate(Auth::getCertifiedUser()->permission, false, null, null, Flow::$params['get']['target_project']))"/>
+			<view/>
+		</execute>
+	</section>
+</xml>

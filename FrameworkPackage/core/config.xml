@@ -7,18 +7,22 @@
 	<ROOT_PATH code="TRUE"><![CDATA[dirname(dirname(dirname(dirname(__FILE__)))).'/']]></ROOT_PATH>
 	<CORE_PATH code="TRUE"><![CDATA[dirname(__FILE__).'/']]></CORE_PATH>
 	<LIB_PATH code="TRUE"><![CDATA[%ROOT_PATH%.'/lib/']]></LIB_PATH>
+	<VENDOR_PATH code="TRUE"><![CDATA[%ROOT_PATH%.'/lib/VendorPackage/']]></VENDOR_PATH>
 	<PEAR_PATH code="TRUE"><![CDATA[%ROOT_PATH%.'/lib/VendorPackage/PEAR/']]></PEAR_PATH>
-	<LOG_PATH code="TRUE" stage="local"><![CDATA[%ROOT_PATH%.'logs/'.PROJECT_NAME.'/']]></LOG_PATH>
-	<LOG_PATH code="TRUE"><![CDATA[dirname(dirname(dirname(dirname(%ROOT_PATH%)))).'/shared/logs/'.PROJECT_NAME.'/']]></LOG_PATH>
+	<TMP_PATH stage="local" code="TRUE"><![CDATA[%ROOT_PATH%.'tmp/'.PROJECT_NAME.'/']]></TMP_PATH>
+	<TMP_PATH code="TRUE"><![CDATA[dirname(%ROOT_PATH%).'/tmp/'.PROJECT_NAME.'/']]></TMP_PATH>
+	<LOG_PATH stage="local" code="TRUE"><![CDATA[%ROOT_PATH%.'logs/'.PROJECT_NAME.'/']]></LOG_PATH>
+	<LOG_PATH code="TRUE"><![CDATA[dirname(%ROOT_PATH%).'/logs/'.PROJECT_NAME.'/']]></LOG_PATH>
 	<LOCALE_PATH code="TRUE"><![CDATA[%ROOT_PATH%.'locale/']]></LOCALE_PATH>
 	<FLOWXML_PATH>FrameworkPackage/Flow/controller/</FLOWXML_PATH>
-	<MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname( __FILE__ ).'/.maintenance']]></MAINTENANCE_FLAG_FILE>
-	<WEB_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname( __FILE__ ).'/.webmaintenance']]></WEB_MAINTENANCE_FLAG_FILE>
-	<API_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname( __FILE__ ).'/.apimaintenance']]></API_MAINTENANCE_FLAG_FILE>
-	<DB_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname( __FILE__ ).'/.dbmaintenance']]></DB_MAINTENANCE_FLAG_FILE>
+	<FILE_UPLOAD_DIR code="TRUE"><![CDATA[PROJECT_NAME.'/']]></FILE_UPLOAD_DIR>
+	<MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname(dirname( __FILE__ )).'/.maintenance']]></MAINTENANCE_FLAG_FILE>
+	<WEB_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname(dirname( __FILE__ )).'/.webmaintenance']]></WEB_MAINTENANCE_FLAG_FILE>
+	<API_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname(dirname( __FILE__ )).'/.apimaintenance']]></API_MAINTENANCE_FLAG_FILE>
+	<DB_MAINTENANCE_FLAG_FILE code="TRUE"><![CDATA[dirname(dirname( __FILE__ )).'/.dbmaintenance']]></DB_MAINTENANCE_FLAG_FILE>
 	<!-- DB定義(DSN形式指定) ※この定義は必須では無いが、この定義は自動で解決されます -->
 	<DB_DSN>mysqli://root:root@localhost/mysql</DB_DSN>
 	<DENY_HTTP>false</DENY_HTTP>
-	<DENY_ALL_IP>false</DENY_ALL_IP>
+	<ALLOW_IP_FILTER>false</ALLOW_IP_FILTER>
 	<LOG_ROTATE_CYCLE>3</LOG_ROTATE_CYCLE>
 </xml>

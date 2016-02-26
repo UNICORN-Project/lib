@@ -31,6 +31,12 @@ Interface SessionIO {
 	public static function start($argDomain=NULL, $argExpiredtime=NULL, $argDSN=NULL);
 
 	/**
+	 * セッションを明示的に適用する
+	 * @param string cookieの対象ドメイン指定
+	 */
+	public static function flush($argDomain=NULL, $argExpiredtime=NULL, $argDSN=NULL);
+
+	/**
 	 * セッションにしまわれているデータの数を返す
 	*/
 	public static function count();
@@ -54,9 +60,17 @@ Interface SessionIO {
 	public static function set($argKey, $argment);
 
 	/**
+	 * identifierに紐づくセッションデータレコードをクリアする
+	 * @param string セッションデータのプライマリーキー
+	 * @param int 有効期限の直指定
+	 * @param mixed DBDSN情報の直指定
+	 */
+	public static function clear($argPKey=NULL);
+
+	/**
 	 * 不要になっているハズのセッションを全てクリーンする
 	*/
-	public static function clean();
+	public static function clean($argExpiredtime=NULL);
 }
 
 ?>

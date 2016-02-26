@@ -1,0 +1,9 @@
+WebPay PHPライブラリの展開先
+
+WebPay PHPライブラリのインストール手順
+1.cd [このディレクトリ]
+2.php composer.phar self-update
+3.php composer.phar install
+
+最新のライブラリバージョンは以下のリンク先より確認
+https://webpay.jp/docs/libraries#php

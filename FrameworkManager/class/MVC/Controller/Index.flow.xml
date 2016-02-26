@@ -2,12 +2,14 @@
 <xml>
 	<section id="Index">
 		<execute>
-			<if var="Auth::isCertification()" val="true">
-				<view/>
-			</if>
-			<else>
+			<if val="true !== Auth::isCertification()">
 				<flow section="login"/>
-			</else>
+			</if>
+			<if val="isset(Flow::$params['get']['target_project']) &amp;&amp; 0 &lt; strlen(Flow::$params['get']['target_project'])">
+				<execute val="Flow::$params['get']['target_url'] = ProjectManager::getProjectManageDashboard(Flow::$params['get']['target_project'])"/>
+				<flow section="fwm"/>
+			</if>
+			<view/>
 		</execute>
 	</section>
 </xml>

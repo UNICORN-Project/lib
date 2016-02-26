@@ -13,7 +13,24 @@ class FlowManager
 		return TRUE;
 	}
 
-	public static function reverseRewriteURL($argAction, $argQuery=''){
+	public static function getURIFlowTarget(){
+		$targetPath = '';
+		// 現在アクセスされているURIベースのターゲットパスを特定する
+		if(@isset(Core::$CurrentController) && @isset(Core::$CurrentController->section)){
+			$nowURI = strtolower($_SERVER['REQUEST_URI']);
+			$searchURI = str_replace('_', '-', strtolower(Core::$CurrentController->section));
+			if (1 < strpos($nowURI, $searchURI)){
+				// 上位階層がある状態でリクエストされているので、その階層を全部取り出す
+				$targetPath = substr($nowURI, 0, strpos($nowURI, $searchURI));
+				if (0 === strpos($targetPath, '/')){
+					$targetPath = substr($targetPath, 1);
+				}
+			}
+		}
+		return $targetPath;
+	}
+
+	public static function reverseRewriteURL($argAction, $argQuery='', $argSSLRequired=FALSE){
 		$action= $argAction;
 		if(isset($_SERVER['ReverseRewriteRule'])){
 			$reverseRules = explode(' ', str_replace('＄', '$', $_SERVER['ReverseRewriteRule']));
@@ -32,14 +49,19 @@ class FlowManager
 			$query = $argQuery;
 		}
 		else {
-			foreach($_GET as $key => $val){
-				if('_c_' !== $key && '_a_' !== $key && '_o_' !== $key){
-					if(strlen($query) > 0){
-						$query .= '&';
+			if (isset($_GET) && 0 < count($_GET)){
+				foreach($_GET as $key => $val){
+					if('_c_' !== $key && '_a_' !== $key && '_o_' !== $key){
+						if(strlen($query) > 0){
+							$query .= '&';
+						}
+						$query .= $key.'='.$val;
 					}
-					$query .= $key.'='.$val;
 				}
 			}
+		}
+		if (!(isset($_GET['_o_']) && 0 < strlen($_GET['_o_']))){
+			$_GET['_o_'] = 'html';
 		}
 		if('' !== $query){
 			if(FALSE === strpos($action, '.'.$_GET['_o_'].'?')){
@@ -49,7 +71,57 @@ class FlowManager
 				$query = '&'.$query;
 			}
 		}
+		if ('?' === trim($query)){
+			$query = '';
+		}
+		if (NULL !== $argSSLRequired && FALSE !== $argSSLRequired){
+			if (0 === strpos($action, './')){
+				$action = substr($action, 2);
+			}
+			if (0 === strpos($action, '/')){
+				$action = substr($action, 1);
+			}
+			$protocol = '';
+			if (1 !== getLocalEnabled() && TRUE === $argSSLRequired){
+				$protocol = 'https:';
+			}
+			// 現在アクセスされているURLと同じ階層にターゲットする
+			$target = self::getURIFlowTarget();
+			if (0 === strlen($target) || false === strpos($action, $target)){
+				$action = $target.$action;
+			}
+			$action = $protocol.'//'.str_replace('//', '/', $_SERVER["HTTP_HOST"].'/'.$action);
+		}
+		else {
+			$action = str_replace('//', '/', $action);
+		}
 		return $action.$query;
+	}
+
+	/**
+	 * 登録されているbackFlowをクリアする
+	 */
+	public static function clearBackFlow(){
+		if(isset($_POST['flowpostformsection-backflow-section'])){
+			unset($_POST['flowpostformsection-backflow-section']);
+		}
+		if(isset($_POST['flowpostformsection-backflow-section-query'])){
+			unset($_POST['flowpostformsection-backflow-section-query']);
+		}
+		if(isset(Flow::$params['post']['flowpostformsection-backflow-section'])){
+			unset(Flow::$params['post']['flowpostformsection-backflow-section']);
+		}
+		if(isset(Flow::$params['post']['flowpostformsection-backflow-section-query'])){
+			unset(Flow::$params['post']['flowpostformsection-backflow-section-query']);
+		}
+		if(isset($_COOKIE['flowpostformsection-backflow-section'])){
+			unset($_COOKIE['flowpostformsection-backflow-section']);
+			setcookie('flowpostformsection-backflow-section', '', time() - 3600, '/');
+		}
+		if(isset($_COOKIE['flowpostformsection-backflow-section-query'])){
+			unset($_COOKIE['flowpostformsection-backflow-section-query']);
+			setcookie('flowpostformsection-backflow-section-query', '', time() - 3600, '/');
+		}
 	}
 
 	/**
@@ -58,11 +130,18 @@ class FlowManager
 	 * @param string ターゲットファイルパスのヒント
 	 * @return mixed 成功時は対象のクラス名 失敗した場合はFALSEを返す
 	 */
-	public static function loadNextFlow($argClassName = NULL, $argTargetPath = ''){
+	public static function loadNextFlow($argClassName = NULL, $argTargetPath = '', $argRedirect=FALSE){
+		$query = '';
 		// 先ずbackflowなのかどうか
 		if('backflow' === strtolower($argClassName)){
 			// backflowが特定出来無かった時ように強制的にIndexを指定しておく
 			$argClassName = 'index';
+			if (defined('PROJECT_NAME') && 0 < strlen(PROJECT_NAME)){
+				$defaultBackFlow = getConfig('DEFAULT_BACKFLOW', PROJECT_NAME);
+				if (0 < strlen($defaultBackFlow)){
+					$argClassName = $defaultBackFlow;
+				} 
+			}
 			if(strlen($argTargetPath) > 0){
 				$argClassName = $argTargetPath.'/'.$argClassName;
 			}
@@ -70,16 +149,46 @@ class FlowManager
 			if(isset($_POST['flowpostformsection-backflow-section'])){
 				$argClassName = $_POST['flowpostformsection-backflow-section'];
 			}
+			else if(isset($_COOKIE['flowpostformsection-backflow-section'])){
+				$argClassName = $_COOKIE['flowpostformsection-backflow-section'];
+				setcookie('flowpostformsection-backflow-section', '', time() - 3600, '/');
+			}
 			// backflowはリダイレクトポスト(307リダイレクト)
-			$query = '';
 			if(isset($_POST['flowpostformsection-backflow-section-query']) && strlen($_POST['flowpostformsection-backflow-section-query']) > 0){
 				$query = $_POST['flowpostformsection-backflow-section-query'];
 			}
-			$argClassName = str_replace('//', '/', str_replace('//', '/', $argClassName));
-			header('Location: ./'.self::reverseRewriteURL('?_c_=' . $argClassName . '&_o_='.$_GET['_o_'], $query), TRUE, 307);
-			exit();
+			else if(isset($_COOKIE['flowpostformsection-backflow-section-query']) && strlen($_COOKIE['flowpostformsection-backflow-section-query']) > 0){
+				$query = $_COOKIE['flowpostformsection-backflow-section-query'];
+				setcookie('flowpostformsection-backflow-section-query', '', time() - 3600, '/');
+			}
+			// XXX Redirectを今のところ強制
+			$argRedirect = TRUE;
 		}
-		$className = MVCCore::loadMVCModule($argClassName, FALSE, $argTargetPath);
+		if (TRUE === $argRedirect){
+			$locationStatus = 302;
+			$action = $argClassName;
+			if (FALSE === (0 === strpos($argClassName, 'http://') || 0 === strpos($argClassName, 'https://')) && FALSE === strpos($argClassName, '.html')){
+				$argClassName = str_replace('//', '/', str_replace('//', '/', $argClassName));
+				if (isset($_POST['backflow']) && is_array($_POST['backflow']) && 0 < count($_POST['backflow'])){
+					$locationStatus = 307;
+				}
+				$output = $_GET['_o_'];
+				if ('shtml' !== $output && 'html' !== $output && 'php' !== $output && '' !== $output){
+					$output = 'html';
+				}
+				$action = self::reverseRewriteURL('?_c_=' . str_replace('_', '-', ucfirst($argClassName)) . '&_o_='.$output, $query);
+			}
+			if (FALSE !== strpos($action, '://')){
+				$action = str_replace('//', '/', str_replace('//', '/', $action));
+			}
+			else if (false === strpos($action, '/')){
+				// ターゲット指定が無いので相対パスにしてあげる
+				$action = str_replace('.//', './', './'.$action);
+			}
+			header('Location: '.$action, TRUE, $locationStatus);
+			return TRUE;
+		}
+		$className = Core::loadMVCModule(str_replace('-', '_', ucfirst($argClassName)), FALSE, $argTargetPath);
 		debug('backflowClass='.var_export($className,true));
 		return $className;
 	}
@@ -141,14 +250,27 @@ class FlowManager
 					if('web' == $typeStr){
 						$extends = ' extends WebFlowControllerBase';
 					}
+					elseif('fwm' == $typeStr){
+						$extends = ' extends FwmFlowBase';
+					}
 					elseif('api' == $typeStr){
 						$extends = ' extends APIControllerBase';
+					}
+					elseif('rest' == $typeStr){
+						$extends = ' extends RestControllerBase';
 					}
 					elseif('image' == $typeStr){
 						$extends = ' extends ImageControllerBase';
 					}
 				}
+				if(isset($tmpAttr['permission']) && strlen($tmpAttr['permission']) > 0){
+					// そのまま採用
+					$permission = $tmpAttr['permission'];
+				}
+				$prepends = array();
 				$methods = array();
+				$appends = array();
+				$exceptions = array();
 				// メソッド定義
 				foreach ($firstNode->children() as $methodNode) {
 					// 2次元目はメソッド定義
@@ -157,7 +279,23 @@ class FlowManager
 					if('construct' == $methodName || 'destruct' == $methodName){
 						$methodName = '__' . $methodName;
 					}
-					$method = PHP_TAB . 'function ' . $methodName . '(%s){' . PHP_EOL . '%s' . PHP_EOL . PHP_TAB . PHP_TAB . 'return TRUE;' . PHP_EOL . PHP_TAB . '}' . PHP_EOL;
+					if ($methodName === 'exception' || $methodName === 'append' || $methodName === 'prepend'){
+						$method = '';
+					}
+					else {
+						$method = PHP_TAB . 'function ' . $methodName . '(%s){' . PHP_EOL;
+						$method .= PHP_TAB . PHP_TAB . 'try' . PHP_EOL;
+						$method .= PHP_TAB . PHP_TAB . '{' . PHP_EOL;
+						$method .= '[[[:prepend:]]]';
+						$method .= '%s';
+						$method .= '[[[:append:]]]';
+						$method .= PHP_TAB . PHP_TAB . '}' . PHP_EOL;
+						$method .= PHP_TAB . PHP_TAB . 'catch (Exception $Exception){' . PHP_EOL;
+						$method .= '[[[:exception:]]]';
+						$method .= PHP_TAB . PHP_TAB . '}' . PHP_EOL;
+						$method .= PHP_TAB . PHP_TAB . 'return TRUE;' . PHP_EOL;
+						$method .= PHP_TAB . '}' . PHP_EOL;
+					}
 					$methodArg = '';
 					$methodArgs = $methodNode->attributes();
 					if(count($methodArgs) > 0){
@@ -171,22 +309,45 @@ class FlowManager
 					}
 					// 3次元目は以降はネスト構造のソースコード定義
 					$code = '';
-					if(isset($extends) && strlen($extends) > 0 && ' extends WebFlowControllerBase' == $extends){
+					if($methodName !== 'exception' && $methodName !== 'append' && $methodName !== 'prepend' && isset($extends) && strlen($extends) > 0 && TRUE === (' extends WebFlowControllerBase' == $extends || ' extends FwmFlowBase' == $extends)){
+						// パミッションの補完
+						if (' extends FwmFlowBase' == $extends && isset($permission) && 0 < strlen($permission)){
+							$code .= PHP_TAB . PHP_TAB . PHP_TAB . '$this->permission = '.$permission.';' . PHP_EOL;
+						}
 						// WebFlowBaseのinitをメソッドの頭で必ず呼ぶ
-						$code .= PHP_TAB . PHP_TAB . '$autoValidated = parent::_initWebFlow();' . PHP_EOL;
+						$code .= PHP_TAB . PHP_TAB . PHP_TAB . '$autoValidated = $this->_initWebFlow();' . PHP_EOL;
 					}
 					foreach ($methodNode->children() as $codeNode) {
 						$code .= self::_generateCode($codeNode, $argBasePathTarget);
 					}
-					$method = sprintf($method, $methodArg, $code);
-					$methods[] = $method;
+					if ($methodName === 'exception' && 0 < count($methods)){
+						$exceptions[count($methods) -1] = $code;
+					}
+					elseif ($methodName === 'append' && 0 < count($methods)){
+						$appends[count($methods) -1] = $code;
+					}
+					elseif ($methodName === 'prepend'){
+						$prepends[count($methods)] = $code;
+					}
+					else {
+						$method = sprintf($method, $methodArg, $code);
+						$methods[] = $method;
+						$appends[] = '';
+						if (!isset($prepends[count($methods) - 1])){
+							$prepends[count($methods) - 1] = '';
+						}
+						$exceptions[] = PHP_TAB . PHP_TAB . PHP_TAB . 'throw $Exception;' . PHP_EOL;
+					}
 				}
 				// クラス定義つなぎ合わせ
-				$classDef .= PHP_EOL . 'class ' . $sectionClassName . $extends . PHP_EOL;
+				$classDef .= PHP_EOL . 'class ' . $sectionClassName.'Flow' . $extends . PHP_EOL;
 				$classDef .= '{' . PHP_EOL . PHP_EOL;
-				$classDef .= PHP_TAB . 'public $section=\''.basename($argSection).'\';' . PHP_EOL;
+				$classDef .= PHP_TAB . 'public $section=\''.$sectionClassName.'\';' . PHP_EOL;
 				$classDef .= PHP_TAB . 'public $target=\''.$argBasePathTarget.'\';' . PHP_EOL . PHP_EOL;
 				for($methodIdx=0; count($methods) > $methodIdx; $methodIdx++){
+					$methods[$methodIdx] = str_replace('[[[:prepend:]]]', $prepends[$methodIdx], $methods[$methodIdx]);
+					$methods[$methodIdx] = str_replace('[[[:append:]]]', $appends[$methodIdx], $methods[$methodIdx]);
+					$methods[$methodIdx] = str_replace('[[[:exception:]]]', $exceptions[$methodIdx], $methods[$methodIdx]);
 					$classDef .= $methods[$methodIdx];
 				}
 				$classDef .= '}' . PHP_EOL;
@@ -196,7 +357,7 @@ class FlowManager
 				// 空でジェネレートファイルを生成
 				@file_put_contents($generatedClassPath, '');
 				// ジェネレート
-				generateClassCache($generatedClassPath, $argTarget, $classDef, $className);
+				generateClassCache($generatedClassPath, $argTarget, $classDef, $className.'Flow');
 				// 静的ファイル化されたクラスファイルを読み込んで終了
 				// fatal errorがいいのでrequireする
 				//require_once $generatedClassPath;
@@ -213,7 +374,7 @@ class FlowManager
 	 * @param unknown $argNode
 	 */
 	public static function _getAutogenerateTargetPath($argTarget){
-		$targetPath = str_replace('..','.', str_replace('/','.', substr($argTarget, strlen(MVCCore::$flowXMLBasePath))));
+		$targetPath = str_replace('.flow.xml', 'Flow', str_replace('..','.', str_replace('/','.', substr($argTarget, strlen(Core::$flowXMLBasePath)))));
 		if(0 === strpos($targetPath, '.')){
 			$targetPath = substr($targetPath, 1);
 		}
@@ -235,10 +396,9 @@ class FlowManager
 	public static function _generateCode($argCodeNode, $argBasePathTarget='', $argDepth=1){
 		if(isset($argCodeNode) && NULL !== $argCodeNode){
 			// TAB
-			$tab = PHP_TAB;
+			$tab = PHP_TAB.PHP_TAB;
 			for ($depthIdx=0; $depthIdx < $argDepth; $depthIdx++){
 				$tab .= PHP_TAB;
-
 			}
 			$code = $tab;
 			$codeType = $argCodeNode->getName();
@@ -249,6 +409,7 @@ class FlowManager
 				if(isset($tmpAttr['section']) && strlen($tmpAttr['section']) > 0){
 					$sectionID = $tmpAttr['section'];
 					$target = $argBasePathTarget;
+					$redirect = 'FALSE';
 					if(FALSE !== strpos($sectionID, '/')){
 						// sectionとtargetを分割する
 						$targetTmp = explode('/', $sectionID);
@@ -260,8 +421,18 @@ class FlowManager
 					elseif(isset($tmpAttr['target']) && strlen($tmpAttr['target']) > 0){
 						$target = $tmpAttr['target'] . '/';
 					}
-					$code .= '$className = Flow::loadNextFlow(\'' . str_replace('-', '_', ucfirst($sectionID)) . '\', \'' . $target . '\');' . PHP_EOL;
+					if(isset($tmpAttr['redirect']) && strlen($tmpAttr['redirect']) > 0 && TRUE === ('true' === strtolower($tmpAttr['redirect']) || '1' === strtolower($tmpAttr['redirect']))){
+						$redirect = 'TRUE';
+					}
+					$code .= '$className = Flow::loadNextFlow(\'' . $sectionID . '\', \'' . $target . '\', ' . $redirect . ');' . PHP_EOL;
+					$code .= $tab . 'if (TRUE === $className){' . PHP_EOL;
+					$code .= $tab . PHP_TAB . 'return TRUE;' . PHP_EOL;
+					$code .= $tab . '}' . PHP_EOL;
 					$code .= $tab . '$instance = new $className();' . PHP_EOL;
+					$code .= $tab . 'if (isset($_POST[\'flowpostformsection\']) && str_replace(\'_\', \'-\', ucfirst($_POST[\'flowpostformsection\'])) != $instance->section){' . PHP_EOL;
+					// POSTパラメータを分離するため、今ポストされているものはバックフロー用のパラメータにしておく
+					$code .= $tab . PHP_TAB . '$this->_convertBackflowForm($this->section, $_POST);' . PHP_EOL;
+					$code .= $tab . '}' . PHP_EOL;
 					// Flowなので、処理の移譲先のコントローラに自身のクラス変数を適用し直す
 					$code .= $tab . '$instance->controlerClassName = $className;' . PHP_EOL;
 				}
@@ -289,6 +460,55 @@ class FlowManager
 				$code .= $tab . '$this->mustAppVersioned = $instance->mustAppVersioned;' . PHP_EOL;
 				$code .= $tab . 'return $res;';
 			}
+			elseif('rest' === $codeType){
+				// 内部のrestに処理を回す
+				$executor = 'execute';
+				$resourceBox = '$resource';
+				$targetResource = '';
+				$method = 'GET';
+				if(isset($tmpAttr['assign']) && strlen($tmpAttr['assign']) > 0){
+					$resourceBox = '$'.$tmpAttr['assign'];
+				}
+				if(isset($tmpAttr['execute']) && strlen($tmpAttr['execute']) > 0){
+					$executor = $tmpAttr['execute'];
+				}
+				if(isset($tmpAttr['resource']) && strlen($tmpAttr['resource']) > 0){
+					$targetResource = $tmpAttr['resource'];
+				}
+				if(isset($tmpAttr['method']) && strlen($tmpAttr['method']) > 0){
+					$method = $tmpAttr['method'];
+				}
+				$code .= '$params = NULL;' . PHP_EOL;
+				if(isset($tmpAttr['params']) && strlen($tmpAttr['params']) > 0){
+					$code .= $tab . '$params = @json_decode(\''.$tmpAttr['params'].'\', TRUE);' . PHP_EOL;
+					$code .= $tab . 'if (FALSE === (is_array($params) && 0 < count($params))){' . PHP_EOL;
+					$code .= $tab . PHP_TAB . '$params = NULL;' . PHP_EOL;
+					$code .= $tab . '}' . PHP_EOL;
+				}
+				$code .= $tab . '$controlerClassName = Core::loadMVCModule (\'Rest\', FALSE, \'\', TRUE);' . PHP_EOL;
+				$code .= $tab . '$_SERVER[\'ALLOW_ALL_WHITE\'] = TRUE;' . PHP_EOL;
+				$code .= $tab . '$Rest = new $controlerClassName ();' . PHP_EOL;
+				$code .= $tab . '$targetResource = '.self::_resolveValue($targetResource).';' . PHP_EOL;
+				$code .= $tab . 'if (isset(Flow::$params) && isset(Flow::$params[\''.strtolower($method).'\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (NULL === $params) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . '$params = Flow::$params[\''.strtolower($method).'\'];' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				if(isset($tmpAttr['margeparam']) && strlen($tmpAttr['margeparam']) > 0 && TRUE === ('true' === strtolower($tmpAttr['margeparam']) || '1' === strtolower($tmpAttr['margeparam']))){
+					$code .= $tab . PHP_TAB . 'else {' . PHP_EOL;
+					$code .= $tab . PHP_TAB . PHP_TAB . '$params = array_merge($params, Flow::$params[\''.strtolower($method).'\']);' . PHP_EOL;
+					$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				}
+				$code .= $tab . '}' . PHP_EOL;
+				if ('PUT' === strtoupper($method) || 'POST' === strtoupper($method)){
+					$code .= $tab . $resourceBox.' = $Rest->'.$executor.' ($targetResource, $params, \''.strtoupper($method).'\');' . PHP_EOL;
+				}
+				else {
+					$code .= $tab . $resourceBox.' = $Rest->'.$executor.' ($targetResource, NULL, \''.strtoupper($method).'\', $params);' . PHP_EOL;
+				}
+				$code .= $tab . 'if (FALSE === '.$resourceBox.') {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'throw new Exception (__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);' . PHP_EOL;
+				$code .= $tab . '}' . PHP_EOL;
+			}
 			elseif('flowpostformsectionerror' === $codeType){
 				$code .= 'if(NULL === Flow::$params[\'view\']){' . PHP_EOL;
 				$code .= $tab . PHP_TAB . 'Flow::$params[\'view\'] = array();' . PHP_EOL;
@@ -298,7 +518,13 @@ class FlowManager
 			elseif('cancelthisbackflow' === $codeType){
 				$code .= 'if(count(Flow::$params[\'backflow\']) > 0){' . PHP_EOL;
 				$code .= $tab . PHP_TAB . 'unset(Flow::$params[\'backflow\'][count(Flow::$params[\'backflow\']) -1]);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'backflow\']) && isset($_POST[\'backflow\'][count(Flow::$params[\'backflow\'])])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'backflow\'][count(Flow::$params[\'backflow\']) -1]);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
 				$code .= $tab. '}' . PHP_EOL;
+			}
+			elseif('clearbackflow' === $codeType){
+				$code .= 'Flow::clearBackFlow();' . PHP_EOL;
 			}
 			elseif('flowviewparam' === $codeType){
 				$code .= 'if(NULL === Flow::$params[\'view\']){' . PHP_EOL;
@@ -306,12 +532,15 @@ class FlowManager
 				$code .= $tab . '}' . PHP_EOL;
 				$code .= $tab . 'Flow::$params[\'view\'][] = array(\'' . $tmpAttr['selector'] . '\' => ' . self::_resolveValue($tmpAttr['val']) . ');';
 			}
+			elseif('flowformparam' === $codeType){
+				$code .= '$this->_convertWebFlowForm(\'' . $tmpAttr['section'] . '\', ' . self::_resolveValue($tmpAttr['val']) . ');';
+			}
 			elseif('exception' === $codeType){
 				$msg = '';
 				$code .= 'throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);';
 			}
 			elseif('view' === $codeType){
-				$section = 'str_replace(\'_\', \'-\', $this->controlerClassName)';
+				$section = '$this->section';
 				if(isset($tmpAttr['section']) && strlen($tmpAttr['section']) > 0){
 					$section = '\'' . $tmpAttr['section'] . '\'';
 				}
@@ -323,18 +552,75 @@ class FlowManager
 				if(isset($tmpAttr['baseview']) && strlen($tmpAttr['baseview']) > 0){
 					$base = $tmpAttr['baseview'];
 				}
+				$output = $_GET['_o_'];
+				if ('shtml' !== $output && 'html' !== $output && 'php' !== $output && '' !== $output){
+					$output = 'html';
+				}
+				// 入力フォーム用
 				if(isset($tmpAttr['flowpostformsection']) && strlen($tmpAttr['flowpostformsection']) > 0){
 					$code .= 'if(NULL === Flow::$params[\'view\']){' . PHP_EOL;
 					$code .= $tab . PHP_TAB . 'Flow::$params[\'view\'] = array();' . PHP_EOL;
 					$code .= $tab . '}' . PHP_EOL;
-					$action = '?_c_=' . $tmpAttr['flowpostformsection'] . '&_o_='.$_GET['_o_'];
-					$code .= $tab . '$this->action = \'?_c_=' . $tmpAttr['flowpostformsection'] . '&_o_='.$_GET['_o_'].'\';' . PHP_EOL;
+					$action = '?_c_=' . $tmpAttr['flowpostformsection'] . '&_o_='.$output;
+					if(isset($tmpAttr['sslrequired']) && strlen($tmpAttr['sslrequired']) > 0){
+						if('TRUE' === strtoupper($tmpAttr['sslrequired']) || 1 === (int)$tmpAttr['sslrequired'] || TRUE === $tmpAttr['sslrequired']){
+							$code .= $tab . '$this->isSSLRequired = TRUE;' . PHP_EOL;
+						}
+						else {
+							$code .= $tab . '$this->isSSLRequired = FALSE;' . PHP_EOL;
+						}
+					}
+					else {
+						$code .= $tab . '$this->isSSLRequired = NULL;' . PHP_EOL;
+					}
+					$code .= $tab . '$this->action = \'?_c_=' . $tmpAttr['flowpostformsection'] . '&_o_='.$output.'\';' . PHP_EOL;
 					$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[flowpostformsection=' . $tmpAttr['flowpostformsection'] . ']\' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array(\'method\'=>\'post\', \'action\'=>$this->_reverseRewriteURL())));' . PHP_EOL;
-					$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[flowpostformsection=' . $tmpAttr['flowpostformsection'] . ']\' => array(HtmlViewAssignor::APPEND_NODE_KEY => \'<input type="hidden" name="flowpostformsection" value="'.$tmpAttr['flowpostformsection'].'"/>\'));' . PHP_EOL;
+					if ($tmpAttr['section'] !== $tmpAttr['flowpostformsection']){
+						$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[flowpostformsection=' . $tmpAttr['flowpostformsection'] . ']\' => array(HtmlViewAssignor::APPEND_NODE_KEY => \'<input class="generate-flow" type="hidden" name="flowpostformsection" value="'.$tmpAttr['flowpostformsection'].'"/>\'));' . PHP_EOL;
+					}
+					$code .= $tab;
+				}
+				// 入浴確認、完了フォーム用
+				if(isset($tmpAttr['confirmflowpostformsection']) && strlen($tmpAttr['confirmflowpostformsection']) > 0){
+					$code .= 'if(NULL === Flow::$params[\'view\']){' . PHP_EOL;
+					$code .= $tab . PHP_TAB . 'Flow::$params[\'view\'] = array();' . PHP_EOL;
+					$code .= $tab . '}' . PHP_EOL;
+					$action = '?_c_=' . $tmpAttr['confirmflowpostformsection'] . '&_o_='.$output;
+					// XXX 確認画面から完了画面へのフローは今のところSSL非強制には非対応
+					$code .= $tab . '$this->isSSLRequired = NULL;' . PHP_EOL;
+					$code .= $tab . '$this->action = \'?_c_=' . $tmpAttr['confirmflowpostformsection'] . '&_o_='.$output.'\';' . PHP_EOL;
+					$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[confirmflowpostformsection=' . $tmpAttr['confirmflowpostformsection'] . ']\' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array(\'method\'=>\'post\', \'action\'=>$this->_reverseRewriteURL())));' . PHP_EOL;
+					if ($tmpAttr['section'] !== $tmpAttr['confirmflowpostformsection']){
+						$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[confirmflowpostformsection=' . $tmpAttr['confirmflowpostformsection'] . ']\' => array(HtmlViewAssignor::APPEND_NODE_KEY => \'<input class="generate-flow" type="hidden" name="flowpostformsection" value="'.$tmpAttr['confirmflowpostformsection'].'"/>\'));' . PHP_EOL;
+					}
+					$code .= $tab;
+				}
+				// 戻るフォーム用
+				if(isset($tmpAttr['backflowpostformsection']) && strlen($tmpAttr['backflowpostformsection']) > 0){
+					$code .= 'if(NULL === Flow::$params[\'view\']){' . PHP_EOL;
+					$code .= $tab . PHP_TAB . 'Flow::$params[\'view\'] = array();' . PHP_EOL;
+					$code .= $tab . '}' . PHP_EOL;
+					$action = '?_c_=' . $tmpAttr['backflowpostformsection'] . '&_o_='.$output;
+					if(isset($tmpAttr['sslrequired']) && strlen($tmpAttr['sslrequired']) > 0){
+						if('TRUE' === strtoupper($tmpAttr['sslrequired']) || 1 === (int)$tmpAttr['sslrequired'] || TRUE === $tmpAttr['sslrequired']){
+							$code .= $tab . '$this->isSSLRequired = TRUE;' . PHP_EOL;
+						}
+						else {
+							$code .= $tab . '$this->isSSLRequired = FALSE;' . PHP_EOL;
+						}
+					}
+					else {
+						$code .= $tab . '$this->isSSLRequired = NULL;' . PHP_EOL;
+					}
+					$code .= $tab . '$this->action = \'?_c_=' . $tmpAttr['backflowpostformsection'] . '&_o_='.$output.'\';' . PHP_EOL;
+					$code .= $tab . 'Flow::$params[\'view\'][] = array(\'form[backflowpostformsection=' . $tmpAttr['backflowpostformsection'] . ']\' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array(\'method\'=>\'post\', \'action\'=>$this->_reverseRewriteURL())));' . PHP_EOL;
 					$code .= $tab;
 				}
 				// Viewを表示する処理を生成
-				$code .= '$HtmlView = Core::loadView(' . $section . ', FALSE, ' . $target . ');' . PHP_EOL;
+				$code .= '$HtmlView = Core::loadView(str_replace(\'_\', \'-\', strtolower(' . $section . ')), FALSE, ' . $target . ');' . PHP_EOL;
+				$code .= $tab .'if (FALSE === $HtmlView){' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'throw new Exception (__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);' . PHP_EOL;
+				$code .= $tab .'}' . PHP_EOL;
 				if(NULL !== $base){
 					// baseになるhtmlをViewクラスに渡す
 					$code .= $tab . '$HtmlView->addTemplate(Core::loadTemplate(\'' . $base . '\', FALSE, \'\', \'.html\', \'HtmlTemplate\'), \'base\');' . PHP_EOL;
@@ -379,6 +665,10 @@ class FlowManager
 				if('foreach' === $codeType){
 					$code .= 'foreach($'.$tmpAttr['eachas'].' AS $'.$tmpAttr['eachas'].'key => $'.$tmpAttr['eachas'].'val';
 				}
+				// while文
+				if('while' === $codeType){
+					$code .= 'while(';
+				}
 				// 式の評価文
 				// if文 elseif文
 				if('if' === $codeType || 'elseif' === $codeType){
@@ -392,7 +682,7 @@ class FlowManager
 					}
 				}
 				// else文 for文 foreach文
-				elseif('else' === $codeType || 'for' === $codeType || 'foreach' === $codeType){
+				elseif('else' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType){
 					// 何もナシ
 				}
 				// return文
@@ -438,7 +728,7 @@ class FlowManager
 					$code .= $tmpAttr['property'];
 				}
 				// 式の終端文
-				if('if' === $codeType || 'elseif' === $codeType || 'for' === $codeType || 'foreach' === $codeType){
+				if('if' === $codeType || 'elseif' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType){
 					$code .= '){' . PHP_EOL;
 				}
 				elseif('else' === $codeType){
@@ -451,7 +741,7 @@ class FlowManager
 					}
 				}
 				// 終了子判定
-				if('if' === $codeType || 'elseif' === $codeType || 'else' === $codeType || 'for' === $codeType || 'foreach' === $codeType){
+				if('if' === $codeType || 'elseif' === $codeType || 'else' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType){
 					$code .= $tab . '}';
 				}
 				else{

@@ -291,16 +291,6 @@ abstract class SessionDataMemcache {
 		@MCO::delete($argPKey, 0, self::$_DSN);
 		return TRUE;
 	}
-
-	/**
-	 * Expiredの切れたSessionレコードをDeleteする
-	 * @param int 有効期限の直指定
-	 * @param mixed DBDSN情報の直指定
-	 */
-	public static function clean($argExpiredtime=NULL, $argDSN=NULL){
-		// XXX 何もしない
-		return TRUE;
-	}
 }
 
 ?>
