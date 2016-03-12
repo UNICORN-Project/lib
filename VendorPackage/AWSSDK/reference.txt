@@ -1,7 +1,0 @@
-AWSSDKの展開先
-
-AWSSDKのインストール手順
-1.cd [このディレクトリ]
-2.php composer.phar self-update
-3.php composer.phar install
-

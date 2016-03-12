@@ -114,7 +114,7 @@ class WebFlowControllerBase extends WebControllerBase {
 						if($_GET['_c_'] === $_POST['flowpostformsection']){
 							// backflowがポストされてきたらそれをviewのformに自動APPEND
 							if($key === 'flowpostformsection-backflow-section'){
-								Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section" value="' . $val . '"/>'));
+								Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class="bbb" name="flowpostformsection-backflow-section" value="' . $val . '"/>'));
 								self::$flowpostformsectionUsed = TRUE;
 								$executed = TRUE;
 							}
@@ -242,7 +242,7 @@ class WebFlowControllerBase extends WebControllerBase {
 			if(NULL === Flow::$params['view']){
 				Flow::$params['view'] = array();
 			}
-			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
+			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class=="aaa" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
 			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section-query" value="' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['query'] . '"/>'));
 			self::$flowpostformsectionUsed = TRUE;
 		}
@@ -260,9 +260,7 @@ class WebFlowControllerBase extends WebControllerBase {
 			}
 		}
 		Flow::$params['backflow'][] = array('section' => $this->section, 'target' => $this->target, 'query' => htmlspecialchars($query));
-		debug('backflows=');
-		debug(Flow::$params['backflow']);
-
+		
 		// flowpostformsectionに現在の画面をBackFlowとして登録する
 		if(NULL === Flow::$params['view'] && FALSE === self::$flowpostformsectionUsed){
 			$backFrowID = Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['target'] . '/' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['section'];

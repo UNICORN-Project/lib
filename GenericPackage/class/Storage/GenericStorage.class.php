@@ -204,8 +204,8 @@ class GenericStorage
 					// 通常アップロード処理
 					$saveDir = str_replace('//', '/', $argUploadTargetDir . '/' . $argSaveDir);
 					if (!is_dir($saveDir)){
-						@mkdir($saveDir, 0777, true);
-						@exec('chmod -R 0777 ' .$saveDir);
+						@mkdir($saveDir, 0666, true);
+						@exec('chmod -R 0666 ' .$saveDir);
 					}
 					$fileName = str_replace('//', '/', $argSaveDir . '/' . $fileName);
 					if(!file_put_contents(str_replace('//', '/', $argUploadTargetDir . '/' . $fileName), $fileBody)){

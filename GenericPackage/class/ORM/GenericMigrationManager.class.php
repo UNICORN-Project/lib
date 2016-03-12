@@ -5,6 +5,83 @@ class GenericMigrationManager {
 	private static $_lastMigrationHash;
 
 	/**
+	 * データベースをマイグレーションする
+	 * @return boolean
+	 */
+	public static function dispatchDatabase(){
+		// DBマイグレーションを実行
+		if (!is_file(getConfig('PROJECT_ROOT_PATH').'.dbinitialized')){
+			$connect = FALSE;
+			$host = '';
+			$port = '';
+			$user = '';
+			$pass = '';
+			if (getLocalEnabled()){
+				// ローカルの場合
+				$host = 'localhost';
+				$port = '';
+				$user = 'root';
+				$pass = 'root';
+			}
+			else {
+				$dsn = getConfig('DB_DSN');
+				if (0 >= strlen($DSN) && defined("DB_DSN")){
+					// 定数を使う
+					$dsn = DB_DSN;
+				}
+				logging('DB Migration:DB Connect '.paers_url($dsn, PHP_URL_HOST).' '. paers_url($dsn, PHP_URL_USER).' '. paers_url($dsn, PHP_URL_PASS).' '. 'mysql'.' '. paers_url($dsn, PHP_URL_PORT).'.', 'migration');
+				// コンフィグから接続先を特定
+				$host = paers_url($dsn, PHP_URL_HOST);
+				$port = paers_url($dsn, PHP_URL_PORT);
+				$user = paers_url($dsn, PHP_URL_USER);
+				$pass = paers_url($dsn, PHP_URL_PASS);
+			}
+			if (0 >= strlen($port)){
+				$port = '3306';
+			}
+			logging('DB Migration:DB Connect '.$host.', '.$user.', '.$pass.', '.$port.'.', 'migration');
+			$connect = @mysqli_connect($host, $user, $pass, 'mysql', $port);
+			if (FALSE === $connect){
+				logging('DB Migration:DB Connect Error.', 'migration');
+				exit;
+			}
+			// DBマイグレーション
+			$createdb = file_get_contents(getConfig('PROJECT_ROOT_PATH').'core/createdb.sql');
+			$matchies = NULL;
+			if (!preg_match('/`(.+)?`/', $createdb, $matchies)){
+				logging('DB Migration:DB Name Resolve Error.', 'migration');
+				exit;
+			}
+			$dbname = $matchies[1];
+			$res = mysqli_set_charset($connect, 'utf8');
+			$res = mysqli_multi_query($connect, $createdb);
+			if(FALSE === res){
+				logging('DB Migration:DB Create Error.', 'migration');
+				exit;
+			}
+			logging('DB Migration:DB '.$dbname.' Created.', 'migration');
+			mysqli_commit($connect);
+			mysqli_close($connect);
+		
+			$connect = @mysqli_connect($host, $user, $pass, $dbname, $port);
+			$res = mysqli_set_charset($connect, 'utf8');
+			logging('DB Migration:Connect Created db '.$dbname.'.', 'migration');
+			$res = mysqli_multi_query($connect, file_get_contents(getConfig('PROJECT_ROOT_PATH').'core/createtable.sql'));
+			if(FALSE === $res){
+				logging('DB Migration:Table Create Error.', 'migration');
+				exit;
+			}
+			mysqli_commit($connect);
+			mysqli_close($connect);
+			logging('DB Migration:Table Created.', 'migration');
+			touch(getConfig('PROJECT_ROOT_PATH').'.dbinitialized');
+			@chmod(getConfig('PROJECT_ROOT_PATH').'.dbinitialized', 0666);
+			logging('DB Migration:DB migrated.', 'migration');
+		}
+		return TRUE;
+	}
+
+	/**
 	 * 適用されていないマイグレーションを探して、あれば実行する。なければそのまま終了する
 	 * @param instance $argDBO
 	 * @return boolean
@@ -13,6 +90,10 @@ class GenericMigrationManager {
 		static $executed = FALSE;
 		// 1プロセス内で2度も処理しない
 		if(FALSE === $executed){
+			// データベースのマイグレーションをまずは実行
+			if (TRUE !== self::dispatchDatabase()){
+				return FALSE;
+			}
 			// 適用差分を見つける
 			self::$_lastMigrationHash = NULL;
 			$diff = self::_getDiff($argDBO, $argTblName);
@@ -30,6 +111,7 @@ class GenericMigrationManager {
 							logging('migration up! '.$diff[$diffIdx], 'migration');
 							// マイグレーション済みに追加
 							@file_put_contents_e(getAutoMigrationPath().$argDBO->dbidentifykey.'.dispatched.migrations', $diff[$diffIdx].PHP_EOL, FILE_APPEND);
+							@chmod(getAutoMigrationPath().$argDBO->dbidentifykey.'.dispatched.migrations', 0666);
 						}
 					}
 				}
@@ -280,12 +362,14 @@ class GenericMigrationManager {
 			$migrationClassDef = 'class '.$migrationClassName.' extends MigrationBase {' . PHP_EOL . PHP_EOL . PHP_TAB . 'public $migrationIdx = "' . $migrationIdx . '";' . PHP_EOL . PHP_EOL . PHP_TAB . 'public $tableName = "' . strtolower($argTblName) . '";' . PHP_EOL . PHP_TAB . 'public $tableComment = "' . $tableComment . '";' . PHP_EOL . PHP_TAB . 'public $tableEngine = "' . $tableEngine . '";' . PHP_EOL . PHP_EOL . PHP_TAB . 'public static $migrationHash = "' . $modelHash . '";' . $migrationClassDef . '}';
 			$path = getAutoMigrationPath().$argDBO->dbidentifykey.'.'.$migrationClassName.'.migration.php';
 			@file_put_contents($path, '<?php' . PHP_EOL . PHP_EOL . $migrationClassDef . PHP_EOL . PHP_EOL . '?>');
-			@chmod($path, 0777);
+			@chmod($path, 0666);
 
 			// 生成した場合は、生成環境のマイグレーションが最新で、適用済みと言う事になるので
 			// マイグレーション済みファイルを生成し、新たにマイグレーション一覧に追記する
 			@file_put_contents_e(getAutoMigrationPath().$argDBO->dbidentifykey.'.all.migrations', $migrationClassName.PHP_EOL, FILE_APPEND);
 			@file_put_contents_e(getAutoMigrationPath().$argDBO->dbidentifykey.'.dispatched.migrations', $migrationClassName.PHP_EOL, FILE_APPEND);
+			@chmod(getAutoMigrationPath().$argDBO->dbidentifykey.'.all.migrations', 0666);
+			@chmod(getAutoMigrationPath().$argDBO->dbidentifykey.'.dispatched.migrations', 0666);
 			$executed[$argTblName] = TRUE;
 			logging('migration! '.$migrationClassName, 'migration');
 		}
@@ -299,7 +383,7 @@ class GenericMigrationManager {
 		if(TRUE === file_exists($migrationesFilePath) && TRUE === is_file($migrationesFilePath)){
 			// 適用済みのmigratione一覧を取得
 			$handle = fopen($migrationesFilePath, 'r');
-			while(($line = fgets($handle, 4096)) !== false){
+			while(($line = fgets($handle, 4096)) !== FALSE){
 				$migrationes[] = trim($line);
 			}
 		}
@@ -311,7 +395,7 @@ class GenericMigrationManager {
 		if(TRUE === file_exists($dispatchedMigrationesFilePath) && TRUE === is_file($dispatchedMigrationesFilePath)){
 			// 適用済みのmigratione一覧を取得
 			$handle = fopen($dispatchedMigrationesFilePath, 'r');
-			while(($line = fgets($handle, 4096)) !== false){
+			while(($line = fgets($handle, 4096)) !== FALSE){
 				$dispatchedMigrationes[] = trim($line);
 			}
 		}

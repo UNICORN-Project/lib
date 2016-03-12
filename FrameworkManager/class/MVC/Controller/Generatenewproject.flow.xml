@@ -2,34 +2,30 @@
 <xml>
 	<section id="Generatenewproject">
 		<execute>
-			<if condition="true === Auth::isCertification()">
-				<view flowpostformsection="generatenewproject-execute"/>
-			</if>
-			<else>
+			<if val="true !== Auth::isCertification()">
 				<flow section="login"/>
-			</else>
+			</if>
+			<view flowpostformsection="generatenewproject-execute"/>
 		</execute>
 	</section>
 	<section id="Generatenewproject-execute">
 		<execute>
-			<if condition="true === Auth::isCertification()">
-				<if var="autoValidated" val="true">
-					<assign var="res" class="ProjectManager" method="createProject" arg1="Flow::$params['post']['project_name_must']" arg2="Flow::$params['post']['project_dispname_must']" arg3="Flow::$params['post']['project_user']" arg4="Flow::$params['post']['project_group']"/>
-					<if var="res" val="true">
-						<view/>
-					</if>
-					<else>
-						<flowpostformsectionerror>プロジェクトの作成に失敗しました</flowpostformsectionerror>
-					</else>
+			<if val="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<if var="autoValidated" val="true">
+				<assign var="res" class="ProjectManager" method="createProject" arg1="Flow::$params['post']['project_name_must']" arg2="Flow::$params['post']['project_dispname_must']" arg3="Flow::$params['post']['project_user']" arg4="Flow::$params['post']['project_group']" arg5="Flow::$params['post']['ios_enabled']" arg6="Flow::$params['post']['android_enabled']"/>
+				<if var="res" val="true">
+					<view/>
 				</if>
 				<else>
-					<flowpostformsectionerror>プロジェクト名は必ず指定して下さい</flowpostformsectionerror>
+					<flowpostformsectionerror>プロジェクトの作成に失敗しました</flowpostformsectionerror>
 				</else>
-				<view section="Generatenewproject" flowpostformsection="generatenewproject-execute"/>
 			</if>
 			<else>
-				<flow section="login"/>
+				<flowpostformsectionerror>プロジェクト名は必ず指定して下さい</flowpostformsectionerror>
 			</else>
+			<view section="Generatenewproject" flowpostformsection="generatenewproject-execute"/>
 		</execute>
 	</section>
 </xml>

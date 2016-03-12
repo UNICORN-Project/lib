@@ -412,7 +412,7 @@ function loadModule($argHint, $argClassExistsCalled = FALSE){
 				// ジェネレート処理
 				if(TRUE !== $fileget && TRUE === $autoGenerateFlag){
 					@file_put_contents_e($generatedIncFileName, '<?php' . PHP_EOL . 'if(FALSE === $unlink' . $classCheck . '){ ' . $mapClass . ' }' . PHP_EOL . '?>', FILE_APPEND);
-					@chmod($generatedIncFileName, 0777);
+					@chmod($generatedIncFileName, 0666);
 				}
 				unset($mapClass);
 			}
@@ -694,7 +694,7 @@ function loadConfig($argConfigPath){
 					$flagchaceBody = '$flagchaces = array(\'autoMigrationFlag\'=>' . (int)$autoMigrationFlag . ', \'localFlag\'=>' . (int)$localFlag . ', \'devFlag\'=>' . (int)$devFlag . ', \'testFlag\'=>' . (int)$testFlag . ', \'stagingFlag\'=>' . (int)$stagingFlag . ', \'debugFlag\'=>' . (int)$debugFlag . ', \'errorReportFlag\'=>' . (int)$errorReportFlag . ', \'loggingFlag\'=>' . (int)$loggingFlag . ');';
 					// フラグメントキャッシュを更新
 					file_put_contents($flagcacheFileName, '<?php' . PHP_EOL . $flagchaceBody . PHP_EOL . '?>');
-					@chmod($flagcacheFileName,0777);
+					@chmod($flagcacheFileName,0666);
 				}
 			}
 			if(TRUE !== $regenerateFlag){
@@ -967,7 +967,7 @@ _CLASSDEF_;
 		// 改行文字削除
 		$configGeneratClassDefine = str_replace(array(PHP_CR, PHP_LF), '', $configGeneratClassDefine);
 		file_put_contents($generatedConfigFileName, '<?php' . PHP_EOL . $configGeneratClassDefine . PHP_EOL . '?>');
-		@chmod($generatedConfigFileName,0777);
+		@chmod($generatedConfigFileName,0666);
 		// 静的ファイル化されたコンフィグクラスファイルを読み込む
 		require_once $generatedConfigFileName;
 	}
@@ -1000,6 +1000,9 @@ function getConfigPathForConfigName($argConfigName){
 	}
 	if(TRUE !== is_file($projectconfPath)){
 		$projectconfPath = dirname(dirname(dirname(__FILE__))).'/' . $argConfigName . 'Package/core/' . $argConfigName . '.config.xml';
+	}
+	if(TRUE !== is_file($projectconfPath) && 'Project' === $argConfigName){
+		$projectconfPath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/' . $argConfigName . 'Package/core/' . $argConfigName . '.config.xml';
 	}
 	if(TRUE === is_file($projectconfPath)){
 		return $projectconfPath;
@@ -1632,7 +1635,10 @@ function getStage($argHost=NULL){
 	static $stage = NULL;
 	if(NULL === $stage){
 		$host = NULL;
-		if(isset($_SERVER['SERVER_NAME'])){
+		if(isset($_SERVER['HTTP_HOST'])){
+			$host = $_SERVER['HTTP_HOST'];
+		}
+		if(isset($_SERVER['SERVER_NAME']) && strlen($_SERVER['SERVER_NAME'])){
 			$host = $_SERVER['SERVER_NAME'];
 		}
 		if(NULL !== $argHost){
@@ -1748,6 +1754,9 @@ function getAutoStageCheckEnabled($argProjectName=NULL){
 			$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.autostagecheck';
 			if(TRUE !== is_file($autoStagecheckEnabledFilepath)){
 				$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.autostagecheck';
+			}
+			if(TRUE !== is_file($autoStagecheckEnabledFilepath) && 'Project' === PROJECT_NAME){
+				$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.autostagecheck';
 			}
 		}
 		else{
@@ -2064,6 +2073,9 @@ function getDebugEnabled($argProjectName=NULL, $argHost=NULL){
 				$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.debug';
 				if(TRUE !== is_file($debugEnabledFilepath)){
 					$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.debug';
+				}
+				if(TRUE !== is_file($autoStagecheckEnabledFilepath) && 'Project' === PROJECT_NAME){
+					$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.debug';
 				}
 			}
 			else{
@@ -2411,7 +2423,7 @@ function generateIncCache($argGeneratedPath, $argIncludePath){
 	@file_put_contents_e($argGeneratedPath, '<?php' . sprintf(_getAutoGenerateIncPHPMainBase(), $argIncludePath) . '?>', FILE_PREPEND);
 	// ファイルの終端に処理を追加
 	@file_put_contents_e($argGeneratedPath, '<?php if(FALSE === $unlink){ @include_once(\'' . $argIncludePath . '\'); } ?>', FILE_APPEND);
-	@chmod($argGeneratedPath, 0777);
+	@chmod($argGeneratedPath, 0666);
 }
 
 /**
@@ -2426,7 +2438,7 @@ function generateClassCache($argGeneratedPath, $argIncludePath, $argClassBuffer,
 	@file_put_contents_e($argGeneratedPath, '<?php' . sprintf(_getAutoGenerateIncPHPMainBase(), $argIncludePath) . '?>', FILE_PREPEND);
 	// ファイルの終端に処理を追加
 	@file_put_contents_e($argGeneratedPath, '<?php' . PHP_EOL . 'if(FALSE === $unlink' . $classCheck . '){ ' . PHP_EOL . $argClassBuffer . PHP_EOL . '}' . PHP_EOL . '?>', FILE_APPEND);
-	@chmod($argGeneratedPath, 0777);
+	@chmod($argGeneratedPath, 0666);
 }
 
 /**
@@ -2602,6 +2614,8 @@ if(isset($_SERVER['SHELL']) && isset($_SERVER['SCRIPT_FILENAME']) && strlen($_SE
 }
 
 if(TRUE === $_consoled){
+	// コンソールの場合、アウトプットバッファリングを中止し、しないようにする。
+	@ob_end_flush();
 	echo PHP_EOL;
 	echo _SYSTEM_LOGO_;
 	echo PHP_EOL;
@@ -2631,6 +2645,117 @@ if(TRUE === $_consoled){
 			else{
 				// バリデーションチェック
 				$valid = TRUE;
+				if ('psycho' === strtolower($_SERVER['argv'][2])) {
+					$_SERVER['argv'][2] = 'MAC';
+				}
+				if ('burst' === strtolower($_SERVER['argv'][3])) {
+					$_SERVER['argv'][3] = 'MAMP';
+				}
+				if ('mac' === strtolower($_SERVER['argv'][2]) && 'mamp' === strtolower($_SERVER['argv'][3])) {
+					// $linkWorkspaceにlnを貼ってしまう
+					$workspace = dirname(dirname(realpath($_SERVER['argv'][0])));
+					$pjdirname = basename($workspace);
+					$linkWorkspace = '/Applications/MAMP/htdocs/workspace';
+					// ディレクトリ生成
+					if (!is_dir($linkWorkspace)){
+						echo 'mkdir -m 777 '.$workspace.PHP_EOL;
+						@mkdir($linkWorkspace, 0777, TRUE);
+					}
+					// リンクを貼る
+					if (!file_exists($linkWorkspace.'/'.$pjdirname)){
+						echo 'ln -s '.$workspace.' '.$linkWorkspace.PHP_EOL;
+						@exec('ln -s '.$workspace.' '.$linkWorkspace);
+					}
+					// ディレクトリコピー
+					$_SERVER['argv'][2] = $workspace;
+					$isPHPProcOutput = array();
+					exec('ps aux|grep php', $isPHPProcOutput);
+					$isPHPProcOutput = implode('<>', $isPHPProcOutput);
+					// Mac&MAMP環境専用の特殊インストール
+					if ('apache' === strtolower($_SERVER['argv'][4])){
+						if (FALSE !== strpos($isPHPProcOutput, 'MAMP/bin/php')){
+							// XXX nginxで動いている！？
+							echo ' (!)エラー : MAMP-Apacheの自動設定を指定する場合は、Apacheを起動して下さい。' . PHP_EOL;
+							exit;
+						}
+						// Apache用の設定
+						// XXX Apacheはパスさえ合っていれば動くのconfなどのコピーはしない
+						$_SERVER['argv'][3] = 'http://localhost/'.basename($linkWorkspace).'/'.$pjdirname.'/';
+					}
+					else if ('nginx' === strtolower($_SERVER['argv'][4])){
+						if (FALSE === strpos($isPHPProcOutput, 'MAMP/bin/php')){
+							// XXX nginxが動いていない！？
+							echo ' (!)エラー : MAMP-Nginxの自動設定を指定する場合は、Nginxを起動して下さい。' . PHP_EOL;
+							exit;
+						}
+						// Nginx用の設定
+						if (!is_dir('/Applications/MAMP/conf/nginx/conf.d')){
+							echo 'mkdir -m 777 /Applications/MAMP/conf/nginx/conf.d'.PHP_EOL;
+							@mkdir('/Applications/MAMP/conf/nginx/conf.d', 0777, TRUE);
+						}
+						if (!is_file('/Applications/MAMP/conf/nginx/conf.d/nginx-mamp-'.$pjdirname.'.conf')){
+							// 設定を書き換えてリンクを貼る
+							@copy($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-fwm.conf', $linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$pjdirname.'.conf');
+							file_put_contents($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$pjdirname.'.conf', str_replace(corefilename(), strtolower($pjdirname), file_get_contents($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$pjdirname.'.conf')));
+							@exec('ln -s '.$linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$pjdirname.'.conf /Applications/MAMP/conf/nginx/conf.d/nginx-mamp-'.$pjdirname.'.conf');
+						}
+						// hostsにローカルドメイン追加
+						if (FALSE === strpos(@file_get_contents('/etc/hosts'), strtolower($pjdirname).'api.localhost')){
+							@exec('sudo sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($pjdirname).'api.localhost \\\\\\n/\' /etc/hosts');
+							echo 'sudo sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($pjdirname).'api.localhost \\\\\\n/\' /etc/hosts'.PHP_EOL;
+						}
+						if (FALSE === strpos(@file_get_contents('/etc/hosts'), strtolower($pjdirname).'.localhost')){
+							@exec('sudo sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($pjdirname).'.localhost \\\\\\n/\' /etc/hosts');
+							echo 'sudo sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($pjdirname).'.localhost \\\\\\n/\' /etc/hosts'.PHP_EOL;
+						}
+						if (FALSE === strpos(@file_get_contents('/etc/hosts'), 'fwm'.strtolower($pjdirname).'.localhost')){
+							@exec('sudo sed -i "" -e $\'1s/^/127.0.0.1       fwm'.strtolower($pjdirname).'.localhost \\\\\\n/\' /etc/hosts');
+							echo 'sudo sed -i "" -e $\'1s/^/127.0.0.1       fwm'.strtolower($pjdirname).'.localhost \\\\\\n/\' /etc/hosts'.PHP_EOL;
+						}
+						// ローカル開発用に自己証明書を設置
+						if (!is_dir('/Applications/MAMP/.ssl')){
+							@mkdir('/Applications/MAMP/.ssl', 0777, TRUE);
+						}
+						if (!is_file('/Applications/MAMP/.ssl/self-server.crt')){
+							echo $linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/.ssl/self-server.crt';
+							@copy($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/.ssl/self-server.crt', '/Applications/MAMP/.ssl/self-server.crt');
+							@copy($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/.ssl/self-server.key', '/Applications/MAMP/.ssl/self-server.key');
+						}
+						if (FALSE === strpos(@file_get_contents('/Applications/MAMP/conf/nginx/nginx.conf'), 'conf.d/*.conf')){
+							// 元のconf移動
+							@rename('/Applications/MAMP/conf/nginx/nginx.conf', '/Applications/MAMP/conf/nginx/nginx.conf.org');
+							// conf入れ替え
+							@copy($linkWorkspace.'/'.$pjdirname.'/supple/setting/NginxWithMAMP/nginx.conf', '/Applications/MAMP/conf/nginx/nginx.conf');
+						}
+						// Nginx再起動
+						echo 'sudo /Applications/MAMP/Library/bin/nginxctl -s reload'.PHP_EOL;
+						flush();
+						@exec('sudo /Applications/MAMP/Library/bin/nginxctl -s reload');
+// 						sleep(10);
+// 						@exec('sudo sh /Applications/MAMP/bin/startNginx.sh');
+// 						flush();
+// 						echo 'sudo sh /Applications/MAMP/bin/startNginx.sh'.PHP_EOL;
+						sleep(5);
+						// 設定完了
+						echo 'MAC MAMP Nginx用の自動設定が完了しました。'.PHP_EOL;
+						echo 'ブラウザが自動的に開き、フレームワーク管理ツールのログイン画面が表示されます。'.PHP_EOL.PHP_EOL;
+						echo 'MAC MAMP 自動インストール時の初期ログインIDとパスワードは以下になります。'.PHP_EOL.PHP_EOL;
+						echo 'ID: root@super.user'.PHP_EOL;
+						echo 'PASS: R00t@sup3r'.PHP_EOL.PHP_EOL;
+						echo 'ログイン後にCRUD機能で即時変更する事をオススメします。'.PHP_EOL;
+						echo '※既にセットアップ済みの場合や、既にログインユーザーが何かしら存在する場合は初期ユーザーは自動生成されません。'.PHP_EOL.PHP_EOL;
+						flush();
+						sleep(2);
+						// フレームワーク管理ツールを直接起動(DBマイグレーションを実行する)
+						exec('open https://fwm'.strtolower($pjdirname).'.localhost/migration.php');
+						exit;
+					}
+					else {
+						// XXX それ以外のWebサーバ
+					}
+					// 
+				}
+				// 通常のインストール処理
 				if (!is_dir($_SERVER['argv'][2])) {
 					// 作成出来るか試みる
 					if (!mkdir($_SERVER['argv'][2], 0777, true)){
@@ -2748,7 +2873,18 @@ if(TRUE === $_consoled){
 		echo ' 以下のコマンドを実行して下さい。' . PHP_EOL;
 		echo ' Webベースナビゲーションのインストーラー"NT-D"が起動します。' . PHP_EOL;
 		echo PHP_EOL;
-// 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D' . PHP_EOL;
+		echo PHP_EOL;
+		echo ' (!)お使いのPCがMACで、且つローカル開発環境"MAMP"にインストールする場合は、全てを自動で設定するコマンドとモードがお使い頂けます。' . PHP_EOL;
+		echo PHP_EOL;
+		echo ' MAC MAMPで、WebサーバにNginxを利用する場合'.PHP_EOL;
+		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D Psycho Burst Apache'.PHP_EOL;
+		echo PHP_EOL;
+		echo ' MAC MAMPで、WebサーバにApacheを利用する場合'.PHP_EOL;
+		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D Psycho Burst Nginx'.PHP_EOL;
+		echo PHP_EOL;
+		echo PHP_EOL;
+		echo ' それ以外の場合'.PHP_EOL;
+		// 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D' . PHP_EOL;
 // 		echo ' OR'.PHP_EOL;
 // 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' install' . PHP_EOL;
 // 		echo PHP_EOL;
@@ -2757,7 +2893,6 @@ if(TRUE === $_consoled){
 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' install [インストーラーのWeb公開ディレクトリ] [インストーラーのWeb公開URL]'.PHP_EOL;
 		echo ' OR'.PHP_EOL;
 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D  [インストーラーのWeb公開ディレクトリ] [インストーラーのWeb公開URL]' . PHP_EOL;
-		echo PHP_EOL;
 		echo PHP_EOL;
 		echo ' 例) php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D '.dirname(dirname(dirname(dirname(__FILE__)))).'/htdocs/ http://mydomian.com/unicorn/' . PHP_EOL;
 		echo PHP_EOL;

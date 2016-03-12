@@ -10,7 +10,6 @@
 		<DB_DSN>mysqli://fwmuser:fwmpass@localhost/fwm</DB_DSN>
 		<!-- MVCフレームワークの定義 -->
 		<FLOWXML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'class/MVC/Controller/']]></FLOWXML_PATH>
-		<TEMPLATEHTML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'template/managedocs/static/']]></TEMPLATEHTML_PATH>
 		<!-- アプリケーションへのアクセスがhttpsで無い場合に405エラーとする設定 -->
 		<DENY_HTTP>false</DENY_HTTP>
 		<!-- アプリケーションへのアクセスをIPフィルタリングし、マッチしない場合に405エラーとする設定 falseの場合はフィルタリングチェックを実行しない(全てのIPが無条件で許可される) -->
@@ -22,18 +21,12 @@
 		<ANDROID_DOWNLOAD_URL><![CDATA[https://play.google.com/store/apps/details?id=com.unicorn-project]]></ANDROID_DOWNLOAD_URL>
 		<ANDROID_UPDATE_URL><![CDATA[https://play.google.com/store/apps/details?id=com.unicorn-project]]></ANDROID_UPDATE_URL>
 		<!-- 汎用Authの定義 -->
-		<TOOL_AUTH_TBL_NAME>fwmuser</TOOL_AUTH_TBL_NAME>
-		<TOOL_AUTH_PKEY_FIELD_NAME>id</TOOL_AUTH_PKEY_FIELD_NAME>
-		<TOOL_AUTH_ID_FIELD_NAME>mail</TOOL_AUTH_ID_FIELD_NAME>
-		<TOOL_AUTH_PASS_FIELD_NAME>pass</TOOL_AUTH_PASS_FIELD_NAME>
-		<TOOL_AUTH_ID_ENCRYPTED>empty</TOOL_AUTH_ID_ENCRYPTED>
-		<TOOL_AUTH_PASS_ENCRYPTED>SHA256</TOOL_AUTH_PASS_ENCRYPTED>
-		<AUTH_TBL_NAME>device</AUTH_TBL_NAME>
-		<AUTH_PKEY_FIELD_NAME>udid</AUTH_PKEY_FIELD_NAME>
-		<AUTH_ID_FIELD_NAME>udid</AUTH_ID_FIELD_NAME>
-		<AUTH_PASS_FIELD_NAME>udid</AUTH_PASS_FIELD_NAME>
+		<AUTH_TBL_NAME>fwmuser</AUTH_TBL_NAME>
+		<AUTH_PKEY_FIELD_NAME>id</AUTH_PKEY_FIELD_NAME>
+		<AUTH_ID_FIELD_NAME>mail</AUTH_ID_FIELD_NAME>
+		<AUTH_PASS_FIELD_NAME>pass</AUTH_PASS_FIELD_NAME>
 		<AUTH_ID_ENCRYPTED>empty</AUTH_ID_ENCRYPTED>
-		<AUTH_PASS_ENCRYPTED>empty</AUTH_PASS_ENCRYPTED>
+		<AUTH_PASS_ENCRYPTED>SHA256</AUTH_PASS_ENCRYPTED>
 		<AUTH_CRYPT_KEY>w4dsfmjec0cde8ad</AUTH_CRYPT_KEY>
 		<AUTH_CRYPT_IV>3b8er3f12fji7sdw</AUTH_CRYPT_IV>
 		<AUTH_CREATE_DATE_KEY_NAME>created</AUTH_CREATE_DATE_KEY_NAME>

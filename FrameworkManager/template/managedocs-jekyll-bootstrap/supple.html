@@ -1,0 +1,24 @@
+---
+layout: fwm/default
+title: Supplement tool
+group: supple
+---
+{% include JB/setup %}
+			<script id="supple-main" type="text/javascript">
+				$(function(){
+					// 共通イベントの初期化・登録
+					$('iframe#supplecontents').load(function(){
+						if (typeof $(this).attr('height') == 'undefined') {
+							$(this).height(this.contentWindow.document.documentElement.scrollHeight+10);
+						}
+					});
+					$('iframe#supplecontents').triggerHandler('load');
+					$('.maincontents h3').text(getParameterByName("targetname"));
+					$('iframe#supplecontents').attr("src", getParameterByName("target"));
+				});
+			</script>
+			<div class="maincontents" permission="0">
+				<h2>Supplement tool</h2>
+				<h3></h3>
+				<iframe id="supplecontents" style="width:100%; background-color: white;"></iframe>
+			</div>

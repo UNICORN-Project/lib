@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<xml>
+	<section id="Sample">
+		<execute>
+			<flowviewparam selector="#section-message" val="'コレはSample FlowによってIndexが読み込まれています。'"/>
+			<flowviewparam selector="#next-link" val="HtmlViewAssignor::buildReplaceAttribute('href', 'sample.html', '')"/>
+			<flowviewparam selector="#next-link" val="HtmlViewAssignor::buildSetNode('Go to Index')"/>
+			<view section="index"/>
+		</execute>
+	</section>
+</xml>

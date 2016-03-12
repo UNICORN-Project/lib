@@ -1,8 +1,8 @@
 RewriteEngine On
 
 # アプリバージョン用
-SetEnvIf User-Agent "^[A-Za-z0-9]+\/(\d\.\d\.\d+)" appversion=$1
-SetEnvIf User-Agent "^[A-Za-z0-9]+\/\d\.\d\.\d+\/([A-Za-z0-9\.]+)" appdisplayversion=$1
+SetEnvIf User-Agent "^[A-Za-z0-9]+\/(\d\.\d\.\d+)" appdisplayversion=$1
+SetEnvIf User-Agent "^[A-Za-z0-9]+\/\d\.\d\.\d+\/([A-Za-z0-9\.]+)" appversion=$1
 
 # All files with .something are skipped
 RewriteCond %{REQUEST_URI} \..+$

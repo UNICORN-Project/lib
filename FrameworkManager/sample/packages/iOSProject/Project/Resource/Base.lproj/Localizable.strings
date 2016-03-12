@@ -1,0 +1,31 @@
+/* 
+  Localizable.strings
+  Project
+
+  Created by saimushi on 2014/10/01.
+  Copyright (c) 2014年 saimushi. All rights reserved.
+*/
+"MM/dd/yy, HH:mm" = "yyyy-MM-dd HH:mm";
+"Last Updated: %@" = "前回読み込み日時: %@";
+"Pull down to refresh..." = "下に引っ張って再読み込み";
+"Release to refresh..." = "指を離すと再読み込みを開始します";
+"Loading..." = "読み込み中...";
+"Cancel" = "キャンセル";
+"OK" = "完了";
+"SAVE" = "保存";
+" OK " = "閉じる";
+"Close" = "閉じる";
+"Choose" = "選択";
+"Add" = "追加";
+"Limit String Length %d ~ %d" = "文字数:%d〜%d";
+"Limit Over String %d" = "文字数が%d文字オーバーしています";
+"Limit Under String %d" = "文字数が%d文字不足しています";
+"Fatal Error!\rPlease try restart this application" = "エラーが発生しました。\nしばらくたってからアプリを起動してください。";
+"Time out" = "インターネット接続に失敗しました。";
+"Internal Server Error" = "ご迷惑をお掛けします。\n\nサーバーが致命的なエラーを発生させました。\n最初からやり直すか、それでも改善しない場合はシステム管理会社に問い合わせをして下さい。";
+"Error code 400\rBad Request" = "エラーコード400\n\nデータの入力にあやまりがあるか\nサーバー側の問題により、処理を正常に受付出来ませんでした。\n最初からやり直すか、それでも改善しない場合はシステム管理会社に問い合わせをして下さい。";
+"Error code 401\rUnauthorized" = "エラーコード401\n\n何らかの理由により、認証に失敗しました。\n最初からやり直すか、それでも改善しない場合はシステム管理会社に問い合わせをして下さい。";
+"Error code 404\rNot Found" = "エラーコード404\n\n要求したデータが既に存在しませんでした。\n最初からやり直すか、それでも改善しない場合はシステム管理会社に問い合わせをして下さい。";
+"Error code 503\rService Unavailable" = "エラーコード503\n\nご迷惑をお掛けします。\nサーバーが現在メンテナンス中です。\nしばらく経ってから再度実行して下さい。";
+"Please update new version." = "アプリケーションを最新版に更新して下さい。";
+"Warrning\rthis App's 'ATS' unenabled." = "Warring\rこのアプリケーションは'ATS'が無効になっています。";

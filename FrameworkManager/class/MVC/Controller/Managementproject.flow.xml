@@ -2,113 +2,121 @@
 <xml>
 	<section id="Managementproject">
 		<execute>
-			<if condition="true === Auth::isCertification()">
-				<assign var="res" method="isset" arg1="Flow::$params['get']['target_project']"/>
-				<if var="res" val="false">
-					<exception/>
-				</if>
-				<assign var="res" method="strlen" arg1="Flow::$params['get']['target_project']"/>
-				<if var="res" val="0">
-					<exception/>
-				</if>
-				<flowviewparam selector="#baseURL" val="getConfig('BASE_URL', Flow::$params['get']['target_project'])"/>
-				<flowviewparam selector="#baseURL" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('href' => getConfig('BASE_URL', Flow::$params['get']['target_project'])))"/>
-				<flowviewparam selector="#DB_DSN" val="getConfig('DB_DSN', Flow::$params['get']['target_project'])"/>
-				<flowviewparam selector="#createdb" val="file_get_contents(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'core/createdb.sql')"/>
-				<flowviewparam selector="#createtable" val="file_get_contents(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'core/createtable.sql')"/>
-				<assign var="projectconf" val="simplexml_load_file(getConfigPathForConfigName(Flow::$params['get']['target_project']))"/>
-				<assign var="configs" val="array()"/>
-				<foreach eachas="projectconf">
-					<assign var="childeCount" val="$projectconfval->count()"/>
-					<if var="childeCount" style="&gt;" val="1">
-						<assign var="configs[]" val="array(array('.config-node-key' => 'ConfigureName:', '.config-node-val' => $projectconfkey), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'configname config-node-key'))))"/>
-						<foreach eachas="projectconfval">
-							<assign var="attribute" val="''"/>
-							<assign var="attributeCount" val="count($projectconfvalval->attributes())"/>
-							<if var="attributeCount" style="!=" val="0">
-								<assign var="tmpAttributes" val="$projectconfvalval->attributes()"/>
-								<assign var="attributes" val="array()"/>
-								<foreach eachas="tmpAttributes">
-									<assign var="attributes[]" val="$tmpAttributeskey.'='.$tmpAttributesval"/>
-								</foreach>
-								<assign var="attribute" val="' ('.implode(',',$attributes).')'"/>
-							</if>
-							<assign var="configs[]" val="array(array('.config-node-key' => $projectconfvalkey.$attribute, '.config-node-val' => $projectconfvalval->__toString()), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'config-node-key'))))"/>
-						</foreach>
-					</if>
-					<else>
+			<if condition="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<assign var="res" method="isset" arg1="Flow::$params['get']['target_project']"/>
+			<if var="res" val="false">
+				<exception/>
+			</if>
+			<assign var="res" method="strlen" arg1="Flow::$params['get']['target_project']"/>
+			<if var="res" val="0">
+				<exception/>
+			</if>
+			<flowviewparam selector="#appapiURL" val="getConfig('APPAPI_BASE_URL', Flow::$params['get']['target_project'])"/>
+			<flowviewparam selector="#appapiURL" val="HtmlViewAssignor::buildSetAttribute('href', getConfig('APPAPI_BASE_URL', Flow::$params['get']['target_project']))"/>
+			<flowviewparam selector="#baseURL" val="getConfig('BASE_URL', Flow::$params['get']['target_project'])"/>
+			<flowviewparam selector="#baseURL" val="HtmlViewAssignor::buildSetAttribute('href', getConfig('BASE_URL', Flow::$params['get']['target_project']))"/>
+			<flowviewparam selector="#DB_DSN" val="getConfig('DB_DSN', Flow::$params['get']['target_project'])"/>
+			<flowviewparam selector="#createdb" val="file_get_contents(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/core/createdb.sql')"/>
+			<flowviewparam selector="#createtable" val="file_get_contents(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/core/createtable.sql')"/>
+			<if val="is_file(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/.ios')">
+				<flowviewparam selector=".iOSDownload" val="HtmlViewAssignor::buildSetAttribute('disabled', '')"/>
+				<flowviewparam selector=".iOSDownloadMsg" val="HtmlViewAssignor::buildSetAttribute('style', 'display:none;')"/>
+			</if>
+			<if val="is_file(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/.android')">
+				<flowviewparam selector=".androidDownload" val="HtmlViewAssignor::buildSetAttribute('disabled', '')"/>
+				<flowviewparam selector=".androidDownloadMsg" val="HtmlViewAssignor::buildSetAttribute('style', 'display:none;')"/>
+			</if>
+			<assign var="projectconf" val="simplexml_load_file(getConfigPathForConfigName(Flow::$params['get']['target_project']))"/>
+			<assign var="configs" val="array()"/>
+			<foreach eachas="projectconf">
+				<assign var="childeCount" val="$projectconfval->count()"/>
+				<if var="childeCount" style="&gt;" val="1">
+					<assign var="configs[]" val="array(array('.config-node-key' => 'ConfigureName:', '.config-node-val' => $projectconfkey), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'configname config-node-key'))))"/>
+					<foreach eachas="projectconfval">
 						<assign var="attribute" val="''"/>
-						<assign var="attributeCount" val="count($projectconfval->attributes())"/>
+						<assign var="attributeCount" val="count($projectconfvalval->attributes())"/>
 						<if var="attributeCount" style="!=" val="0">
-							<assign var="tmpAttributes" val="$projectconfval->attributes()"/>
+							<assign var="tmpAttributes" val="$projectconfvalval->attributes()"/>
 							<assign var="attributes" val="array()"/>
 							<foreach eachas="tmpAttributes">
 								<assign var="attributes[]" val="$tmpAttributeskey.'='.$tmpAttributesval"/>
 							</foreach>
 							<assign var="attribute" val="' ('.implode(',',$attributes).')'"/>
 						</if>
-						<assign var="configs[]" val="array(array('.config-node-key' => $projectconfkey.$attribute, '.config-node-val' => $projectconfval->__toString()), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'config-node-key'))))"/>
-					</else>
-				</foreach>
-				<flowviewparam selector=".config-node" val="array(HtmlViewAssignor::LOOP_NODE_KEY => $configs)"/>
-				<assign var="useAutoGenerate" method="getAutoGenerateEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="useAutoGenerate" val="true">
-					<assign var="useAutoGenerate" val="string:on"/>
-					<flowviewparam selector="#useAutoGenerate" val="$useAutoGenerate"/>
-				</if>
-				<assign var="useAutoMigration" method="getAutoMigrationEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="useAutoMigration" val="true">
-					<assign var="useAutoMigration" val="string:on"/>
-					<flowviewparam selector="#useAutoMigration" val="$useAutoMigration"/>
-				</if>
-				<assign var="useAutoStageCheck" method="getAutoStageCheckEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="useAutoStageCheck" val="1">
-					<assign var="useAutoStageCheck" val="string:on"/>
-					<flowviewparam selector="#useAutoStageCheck" val="$useAutoStageCheck"/>
-				</if>
-				<assign var="isLocal" method="getLocalEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="isLocal" val="1">
-					<assign var="isLocal" val="string:on"/>
-					<flowviewparam selector="#isLocal" val="$isLocal"/>
-				</if>
-				<assign var="isTest" method="getTestEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="isTest" val="1">
-					<assign var="isTest" val="string:on"/>
-					<flowviewparam selector="#isTest" val="$isTest"/>
-				</if>
-				<assign var="isDevelopment" method="getDevelopmentEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="isDevelopment" val="1">
-					<assign var="isDevelopment" val="string:on"/>
-					<flowviewparam selector="#isDevelopment" val="$isDevelopment"/>
-				</if>
-				<assign var="isStaging" method="getStagingEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="isStaging" val="1">
-					<assign var="isStaging" val="string:on"/>
-					<flowviewparam selector="#isStaging" val="$isStaging"/>
-				</if>
-				<assign var="isDebug" method="getDebugEnabled" arg1="Flow::$params['get']['target_project']"/>
-				<if var="isDebug" val="1">
-					<assign var="isDebug" val="string:on"/>
-					<flowviewparam selector="#isDebug" val="$isDebug"/>
-				</if>
-				<assign var="stageTest" method="isTest" arg1="FALSE" arg2="Flow::$params['get']['target_project']"/>
-				<if var="stageTest" val="true">
-					<assign var="stageTest" val="string:on"/>
-					<flowviewparam selector="#stageTest" val="$stageTest"/>
-				</if>
-				<if condition="false !== is_file(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'.manager')">
-					<flowviewparam selector="#management" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'hide'))"/>
+						<assign var="configs[]" val="array(array('.config-node-key' => $projectconfvalkey.$attribute, '.config-node-val' => $projectconfvalval->__toString()), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'config-node-key'))))"/>
+					</foreach>
 				</if>
 				<else>
-					<flowviewparam selector="#installer-path" val="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'installer/index.php'"/>
-					<flowviewparam selector="#installer-link" val="getConfig('BASE_URL', PROJECT_NAME).'installer/index.php'"/>
-					<flowviewparam selector="#installer-link" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('href' => getConfig('BASE_URL', PROJECT_NAME).'installer/index.php'))"/>
+					<assign var="attribute" val="''"/>
+					<assign var="attributeCount" val="count($projectconfval->attributes())"/>
+					<if var="attributeCount" style="!=" val="0">
+						<assign var="tmpAttributes" val="$projectconfval->attributes()"/>
+						<assign var="attributes" val="array()"/>
+						<foreach eachas="tmpAttributes">
+							<assign var="attributes[]" val="$tmpAttributeskey.'='.$tmpAttributesval"/>
+						</foreach>
+						<assign var="attribute" val="' ('.implode(',',$attributes).')'"/>
+					</if>
+					<assign var="configs[]" val="array(array('.config-node-key' => $projectconfkey.$attribute, '.config-node-val' => $projectconfval->__toString()), array('.config-node-key' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'config-node-key'))))"/>
 				</else>
-				<view flowpostformsection="generatenewproject-execute"/>
+			</foreach>
+			<flowviewparam selector=".config-node" val="array(HtmlViewAssignor::LOOP_NODE_KEY => $configs)"/>
+			<assign var="useAutoGenerate" method="getAutoGenerateEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="useAutoGenerate" val="true">
+				<assign var="useAutoGenerate" val="string:on"/>
+				<flowviewparam selector="#useAutoGenerate" val="$useAutoGenerate"/>
+			</if>
+			<assign var="useAutoMigration" method="getAutoMigrationEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="useAutoMigration" val="true">
+				<assign var="useAutoMigration" val="string:on"/>
+				<flowviewparam selector="#useAutoMigration" val="$useAutoMigration"/>
+			</if>
+			<assign var="useAutoStageCheck" method="getAutoStageCheckEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="useAutoStageCheck" val="1">
+				<assign var="useAutoStageCheck" val="string:on"/>
+				<flowviewparam selector="#useAutoStageCheck" val="$useAutoStageCheck"/>
+			</if>
+			<assign var="isLocal" method="getLocalEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="isLocal" val="1">
+				<assign var="isLocal" val="string:on"/>
+				<flowviewparam selector="#isLocal" val="$isLocal"/>
+			</if>
+			<assign var="isTest" method="getTestEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="isTest" val="1">
+				<assign var="isTest" val="string:on"/>
+				<flowviewparam selector="#isTest" val="$isTest"/>
+			</if>
+			<assign var="isDevelopment" method="getDevelopmentEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="isDevelopment" val="1">
+				<assign var="isDevelopment" val="string:on"/>
+				<flowviewparam selector="#isDevelopment" val="$isDevelopment"/>
+			</if>
+			<assign var="isStaging" method="getStagingEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="isStaging" val="1">
+				<assign var="isStaging" val="string:on"/>
+				<flowviewparam selector="#isStaging" val="$isStaging"/>
+			</if>
+			<assign var="isDebug" method="getDebugEnabled" arg1="Flow::$params['get']['target_project']"/>
+			<if var="isDebug" val="1">
+				<assign var="isDebug" val="string:on"/>
+				<flowviewparam selector="#isDebug" val="$isDebug"/>
+			</if>
+			<assign var="stageTest" method="isTest" arg1="FALSE" arg2="Flow::$params['get']['target_project']"/>
+			<if var="stageTest" val="true">
+				<assign var="stageTest" val="string:on"/>
+				<flowviewparam selector="#stageTest" val="$stageTest"/>
+			</if>
+			<if condition="false !== is_file(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'.manager')">
+				<flowviewparam selector="#management" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('class' => 'hide'))"/>
 			</if>
 			<else>
-				<flow section="login"/>
+				<flowviewparam selector="#installer-path" val="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'installer/index.php'"/>
+				<flowviewparam selector="#installer-link" val="getConfig('BASE_URL', PROJECT_NAME).'installer/index.php'"/>
+				<flowviewparam selector="#installer-link" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('href' => getConfig('BASE_URL', PROJECT_NAME).'installer/index.php'))"/>
 			</else>
+			<view/>
 		</execute>
 	</section>
 	<section id="Managementproject-modifyflags">
@@ -433,40 +441,38 @@
 	</section>
 	<section id="Managementproject-downloadzip">
 		<execute>
-			<if condition="true === Auth::isCertification()">
-				<if condition="true === isset(Flow::$params['get']['target']) &amp;&amp; 2 &lt; strlen(Flow::$params['get']['target']) &amp;&amp; true === is_dir(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Sample')">
-					<assing var="outputFile" val="MANAGER_DOCUMENT_ROOT_PATH.'static/'.Flow::$params['get']['target'].'Project.zip'"/>
-					<if condition="true === is_file($outputFile)">
-						<execute val="unlink($outputFile)"/>
-					</if>
-					<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Sample'" arg2="$outputFile"/>
-					<if condition="true === $res">
-						<execute val="header('Location: ./static/'.Flow::$params['get']['target'].'Project.zip')"/>
-					</if>
+			<if condition="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<if condition="true === isset(Flow::$params['get']['target']) &amp;&amp; 2 &lt; strlen(Flow::$params['get']['target']) &amp;&amp; true === is_dir(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Project')">
+				<assing var="outputFile" val="MANAGER_DOCUMENT_ROOT_PATH.'assets/'.Flow::$params['get']['target'].'Project.zip'"/>
+				<if condition="true === is_file($outputFile)">
+					<execute val="unlink($outputFile)"/>
+				</if>
+				<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Project'" arg2="$outputFile"/>
+				<if condition="true === $res">
+					<execute val="header('Location: ./assets/'.Flow::$params['get']['target'].'Project.zip')"/>
 				</if>
 			</if>
-			<else>
-				<flow section="login"/>
-			</else>
 		</execute>
 	</section>
 	<section id="Managementproject-generateiosmodel">
 		<execute>
 			<if condition="true === Auth::isCertification()">
-				<if condition="true === isset(Flow::$params['get']['target']) &amp;&amp; 2 &lt; strlen(Flow::$params['get']['target']) &amp;&amp; true === is_dir(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Sample')">
+				<if condition="true === isset(Flow::$params['get']['target']) &amp;&amp; 2 &lt; strlen(Flow::$params['get']['target']) &amp;&amp; true === is_dir(getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Project')">
 					<assign var="out" class="ProjectManager" method="migrateAppModel" arg1="Flow::$params['get']['target_project']" arg2="Flow::$params['get']['target']"/>
-					<assing var="outputFile" val="MANAGER_DOCUMENT_ROOT_PATH.'static/'.Flow::$params['get']['target'].'Model.zip'"/>
+					<assing var="outputFile" val="MANAGER_DOCUMENT_ROOT_PATH.'assets/'.Flow::$params['get']['target'].'Model.zip'"/>
 					<if condition="true === is_file($outputFile)">
 						<execute val="unlink($outputFile)"/>
 					</if>
 					<if condition="'iOS' === Flow::$params['get']['target']">
-						<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Sample/Project/Classes/Model'" arg2="$outputFile"/>
+						<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Project/Project/Classes/Model'" arg2="$outputFile"/>
 					</if>
 					<elseif condition="'android' === Flow::$params['get']['target']">
-						<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Sample/Project/src/com/unicorn/model'" arg2="$outputFile"/>
+						<assing var="res" method="zip" arg1="getConfig('PROJECT_ROOT_PATH', Flow::$params['get']['target_project']).'/'.Flow::$params['get']['target'].'Project/Project/src/com/unicorn/model'" arg2="$outputFile"/>
 					</elseif>
 					<if condition="true === $res">
-						<execute val="header('Location: ./static/'.Flow::$params['get']['target'].'Model.zip')"/>
+						<execute val="header('Location: ./assets/'.Flow::$params['get']['target'].'Model.zip')"/>
 					</if>
 				</if>
 			</if>

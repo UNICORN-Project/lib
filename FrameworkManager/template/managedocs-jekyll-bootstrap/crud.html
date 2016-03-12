@@ -1,0 +1,61 @@
+---
+layout: fwm/default
+title: CRUD
+fa: fa-sitemap
+group: static navigation
+---
+{% include JB/setup %}
+			<script id="crud-js" src="./assets/fwm/js/crudjs/crud-ja.js"></script>
+			<script id="crud-datetimepicker-js" src="./assets/fwm/js/crudjs/jquery.datetimepicker.js"></script>
+			<script id="crud-validate-js" src="./assets/fwm/js/crudjs/jquery.validate.min.js"></script>
+			<link id="crud-css" rel="stylesheet" href="./assets/fwm/js/crudjs/crud.css" />
+			<link id="crud-datetimepicker-css" rel="stylesheet" href="./assets/fwm/js/crudjs/jquery.datetimepicker.css" />
+			<script id="crud-base" type="text/javascript">
+				$(function(){
+					var projectName = getParameterByName("projectname");
+					var targetProject = getParameterByName("target_project");
+					var dispName = targetProject;
+					if (null != projectName && 0 < projectName.length){
+						dispName = projectName;
+					}
+					$("#crudmain h1").text(dispName + " " + $("#crudmain h1").text());
+					$("#menu-tablelist").ready(function() {
+						$("#menu-tablelist").append("<div id=\"tablelist\"></div>");
+						$("#tablelistss").ready(function(){
+							var crudBasePath = "crud/" + targetProject;
+							// crud.jsを動かす為の前準備のDOM操作を担う
+							var crudEnabled = true;
+							crud(crudBasePath, "target_project="+targetProject+"&projectname="+projectName, function(mode){
+								// crudJS終了後に処理をしたい場合はココに記述
+								$("#crudmain input").attr("class", $("#crudmain input").attr("class") + " form-control");
+								$("#crudmain textarea").attr("class", $("#crudmain textarea").attr("class") + " form-control");
+								var classStr = $("#crudmain input").attr("class");
+								$("#crudmain input[type='submit']").attr("class", classStr + " btn btn-success");
+								if ($("#crudmain input[type='submit'][value='DELETE']")){
+									$("#crudmain input[type='submit'][value='DELETE']").attr("class", classStr + " btn btn-danger");
+								}
+								if("tablelist" == mode){
+									$("#tablelist h2").parent().prepend("<p>" + dispName + "'s " + $("#tablelist h2").text() + "</p>");
+									$("#tablelist h2").remove();
+								}
+								else {
+									$("title#title").text($("title#title").text() + " " + $("#crudmain h2").text() + " " + mode);
+								}
+								$("#crudmain form").append("<input type='hidden' name='target_project' value='" + targetProject + "'>");
+								if("submit" == mode){
+									// 元の一覧にリダイレクトする
+									if($(".list-link a").attr("href").length > 0){
+										location.href = $(".list-link a").attr("href");
+									}
+								}
+							});
+						});
+					});
+				});
+			</script>
+			<div id="crudmain" class="maincontents" permission="0">
+				<h1>CRUD</h1>
+				<div id="crudcontents">
+					<h2>Table Listから操作したいテーブルを選んで下さい。</h2>
+				</div>
+			</div>

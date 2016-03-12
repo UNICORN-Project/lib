@@ -150,7 +150,7 @@
 	</MigrationManager>
 	<PsychoFrame>
 		<package>ORMapper</package>
-		<link mapfrom="GenericORMapper" mapto="PsychoFrame">default.implement.ORM/GenericORMapper</link>
+		<link>default.implement.ORM/PsychoFrame</link>
 	</PsychoFrame>
 	<PsychoJack>
 		<package>MigrationManager</package>

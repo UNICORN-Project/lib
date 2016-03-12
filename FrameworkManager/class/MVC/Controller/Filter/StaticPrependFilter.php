@@ -33,13 +33,15 @@ class StaticPrependFilter extends BasePrependFilter {
 				$query .= $key.'='.$val;
 			}
 		}
-		Flow::$params['backflow'][] = array('section' => pathInfoEX($_SERVER ['REQUEST_URI'], 'filename'), 'target' => '', 'query' => htmlspecialchars($query));
+		$URIs = explode('?', $_SERVER['REQUEST_URI']);
+		$URI = $URIs[0];
+		Flow::$params['backflow'][] = array('section' => pathInfoEX($URI, 'filename'), 'target' => '', 'query' => htmlspecialchars($query));
 		debug('backflows=');
 		debug(Flow::$params['backflow']);
 		$controlerClassName = Core::loadMVCModule ('Login');
 		Core::$CurrentController = new $controlerClassName ();
 		if (isset ( $_SERVER ['REQUEST_METHOD'] )) {
-			Core::$CurrentController->requestMethod = strtoupper ( $_SERVER ['REQUEST_METHOD'] );
+			Core::$CurrentController->requestMethod = strtoupper ( $_SERVER['REQUEST_METHOD'] );
 		}
 		Core::$CurrentController->controlerClassName = $controlerClassName;
 		Core::$CurrentController->outputType = Core::$outputType;

@@ -199,6 +199,7 @@ class HtmlViewAssignor {
 
 	public static function assign($argTemplateHint, $argParams=NULL, $argKey=NULL, $argDepth = 0, $arrayDepth=0, $argTplName=NULL){
 		static $Template = array();
+		static $executed = FALSE;
 		static $caches = array();
 		static $cache = NULL;
 		static $varGetten = FALSE;
@@ -458,6 +459,7 @@ class HtmlViewAssignor {
 									//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[$domIdx]->outertext(), 'action' => 'remove-node');
 									// 削除
 									$dom[$domIdx]->remove();
+									$executed = TRUE;
 								}
 							}
 							unset($dom);
@@ -476,6 +478,7 @@ class HtmlViewAssignor {
 											//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[$domIdx]->outertext(), 'action' => 'set-attr', 'attr' => $attrKey);
 											// 置き換え
 											$dom[$domIdx]->setAttribute($attrKey, $attrVal);
+											$executed = TRUE;
 										}
 										else {
 											// キャッシュを取っておく
@@ -485,11 +488,11 @@ class HtmlViewAssignor {
 											//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[$domIdx]->outertext(), 'action' => 'remove-attr', 'attr' => $attrKey);
 											// 属性の削除
 											$dom[$domIdx]->removeAttribute($attrKey);
+											$executed = TRUE;
 										}
 									}
 								}
 							}
-							unset($dom);
 						}
 						// 属性の部分置換を処理
 						elseif(NULL !== $argKey && self::PART_REPLACE_ATTR_KEY === $key){
@@ -516,6 +519,7 @@ class HtmlViewAssignor {
 										}
 										// 置き換え
 										$dom[$domIdx]->setAttribute($attrKey, $attrVal);
+										$executed = TRUE;
 									}
 								}
 							}
@@ -523,6 +527,11 @@ class HtmlViewAssignor {
 						}
 						// NODEの部分置換を処理
 						elseif(NULL !== $argKey && self::PART_REPLACE_NODE_KEY === $key){
+							if (TRUE === $executed){
+								$executed = FALSE;
+								// DOM再パースしておく
+								$Template[$argDepth]->load($Template[$argDepth]->flush());
+							}
 							$dom = $Template[$argDepth]->find($argKey);
 							if(isset($dom) && is_array($dom) && isset($dom[0])){
 								for ($domIdx = 0; count($dom) > $domIdx; $domIdx++) {
@@ -538,6 +547,7 @@ class HtmlViewAssignor {
 									}
 									// 置き換え
 									$dom[$domIdx]->text($nodeVal);
+									$executed = TRUE;
 								}
 							}
 							unset($dom);
@@ -554,6 +564,7 @@ class HtmlViewAssignor {
 									//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[$domIdx]->outertext(), 'action' => 'append-node');
 									// 置き換え
 									$dom[$domIdx]->innerHtml($dom[$domIdx]->innerHtml().$val);
+									$executed = TRUE;
 								}
 							}
 							unset($dom);
@@ -570,6 +581,7 @@ class HtmlViewAssignor {
 									//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[$domIdx]->outertext(), 'action' => 'prepend-node');
 									// 置き換え
 									$dom[$domIdx]->innerHtml($val.$dom[$domIdx]->innerHtml());
+									$executed = TRUE;
 								}
 							}
 							unset($dom);
@@ -595,6 +607,7 @@ class HtmlViewAssignor {
 									// LOOPして出来たhtmlに置き換え
 									// XXX ここは敢えて「setAttribute」メソッドで値を書き換えている！
 									$dom[0]->setAttribute('outertext', $newDomHtml);
+									$executed = TRUE;
 								}
 							}
 						}
@@ -627,6 +640,7 @@ class HtmlViewAssignor {
 									//$caches[$argDepth][] = array('arrayDepth' => $arrayDepth, 'key' => $key, 'findSelector' => $argKey, 'node' => (string)$dom[0]->outertext(), 'action' => 'set-node');
 									// XXX メソッドは変えてはならない！
 									$dom[$domIdx]->text($val);
+									$executed = TRUE;
 								}
 							}
 						}
@@ -644,7 +658,7 @@ class HtmlViewAssignor {
 // 			}
 // 			//$cachePath = $cacheDir.str_replace('/', '_', str_replace('//', '/', $argTplName)).'.'.sha1(serialize(array_keys_recursive($argParams))).'.tplcache.php';
 // 			file_put_contents($cachePath, serialize($caches));
-// 			@exec('chmod -R 0777 ' .$cachePath);
+// 			@exec('chmod -R 0666 ' .$cachePath);
 		}
 
 		if (NULL !== $argTemplateHint){

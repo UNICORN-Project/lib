@@ -127,6 +127,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			$DSN = $argDSN;
 		}
 		if(!isset($DBO[(string)$DSN])){
+			// DBマイグレーション
+			if(function_exists('getAutoMigrationEnabled') && TRUE === getAutoMigrationEnabled()){
+				MigrationManager::dispatchDatabase();
+			}
 			$DBO[(string)$DSN] = DBO::sharedInstance($DSN);
 		}
 		return $DBO[(string)$DSN];
@@ -271,6 +275,16 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		try{
 			$DBO = self::_getDBO();
 			// UIDAuth
+			if (0 < strlen((string)getConfig('APP_AUTH_TBL_NAME'))){
+				// アプリ用のAuth設定を適用する
+				Auth::init();
+				Auth::$authTable = getConfig('APP_AUTH_TBL_NAME');
+				Auth::$authPKeyField = getConfig('APP_AUTH_PKEY_FIELD_NAME');
+				Auth::$authIDField = getConfig('APP_AUTH_ID_FIELD_NAME');
+				Auth::$authPassField = getConfig('APP_AUTH_PASS_FIELD_NAME');
+				Auth::$authIDEncrypted = getConfig('APP_AUTH_ID_ENCRYPTED');
+				Auth::$authPassEncrypted = getConfig('APP_AUTH_PASS_ENCRYPTED');
+			}
 			$Device = Auth::getCertifiedUser();
 			if(FALSE === $Device){
 				// 登録処理
@@ -633,7 +647,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		$DBO = NULL;
 		try{
 			$DBO = self::_getDBO();
-
+				
 			// RESTの実行
 			$this->restResourceModel = $resource['model'];
 			if(NULL === $this->restResourceListed){
@@ -1354,23 +1368,25 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 					$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 				}
-				Auth::init();
-				// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化・マスク化を自動処理してあげる
-				if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
-					// IDフィールド用
-					if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
-						$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
-						if (FALSE !== strpos(Auth::$authIDField, 'mail')){
-							// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
-							$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+				if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+					Auth::init();
+					// Auth設定されているフィールドへの参照の場合、暗号化・ハッシュ化・マスク化を自動処理してあげる
+					if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+						// IDフィールド用
+						if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+							$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+							if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+								// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+								$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+							}
 						}
-					}
-					// パスフィールド用
-					if (isset($resources[count($resources)-1][Auth::$authPassField])){
-						$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
-						if (FALSE !== strpos(Auth::$authPassField, 'pass')){
-							// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
-							unset($resources[count($resources)-1][Auth::$authPassField]);
+						// パスフィールド用
+						if (isset($resources[count($resources)-1][Auth::$authPassField])){
+							$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+							if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+								// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+								unset($resources[count($resources)-1][Auth::$authPassField]);
+							}
 						}
 					}
 				}
@@ -1537,23 +1553,25 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
-							Auth::init();
-							// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
-							if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
-								// IDフィールド用
-								if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
-									$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
-									if (FALSE !== strpos(Auth::$authIDField, 'mail')){
-										// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
-										$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+							if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+								Auth::init();
+								// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+								if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+									// IDフィールド用
+									if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+										$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+										if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+											// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+											$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+										}
 									}
-								}
-								// パスフィールド用
-								if (isset($resources[count($resources)-1][Auth::$authPassField])){
-									$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
-									if (FALSE !== strpos(Auth::$authPassField, 'pass')){
-										// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
-										unset($resources[count($resources)-1][Auth::$authPassField]);
+									// パスフィールド用
+									if (isset($resources[count($resources)-1][Auth::$authPassField])){
+										$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+										if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+											// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+											unset($resources[count($resources)-1][Auth::$authPassField]);
+										}
 									}
 								}
 							}
@@ -1655,22 +1673,24 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
-							Auth::init();
-							// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
-							if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
-								if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
-									$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
-									if (FALSE !== strpos(Auth::$authIDField, 'mail')){
-										// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
-										$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+							if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+								Auth::init();
+								// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+								if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+									if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+										$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
+										if (FALSE !== strpos(Auth::$authIDField, 'mail')){
+											// mail とか mailaddr とか mailaddress とかっぽいフィールだったら強制的にマスクして一部を読めなく！
+											$resources[count($resources)-1][Auth::$authIDField] = substr($resources[count($resources)-1][Auth::$authIDField], 0, 2) . '********@********' . substr($resources[count($resources)-1][Auth::$authIDField], -2);
+										}
 									}
-								}
-								// パスフィールド用
-								if (isset($resources[count($resources)-1][Auth::$authPassField])){
-									$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
-									if (FALSE !== strpos(Auth::$authPassField, 'pass')){
-										// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
-										unset($resources[count($resources)-1][Auth::$authPassField]);
+									// パスフィールド用
+									if (isset($resources[count($resources)-1][Auth::$authPassField])){
+										$resources[count($resources)-1][Auth::$authPassField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authPassField], Auth::$authPassEncrypted);
+										if (FALSE !== strpos(Auth::$authPassField, 'pass')){
+											// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
+											unset($resources[count($resources)-1][Auth::$authPassField]);
+										}
 									}
 								}
 							}

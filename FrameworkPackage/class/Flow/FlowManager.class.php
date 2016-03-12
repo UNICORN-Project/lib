@@ -17,7 +17,9 @@ class FlowManager
 		$targetPath = '';
 		// 現在アクセスされているURIベースのターゲットパスを特定する
 		if(@isset(Core::$CurrentController) && @isset(Core::$CurrentController->section)){
-			$nowURI = strtolower($_SERVER['REQUEST_URI']);
+			$uris = explode('?', $_SERVER['REQUEST_URI']);
+			$uri = $uris[0];
+			$nowURI = strtolower($uri);
 			$searchURI = str_replace('_', '-', strtolower(Core::$CurrentController->section));
 			if (1 < strpos($nowURI, $searchURI)){
 				// 上位階層がある状態でリクエストされているので、その階層を全部取り出す

@@ -9,4 +9,25 @@
 			<view/>
 		</execute>
 	</section>
+	<!-- フレームワーク管理ツールのMyAdmin用SSOフロー -->
+	<section id="Fwm-pma-auth">
+		<execute>
+			<if val="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<else>
+				<execute val="@session_write_close();"/>
+				<execute val="session_set_cookie_params(0, '/', '', 0);"/>
+				<execute val="session_name('fwm_pma_refresh_token');"/>
+				<execute val="@session_start();"/>
+				<execute val="$_SESSION['PMA_single_signon_user'] = parse_url(getConfig('DB_DSN'), PHP_URL_USER);"/>
+				<execute val="$_SESSION['PMA_single_signon_password'] = parse_url(getConfig('DB_DSN'), PHP_URL_PASS);"/>
+				<execute val="$_SESSION['PMA_single_signon_host'] = parse_url(getConfig('DB_DSN'), PHP_URL_HOST);"/>
+				<execute val="@session_write_close();"/>
+				<execute val="$callback = $_GET['callback']"/>
+				<execute val="unset($_GET['callback'])"/>
+				<execute val="header('location:./supple/myadm/')"/>
+			</else>
+		</execute>
+	</section>
 </xml>

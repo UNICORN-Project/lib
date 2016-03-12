@@ -758,6 +758,12 @@ class MVCCore {
 						$flowXMLPath = self::$flowXMLBasePath . '/' . $targetPath . $classXMLName . '.flow.xml';
 					}
 				}
+				if ('' === $flowXMLPath) {
+					// それっぽいパスを操作してみる
+					if (file_exists_ip ( self::$flowXMLBasePath . '/web/' . $targetPath . $classXMLName . '.flow.xml' )) {
+						$flowXMLPath = self::$flowXMLBasePath . '/web/' . $targetPath . $classXMLName . '.flow.xml';
+					}
+				}
 				debug ( 'mvccore $flowXMLPath=' . $flowXMLPath );
 				if ('' === $flowXMLPath) {
 					// エラー終了
