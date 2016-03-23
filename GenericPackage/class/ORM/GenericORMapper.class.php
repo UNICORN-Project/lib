@@ -25,7 +25,6 @@ class GenericORMapper {
 	 * モデルクラスを自動生成して返す
 	 */
 	public static function getAutoGenerateModel($argDBO, $argModelName, $argExtractionCondition=NULL, $argBinds=NULL, $argAutoReadable=TRUE, $argSeqQuery=NULL){
-
 		// モデルクラス名とテーブル名を特定する
 		$tableName = $argModelName;
 		$modelName = self::getGeneratedModelName($tableName);
@@ -79,7 +78,6 @@ class GenericORMapper {
 					}
 				}
 			}
-
 			// 生成したクラスを取っておく
 			self::$_models[$tableName] = $modelName;
 
@@ -102,7 +100,7 @@ class GenericORMapper {
 				$baseModelClassDefine = str_replace("%vars%", str_replace("; public ", ";".PHP_EOL.PHP_TAB."public ", $varDef), $baseModelClassDefine);
 				$baseModelClassDefine = str_replace("%describes%", str_replace("; \$this->", ";".PHP_EOL.PHP_TAB.PHP_TAB."\$this->", $describeDef), $baseModelClassDefine);
 				$baseModelClassDefine = str_replace("%indexes%", str_replace("; \$this->", ";".PHP_EOL.PHP_TAB.PHP_TAB."\$this->", $indexDef), $baseModelClassDefine);
-
+				
 				// モデルクラス定義からクラス生成
 				eval($baseModelClassDefine);
 
@@ -142,6 +140,42 @@ class GenericORMapper {
 	 * モデル定義取得
 	 */
 	public static function getModelPropertyDefs($argDBO, $tableName, $argDescribes=NULL){
+		// Viewか否か
+		$isView = FALSE;
+		
+		// DBエンジン、テーブルコメントの抽出
+		$tableStatuses = array();
+		$tableIndexs = array();
+		
+		// XXX 現在はMySQL専用
+		if ("mysql" === $argDBO->DBType){
+			logging("migration SHOW TABLE STATUS LIKE '".strtolower($tableName)."'", "migration");
+			$response = $argDBO->execute("SHOW TABLE STATUS LIKE '".strtolower($tableName)."'");
+			//logging("migration res1=".$response, "migration");
+			if(FALSE !== $response){
+				$tableStatuses = $response->GetAll();
+				logging("migration:res2=".var_export($tableStatuses,true), "migration");
+			}
+			logging("migration res3=".$response, "migration");
+			// インデックスの取得
+			logging("migration SHOW INDEX FROM `".strtolower($tableName)."`", "migration");
+			$response = $argDBO->execute("SHOW INDEX FROM `".strtolower($tableName)."`");
+			if(FALSE !== $response){
+				$tableIndexs = $response->GetAll();
+				logging("migration:res5=".var_export($tableIndexs,true), "migration");
+			}
+			logging("migration:res6=".$response, "migration");
+		}
+		// CommentがView(Viewのときは自動で入る)の場合、
+		// Engine="InnoDB"を自動で入れる
+		if(	0 < count($tableStatuses)
+			&& isset($tableStatuses[0]) && isset($tableStatuses[0]["Comment"])
+			&& strtolower($tableStatuses[0]["Comment"]) == "view"){
+			logging("is View:".$tableName);
+			$tableStatuses[0]["Engine"] = "InnoDB";
+			$isView = TRUE;
+		}
+		
 		$describes = $argDescribes;
 		if(NULL === $describes){
 			// テーブル定義を取得
@@ -153,6 +187,7 @@ class GenericORMapper {
 		$pkeysVarDef = "public \$pkeys = array(";
 		$pkeyCnt = 0;
 		if(is_array($describes) && count($describes) > 0){
+			$desc_no = 0;
 			foreach($describes as $colName => $describe){
 				// 小文字で揃える(Oracle向けの対応)
 				$colName = strtolower($colName);
@@ -189,6 +224,18 @@ class GenericORMapper {
 				elseif(FALSE === $describe["autoincrement"]){
 					$describe["autoincrement"] = "FALSE";
 				}
+				// Viewの場合
+				// 1つ目のカラムの場合
+				if( TRUE ===  $isView && 0 === $desc_no){
+					logging("table:".$tableName." type:".$describe["type"]);
+					// typeがintかbigintの場合
+					if( $describe["type"] == "bigint" || $describe["type"] == "int" ){
+						logging("is View no pkey");
+						$describe["pkey"] = "TRUE";
+						$describe["autoincrement"] = "TRUE";
+					}
+				}
+				
 				$describeDef .= "\$this->describes[\"" . $colName . "\"] = array(); ";
 				$describeDef .= "\$this->describes[\"" . $colName . "\"][\"type\"] = \"" . $describe["type"] . "\"; ";
 				if(isset($describe["default"]) && FALSE !== $describe["default"]){
@@ -226,32 +273,12 @@ class GenericORMapper {
 				if(isset($describe["pkey"]) && "TRUE" === $describe["pkey"]){
 					$pkeysVarDef .= "\"" . $colName . "\", ";
 				}
+				$desc_no++;
 			}
 			$pkeysVarDef .= "); ";
 			$varDef .= $pkeysVarDef;
 			$varDef .= "public \$tableName = \"" . $tableName . "\"; ";
-			// DBエンジン、テーブルコメントの抽出
-			$tableStatuses = array();
-			$tableIndexs = array();
-			// XXX 現在はMySQL専用
-			if ("mysql" === $argDBO->DBType){
-				logging("migration SHOW TABLE STATUS LIKE '".strtolower($tableName)."'", "migration");
-				$response = $argDBO->execute("SHOW TABLE STATUS LIKE '".strtolower($tableName)."'");
-				//logging("migration res1=".$response, "migration");
-				if(FALSE !== $response){
-					$tableStatuses = $response->GetAll();
-					logging("migration:res2=".var_export($tableStatuses,true), "migration");
-				}
-				logging("migration res3=".$response, "migration");
-				// インデックスの取得
-				logging("migration SHOW INDEX FROM `".strtolower($tableName)."`", "migration");
-				$response = $argDBO->execute("SHOW INDEX FROM `".strtolower($tableName)."`");
-				if(FALSE !== $response){
-					$tableIndexs = $response->GetAll();
-					logging("migration:res5=".var_export($tableIndexs,true), "migration");
-				}
-				logging("migration:res6=".$response, "migration");
-			}
+			
 			logging("migration:".var_export($tableStatuses, true), "migration");
 			logging("migration:".var_export($tableIndexs, true), "migration");
 			if(0 < count($tableStatuses) && isset($tableStatuses[0]) && isset($tableStatuses[0]["Comment"])){
@@ -293,7 +320,7 @@ class GenericORMapper {
 				logging("migration-index:".$indexDef, "migration");
 			}
 			else {
-				$varDef .= "public \$tableComment = ''; ";
+				//$varDef .= "public \$tableComment = ''; ";
 			}
 			return array('varDef' => $varDef, 'describeDef' => $describeDef, 'indexDef' => $indexDef);
 		}
