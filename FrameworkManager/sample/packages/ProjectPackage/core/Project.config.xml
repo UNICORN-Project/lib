@@ -90,6 +90,8 @@
 			,"me.timeline":
 				{"Method GET":
 					{"user":["_c_","_a_","_r_","_o_","_v_","_dv_","_deep_","LIMIT","OFFSET"]}
+				,"Method POST":
+					{"user":["text","profile_id"]}
 				}
 			}
 		]]></REST_RESOURCE_WHITE_LIST>
