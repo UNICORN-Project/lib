@@ -493,6 +493,7 @@ class HtmlViewAssignor {
 									}
 								}
 							}
+							unset($dom);
 						}
 						// 属性の部分置換を処理
 						elseif(NULL !== $argKey && self::PART_REPLACE_ATTR_KEY === $key){
@@ -658,7 +659,7 @@ class HtmlViewAssignor {
 // 			}
 // 			//$cachePath = $cacheDir.str_replace('/', '_', str_replace('//', '/', $argTplName)).'.'.sha1(serialize(array_keys_recursive($argParams))).'.tplcache.php';
 // 			file_put_contents($cachePath, serialize($caches));
-// 			@exec('chmod -R 0666 ' .$cachePath);
+// 			@exec('chmod -R 0777 ' .$cachePath);
 		}
 
 		if (NULL !== $argTemplateHint){

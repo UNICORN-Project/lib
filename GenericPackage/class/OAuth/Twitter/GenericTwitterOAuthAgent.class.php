@@ -64,7 +64,7 @@ class GenericTwitterOAuthAgent
 			}
 		}
 		TwitterSession::set('option_params', '');
-		TwitterSession::clear();
+		//TwitterSession::clear();
 		return $access_token;
 	}
 }

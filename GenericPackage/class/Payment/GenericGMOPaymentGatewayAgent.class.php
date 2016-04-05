@@ -1,46 +1,30 @@
 <?php
 
 /**
- * WebPay API を利用してクレジットカードの取引を行います。
+ * GMO Payment Gatewayを利用して決済を行う
  * 
- * @author atarun
- * @see <a href="https://webpay.jp/docs/api/php">WebPay API Docs</a>
+ * @author saimushi
+ * @see <a href="https://www.gmo-pg.com">GMO Payment Gateway</a>
  */
-class GenericGMOPay
+class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 {
 	/**
-	 * @var string 通貨
-	 * 2015/11/4時点で対応している通貨は"jpy"のみ
+	 * @var number 最低課金額 50円以下の決済は出来ない
 	 */
-	public static $currency = 'jpy';
-
-	public static $tokenKeyFields = array('card', 'customer');
+	public static $_minimumChargeAmount = 50;
 
 	/**
-	 * @var number 最低課金額
+	 * @var number 最高課金額 1000万以上の決済は出来ない
 	 */
-	public static $minimumChargeAmount = 50;
+	public static $_maximumChargeAmount = 10000000;
 
 	/**
-	 * @var number 最高課金額
+	 * 決済処理
 	 */
-	public static $maximumChargeAmount = 9999999;
-
-	/**
-	 * 課金の実行 $argCaptureがFALSEの場合は仮売上処理
-	 * @param string $argTokenKeyField
-	 * @param string $argChargeToken
-	 * @param number $argChargeAmount
-	 * @param string $argCapture
-	 * @param number $argExpireDays
-	 * @param string $argDescription
-	 * @param string $argUuid
-	 * @param string $argShop
-	 */
-	public static function fixPurchase($argAccessKey, $argAccessSecret, $argToken, $argUserID, $argAmount, $argItemID=NULL, $argCapture=TRUE, $arg3DSecured=FALSE, $argTax=NULL, $argExpireDays=NULL, $argDescription=NULL, $argUuid=NULL, $argShop=NULL){
+	public static function fixPurchase($argAccessKey, $argAccessSecret, $argToken, $argUserID, $argAmount, $argCallbackFunction, $argOptions=NULL, $argItemID=NULL, $argCapture=TRUE, $arg3DSecured=FALSE, $argTax=NULL, $argReturnURL=NULL, $argCancelURL=NULL, $argNotifyURL=NULL, $argExpireDays=NULL, $argDescription=NULL, $argUuid=NULL, $argShop=NULL){
 		$cardToken = NULL;
 		// バリデート
-		if (NULL === $argAmount || (int)$argAmount < self::$minimumChargeAmount || self::$maximumChargeAmount < (int)$argAmount || (int)$argAmount < 0) {
+		if (NULL === $argAmount || (int)$argAmount < self::$_minimumChargeAmount || self::$_maximumChargeAmount < (int)$argAmount || (int)$argAmount < 0) {
 			// 金額エラー
 			return FALSE;
 		}
@@ -95,10 +79,10 @@ class GenericGMOPay
 			$entryInput->setTax($argTax);
 		}
 		// デフォルトは無し
-// 		if (FALSE !== $arg3DSecured){
-// 			// 3Dセキュアで処理
-// 			$entryInput->setTdFlag(1);
-// 		}
+		if (FALSE !== $arg3DSecured){
+			// 3Dセキュアで処理
+			$entryInput->setTdFlag(1);
+		}
 		if (NULL !== $argShop){
 			$entryInput->setTdTenantName($argShop);
 		}
@@ -139,7 +123,7 @@ class GenericGMOPay
 			$execInput->setExpire($tokenTmp[2]);
 			$execInput->setSecurityCode($tokenTmp[3]);
 			// カードトークンを生成
-			$cardToken = 'cus_'.substr(sha256(str_pad($argUserID, 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
+			$cardToken = 'cus_'.substr(sha256(str_pad(sha256($argUserID), 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
 		}
 		else {
 			// カードトークンとして扱う
@@ -147,14 +131,14 @@ class GenericGMOPay
 			// ワンタイムトークンでの決済
 			$execInput->setToken($argToken);
 			// カードトークンを生成
-			$cardToken = 'cus_'.substr(sha256(str_pad($argUserID, 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
+			$cardToken = 'cus_'.substr(sha256(str_pad(sha256($argUserID), 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
 		}
 
 		// オーダーIDを生成してセット
 		$orderID = 'o'.substr(sha1($cardToken), 0, 11).'-'.Utilities::date('YmdHis', NULL, NULL, 'GMT');
 		if (function_exists('getLocalEnabled') && 1 === (int)getLocalEnabled()){
 			// ローカル環境の場合は強制OKにしてしまう
-			return array('status' => TRUE, 'orderID' => $orderID, 'accessID' => substr(sha256($orderID.time()), 0, 32), 'accessPass' => substr(sha256($orderID.time()), 0, 32), 'cardToken' => $cardToken);
+			return $argCallbackFunction(array('status' => TRUE, 'userID' => $argUserID, 'amount' => $argAmount, 'orderID' => $orderID, 'accessID' => substr(sha256($orderID.time()), 0, 32), 'accessPass' => substr(sha256($orderID.time()), 0, 32), 'cardToken' => $cardToken, 'options' => $argOptions));
 		}
 
 		$entryInput->setOrderId($orderID);
@@ -175,7 +159,7 @@ class GenericGMOPay
 		//実行後、その結果を確認します。
 		if( $exe->isExceptionOccured() ){
 			//取引の処理そのものがうまくいかない（通信エラー等）場合、例外が発生します。
-			throw $exception;
+			throw $exe->exception;
 		}
 		//出力パラメータにエラーコードが含まれていないか、チェックしています。
 		if( $output->isErrorOccurred() ){
@@ -205,7 +189,10 @@ class GenericGMOPay
 				$errorCode = '999';
 				$errorMsg = '致命的なエラー';
 			}
-			throw new Exception($errorMsg, (int)$errorCode);
+			if (FALSE !== strpos($errorMsg, 'エラーコード表')){
+					$errorMsg = '致命的なエラー';
+				}
+			throw new Exception($errorCode.':'.$errorMsg, (int)$errorCode);
 		}
 		// 今回の決済用のIDとPASSを取っておく
 		$accessID = $output->getAccessID();
@@ -266,9 +253,12 @@ class GenericGMOPay
 						break;
 					}
 				}
+				if (FALSE !== strpos($errorMsg, 'エラーコード表')){
+					$errorMsg = '致命的なエラー';
+				}
 				// 売上てしまっているのでthrowする前にキャンセルを行う!
-				self::cancelAccounts($argAccessKey, $argAccessSecret, $accessID, $accessPass);
-				throw new Exception ($errorMsg, (int)$errorCode);
+				self::cancelPurchase($argAccessKey, $argAccessSecret, $accessID, $accessPass);
+				throw new Exception ($errorCode.':'.$errorMsg, (int)$errorCode);
 			}
 			// 次にカード登録を実行
 			require_once( 'com/gmo_pg/client/input/TradedCardInput.php');
@@ -287,7 +277,7 @@ class GenericGMOPay
 			$output = $exe->exec( $tradedInput );
 			if( $exe->isExceptionOccured() ){
 				// 売上てしまっているのでthrowする前にキャンセルを行う!
-				self::cancelAccounts($argAccessKey, $argAccessSecret, $accessID, $accessPass);
+				self::cancelPurchase($argAccessKey, $argAccessSecret, $accessID, $accessPass);
 				// 取引の処理そのものがうまくいかない（通信エラー等）場合、例外が発生します。
 				throw $exception;
 			}
@@ -305,17 +295,21 @@ class GenericGMOPay
 						break;
 					}
 				}
+				if (FALSE !== strpos($errorMsg, 'エラーコード表')){
+					$errorMsg = '致命的なエラー';
+				}
 				// 売上てしまっているのでthrowする前にキャンセルを行う!
-				self::cancelAccounts($argAccessKey, $argAccessSecret, $accessID, $accessPass);
-				throw new Exception ($errorMsg, (int)$errorCode);
+				self::cancelPurchase($argAccessKey, $argAccessSecret, $accessID, $accessPass);
+				throw new Exception ($errorCode.':'.$errorMsg, (int)$errorCode);
 			}
 		}
 		// カードトークンを返す
-		return array('status' => TRUE, 'orderID' => $orderID, 'accessID' => $accessID, 'accessPass' => $accessPass, 'cardToken' => $cardToken);
+		$function = create_lambdafunction($argCallbackFunction, '$results');
+		return $function(array('status' => TRUE, 'userID' => $argUserID, 'amount' => $argAmount, 'orderID' => $orderID, 'accessID' => $accessID, 'accessPass' => $accessPass, 'cardToken' => $cardToken, 'options' => $argOptions));
 	}
-	
+
 	/**
-	 * 課金の取り消し or 返品
+	 * 決済取消
 	 */
 	public static function cancelPurchase($argAccessKey, $argAccessSecret, $argAccessID, $argAccessPass, $argRETURN=TRUE){
 		// バリデート
@@ -375,46 +369,14 @@ class GenericGMOPay
 						break;
 					}
 				}
-				throw new Exception($errorMsg, (int)$errorCode);
+				if (FALSE !== strpos($errorMsg, 'エラーコード表')){
+					$errorMsg = '致命的なエラー';
+				}
+				throw new Exception($errorCode.':'.$errorMsg, (int)$errorCode);
 			}
 		}
 		// 正常終了
 		return TRUE;
-	}
-
-	public static function generateTokenForPOSTParam(){
-		$cardNo = '';
-		if (isset($_POST['cardnum']) && 16 === strlen($_POST['cardnum'])){
-			$cardNo = $_POST['cardnum'];
-		}
-		elseif (isset($_POST['cardno']) && 16 === strlen($_POST['cardno'])){
-			$cardNo = $_POST['cardno'];
-		}
-		$expired = '';
-		if (isset($_POST['expired']) && 4 <= strlen($_POST['expired']) && 6 >= strlen($_POST['expired'])){
-			$expired = $_POST['expired'];
-		}
-		elseif (isset($_POST['expire']) && 4 <= strlen($_POST['expire']) && 6 >= strlen($_POST['expire'])){
-			$expired = $_POST['expire'];
-		}
-		elseif (isset($_POST['cardlimit_month']) && isset($_POST['cardlimit_year']) && 2 <= strlen($_POST['cardlimit_year']) && 1 <= strlen($_POST['cardlimit_month']) && 4 >= strlen($_POST['cardlimit_year']) && 2 >= strlen($_POST['cardlimit_month'])){
-			$expired = substr($_POST['cardlimit_year'], -2, 2).str_pad($_POST['cardlimit_month'], 2, 0, STR_PAD_LEFT);
-		}
-		$securityCode = '';
-		if (isset($_POST['securitycode']) && 3 <= strlen($_POST['securitycode']) && 4 >= strlen($_POST['securitycode'])){
-			$securityCode = $_POST['securitycode'];
-		}
-		elseif (isset($_POST['security_code']) && 3 <= strlen($_POST['security_code']) && 4 >= strlen($_POST['security_code'])){
-			$securityCode = $_POST['security_code'];
-		}
-		elseif (isset($_POST['cardsecret']) && 3 <= strlen($_POST['cardsecret']) && 4 >= strlen($_POST['cardsecret'])){
-			$securityCode = $_POST['cardsecret'];
-		}
-		if ('' === $cardNo.$expired.$securityCode){
-			// トークンにならん・・・
-			return FALSE;
-		}
-		return 'cdn_:'.$cardNo.':'.$expired.':'.$securityCode;
 	}
 }
 

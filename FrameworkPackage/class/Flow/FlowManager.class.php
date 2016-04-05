@@ -163,6 +163,9 @@ class FlowManager
 				$query = $_COOKIE['flowpostformsection-backflow-section-query'];
 				setcookie('flowpostformsection-backflow-section-query', '', time() - 3600, '/');
 			}
+			if (isset($_SERVER['__loginID__'])){
+				setcookie('__loginID__', $_SERVER['__loginID__'], time() + 60, '/');
+			}
 			// XXX Redirectを今のところ強制
 			$argRedirect = TRUE;
 		}
@@ -523,6 +526,30 @@ class FlowManager
 				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'backflow\']) && isset($_POST[\'backflow\'][count(Flow::$params[\'backflow\'])])) {' . PHP_EOL;
 				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'backflow\'][count(Flow::$params[\'backflow\']) -1]);' . PHP_EOL;
 				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'mail\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'mail\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'pass\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'pass\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'passwd\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'passwd\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset($_POST[\'password\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset($_POST[\'password\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset(Flow::$params[\'post\'][\'mail\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset(Flow::$params[\'post\'][\'mail\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset(Flow::$params[\'post\'][\'pass\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset(Flow::$params[\'post\'][\'pass\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset(Flow::$params[\'post\'][\'passwd\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset(Flow::$params[\'post\'][\'passwd\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
+				$code .= $tab . PHP_TAB . 'if (isset(Flow::$params[\'post\'][\'password\'])) {' . PHP_EOL;
+				$code .= $tab . PHP_TAB . PHP_TAB . 'unset(Flow::$params[\'post\'][\'password\']);' . PHP_EOL;
+				$code .= $tab . PHP_TAB . '}' . PHP_EOL;
 				$code .= $tab. '}' . PHP_EOL;
 			}
 			elseif('clearbackflow' === $codeType){
@@ -631,6 +658,36 @@ class FlowManager
 				$code .= $tab . 'return $html;';
 			}
 			else{
+				if('lambda' === $codeType){
+					$lambdaFunction = '$lambda';
+					if(isset($tmpAttr['execute'])){
+						// 匿名関数を実行処理
+						if(strlen($tmpAttr['execute']) > 0){
+							$lambdaFunction = '$'.$tmpAttr['execute'].'Lambda';
+						}
+						$lambdaArgment = '';
+						if(isset($tmpAttr['argments']) && strlen($tmpAttr['argments']) > 0){
+							$lambdaArgment = $tmpAttr['argments'];
+						}
+						$code .= $lambdaFunction.'('.$lambdaArgment.')';
+					}
+					else {
+						// 匿名関数の作成処理
+						$heredoc = 'LAMBDA';
+						$lambdaFunctions = $lambdaFunction;
+						$lambdaArgments = '$_lambdaArgments = \'\'';
+						if(isset($tmpAttr['section']) && strlen($tmpAttr['section']) > 0){
+							$heredoc = strtoupper($tmpAttr['section']);
+							$lambdaFunctions = '$'.$tmpAttr['section'];
+						}
+						$lambdaFunction = $lambdaFunctions.'Lambda';
+						if(isset($tmpAttr['argments']) && strlen($tmpAttr['argments']) > 0){
+							$lambdaArgments = '$_lambdaArgments = \''.$tmpAttr['argments'].'\'';
+						}
+						$code .= $lambdaArgments . ';' . PHP_EOL;
+						$code .= $tab . $lambdaFunctions.' = <<<__'.$heredoc.'__' . PHP_EOL;
+					}
+				}
 				// それ以外はXML化されたただのPHPコード扱い
 				// XXX 状態遷移して生成して行くので、処理の順番に注意！
 				// if文
@@ -684,7 +741,7 @@ class FlowManager
 					}
 				}
 				// else文 for文 foreach文
-				elseif('else' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType){
+				elseif('else' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType || 'lambda' === $codeType){
 					// 何もナシ
 				}
 				// return文
@@ -738,15 +795,32 @@ class FlowManager
 				}
 				// ネスト構造を再帰的に処理して、コードに繋げる
 				if(count($argCodeNode->children()) > 0){
+					$_code = '';
 					foreach($argCodeNode->children() as $codeNode){
-						$code .= self::_generateCode($codeNode, $argBasePathTarget, ($argDepth+1));
+						$_code .= self::_generateCode($codeNode, $argBasePathTarget, ($argDepth+1));
 					}
+					if('lambda' === $codeType && isset($heredoc) && isset($lambdaFunction) && isset($lambdaFunctions) && isset($lambdaArgments)){
+						$_code = str_replace('$', '\$', $_code);
+						$projectName = '';
+						if (defined('PROJECT_NAME') && 0 < strlen(PROJECT_NAME)){
+							$projectName = PROJECT_NAME;
+						}
+						$_code = $tab . PHP_TAB . 'if (!defined(\'PROJECT_NAME\')) {' . PHP_EOL
+						. $tab . PHP_TAB . PHP_TAB . 'define(\'PROJECT_NAME\', \'' . $projectName . '\');' . PHP_EOL
+						. $tab . PHP_TAB . '}' . PHP_EOL
+						. $tab . PHP_TAB . 'require_once \''.getFrameworkCoreFilePath() . '\';' . PHP_EOL.$_code;
+					}
+					$code .= $_code;
 				}
 				// 終了子判定
 				if('if' === $codeType || 'elseif' === $codeType || 'else' === $codeType || 'for' === $codeType || 'foreach' === $codeType || 'while' === $codeType){
 					$code .= $tab . '}';
 				}
 				else{
+					if('lambda' === $codeType && isset($heredoc) && isset($lambdaFunction) && isset($lambdaFunctions) && isset($lambdaArgments)){
+						$code .=  '__'.$heredoc.'__;'.PHP_EOL;
+						$code .= $tab . $lambdaFunction.' = create_lambdafunction('.$lambdaFunctions.', $_lambdaArgments)';
+					}
 					$code .= ';';
 				}
 			}

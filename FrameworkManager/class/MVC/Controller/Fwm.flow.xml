@@ -24,8 +24,11 @@
 				<execute val="$_SESSION['PMA_single_signon_password'] = parse_url(getConfig('DB_DSN'), PHP_URL_PASS);"/>
 				<execute val="$_SESSION['PMA_single_signon_host'] = parse_url(getConfig('DB_DSN'), PHP_URL_HOST);"/>
 				<execute val="@session_write_close();"/>
-				<execute val="$callback = $_GET['callback']"/>
-				<execute val="unset($_GET['callback'])"/>
+				<execute val="$callback = './supple/myadm/'"/>
+				<if val="isset($_GET['callback'])">
+					<execute val="$callback = $_GET['callback']"/>
+					<execute val="unset($_GET['callback'])"/>
+				</if>
 				<execute val="header('location:./supple/myadm/')"/>
 			</else>
 		</execute>

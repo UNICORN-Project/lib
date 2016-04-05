@@ -2468,6 +2468,13 @@ function getAutoMigrationPath(){
 }
 
 /**
+ * フレームワークのコアファイル(このファイル)のパスを返す
+ */
+function getFrameworkCoreFilePath(){
+	return __FILE__;
+}
+
+/**
  * コンフィグレーションされている値を返す
  */
 function getConfig($argKey, $argConfigName=''){

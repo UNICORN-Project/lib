@@ -6,6 +6,7 @@ class WebFlowControllerBase extends WebControllerBase {
 	public $isSSLRequired=NULL;
 	public $section='';
 	public $target='';
+	public $validateError = FALSE;
 	public static $flowpostformsectionUsed = FALSE;
 
 	protected function _reverseRewriteURL($argAction=NULL, $argQuery='', $argSSLRequired=NULL){
@@ -114,7 +115,7 @@ class WebFlowControllerBase extends WebControllerBase {
 						if($_GET['_c_'] === $_POST['flowpostformsection']){
 							// backflowがポストされてきたらそれをviewのformに自動APPEND
 							if($key === 'flowpostformsection-backflow-section'){
-								Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class="bbb" name="flowpostformsection-backflow-section" value="' . $val . '"/>'));
+								Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section" value="' . $val . '"/>'));
 								self::$flowpostformsectionUsed = TRUE;
 								$executed = TRUE;
 							}
@@ -154,8 +155,11 @@ class WebFlowControllerBase extends WebControllerBase {
 						if($_GET['_c_'] === $_POST['flowpostformsection']){
 							try{
 								if(FALSE !== strpos($key, 'mail')){
-									// メールアドレスのオートバリデート
-									Validations::isEmail($val);
+									// 強制loginID認証モードの場合はmailにloginIDが入ってるのでメアドvalidateをしない
+									if (TRUE !== (isset($_SERVER['__loginID__']) && $_SERVER['__loginID__'] == $val)){
+										// メールアドレスのオートバリデート
+										Validations::isEmail($val);
+									}
 								}
 								if(FALSE !== strpos($key, '_must') && 0 === strlen($val)){
 									debug('must exception');
@@ -165,7 +169,7 @@ class WebFlowControllerBase extends WebControllerBase {
 							}
 							catch (Exception $Exception){
 								// 最後のエラーメッセージを取っておく
-								$validateError = TRUE;
+								$this->validateError = TRUE;
 								if(NULL === Flow::$params['view']){
 									Flow::$params['view'] = array();
 								}
@@ -213,8 +217,37 @@ class WebFlowControllerBase extends WebControllerBase {
 				$_POST = array_merge($_POST, $_POST['backflow'][$this->section]);
 				unset($_POST['backflow'][$this->section]);
 			}
+			if (isset($_COOKIE['__loginID__'])){
+				unset($_COOKIE['__loginID__']);
+				setcookie('__loginID__', '', time() - 3600, '/');
+				// loginのcancelthisbackflowを代行する
+				if (isset($_POST['mail'])) {
+					unset($_POST['mail']);
+				}
+				if (isset($_POST['pass'])) {
+					unset($_POST['pass']);
+				}
+				if (isset($_POST['passwd'])) {
+					unset($_POST['passwd']);
+				}
+				if (isset($_POST['password'])) {
+					unset($_POST['password']);
+				}
+				if (isset(Flow::$params['post']['mail'])) {
+					unset(Flow::$params['post']['mail']);
+				}
+				if (isset(Flow::$params['post']['pass'])) {
+					unset(Flow::$params['post']['pass']);
+				}
+				if (isset(Flow::$params['post']['passwd'])) {
+					unset(Flow::$params['post']['passwd']);
+				}
+				if (isset(Flow::$params['post']['password'])) {
+					unset(Flow::$params['post']['password']);
+				}
+			}
 			$this->_initWebFlowForm($_POST);
-			if(isset($validateError)){
+			if(isset($this->validateError) && TRUE === $this->validateError){
 				// オートバリデートでエラー
 				debug('$validateError');
 				return FALSE;
@@ -242,7 +275,7 @@ class WebFlowControllerBase extends WebControllerBase {
 			if(NULL === Flow::$params['view']){
 				Flow::$params['view'] = array();
 			}
-			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class=="aaa" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
+			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
 			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section-query" value="' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['query'] . '"/>'));
 			self::$flowpostformsectionUsed = TRUE;
 		}
@@ -260,7 +293,9 @@ class WebFlowControllerBase extends WebControllerBase {
 			}
 		}
 		Flow::$params['backflow'][] = array('section' => $this->section, 'target' => $this->target, 'query' => htmlspecialchars($query));
-		
+		debug('backflows=');
+		debug(Flow::$params['backflow']);
+
 		// flowpostformsectionに現在の画面をBackFlowとして登録する
 		if(NULL === Flow::$params['view'] && FALSE === self::$flowpostformsectionUsed){
 			$backFrowID = Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['target'] . '/' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['section'];

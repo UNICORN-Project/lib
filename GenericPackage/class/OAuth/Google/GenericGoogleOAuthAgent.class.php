@@ -90,7 +90,7 @@ class GenericGoogleOAuthAgent {
 		}
 		// セッションを削除
 		GoogleSession::set('option_params', '');
-		GoogleSession::clear();
+		//GoogleSession::clear();
 		return $access_token;
 	}
 }

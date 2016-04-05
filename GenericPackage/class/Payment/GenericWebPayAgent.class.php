@@ -9,7 +9,7 @@ use WebPay\WebPay;
  * @author atarun
  * @see <a href="https://webpay.jp/docs/api/php">WebPay API Docs</a>
  */
-class GenericWebPay
+class GenericWebPayAgent
 {
 	/**
 	 * @var WebPay インスタンス

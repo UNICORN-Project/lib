@@ -7,10 +7,10 @@ class AccessTokenAuth {
 
 	public static function getAccessKey($argAccessKey=NULL, $argTargetProject=NULL){
 		if (NULL === $argAccessKey){
-			$argAccessKey = @getConfig('ACCESS_KEY', $argTargetProject);
+			$argAccessKey = @getConfig('FWM_ACCESS_KEY', $argTargetProject);
 		}
 		if (NULL === $argAccessKey){
-			$argAccessKey = @getConfig('FWM_ACCESS_KEY', $argTargetProject);
+			$argAccessKey = @getConfig('ACCESS_KEY', $argTargetProject);
 		}
 		return $argAccessKey;
 	}
@@ -74,6 +74,7 @@ class AccessTokenAuth {
 			@setcookie('refresh_token', '', time() - 3600, '/');
 			return FALSE;
 		}
+		debug('whitelistcheck $argAccessKey='.$argAccessKey);
 		$key = $argAccessKey;
 		if (NULL === $key){
 			$key = self::getAccessKey($key, $argTargetProject);
@@ -84,7 +85,7 @@ class AccessTokenAuth {
 		}
 		$accessTokens = @json_decode(Utilities::doHexDecryptAES($argAccessToken, $key, $iv), TRUE);
 		debug('AccessTokenAuth accessTokens='.var_export($accessTokens, TRUE));
-		if (TRUE != isset($accessTokens['access_key']) && isset($accessTokens['permission']) && isset($accessTokens['time'])){
+		if (TRUE != (isset($accessTokens['access_key']) && isset($accessTokens['permission']) && isset($accessTokens['time']))){
 			// Validate Error
 			@setcookie('refresh_token', '', time() - 3600, '/');
 			return FALSE;

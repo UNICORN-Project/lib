@@ -884,6 +884,20 @@ function array_keys_recursive($myArray, $MAXDEPTH = INF, $depth = 0, $arrayKeys 
 }
 
 /**
+ * 特命関数をメモリーリークせずに生成する
+ * @param string $code コード文字
+ * @param string $args 引数文字列
+ */
+function create_lambdafunction($argCode, $argmentsStr = '') {
+	static $lambdaFunctions;
+	if (!isset($lambdaFunctions[$argmentsStr][$argCode])) {
+		// 新しい匿名関数のみ一覧に登録する
+		$lambdaFunctions[$argmentsStr][$argCode] = create_function($argmentsStr, $argCode);
+	}
+	return $lambdaFunctions[$argmentsStr][$argCode];
+}
+
+/**
  * POPGATE用暗号化関数
  */
 function popgate_enc ($str) {

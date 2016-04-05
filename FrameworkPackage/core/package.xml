@@ -190,6 +190,10 @@
 		<link>default.AWSSDK/autoload.php</link>
 		<link mapfrom="GenericAWSS3" mapto="WebStorage">default.implement.AWS/GenericAWSS3</link>
 	</WebStorage>
+	<DynamoDB>
+		<link>default.AWSSDK/autoload.php</link>
+		<link mapfrom="GenericAWSDynamoDb" mapto="DynamoDB">default.implement.AWS/GenericAWSDynamoDb</link>
+	</DynamoDB>	
 	<Storage>
 		<package>WebStorage</package>
 		<link mapfrom="GenericStorage" mapto="Storage">default.implement.Storage/GenericStorage</link>
@@ -210,10 +214,23 @@
 		<package>SimpleEmail</package>
 		<link mapfrom="GenericMail" mapto="DeliveryMail">default.implement.Mail/GenericMail</link>
 	</DeliveryMail>
-	<!-- GMOPayment利用の場合 -->
-	<PaymentAgent>
-		<link mapfrom="GenericGMOPay" mapto="PaymentAgent">default.implement.Payment/GenericGMOPay</link>
-	</PaymentAgent>
+	<GMOPaymentGatewayAgent>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link mapfrom="GenericGMOPaymentGatewayAgent" mapto="GMOPaymentGatewayAgent">default.implement.Payment/GenericGMOPaymentGatewayAgent</link>
+	</GMOPaymentGatewayAgent>
+	<WebPayAgent>
+		<link>default.WebPay/vendor/autoload.php</link>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link mapfrom="GenericWebPayAgent" mapto="WebPayAgent">default.implement.Payment/GenericWebPayAgent</link>
+	</WebPayAgent>
+	<BitCashAgent>
+		<link>default.BitCash/settle.php</link>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link mapfrom="GenericBitCashAgent" mapto="BitCashAgent">default.implement.Payment/GenericBitCashAgent</link>
+	</BitCashAgent>
+	<Payment>
+		<link mapfrom="GenericPayment" mapto="Payment">default.implement.Payment/GenericPayment</link>
+	</Payment>
 	<TwitterOAuthAgent>
 		<package>Session</package>
 		<link>default.interface.OAuth/Twitter/TwitterSessionIO</link>

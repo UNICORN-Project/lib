@@ -647,7 +647,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		$DBO = NULL;
 		try{
 			$DBO = self::_getDBO();
-				
+
 			// RESTの実行
 			$this->restResourceModel = $resource['model'];
 			if(NULL === $this->restResourceListed){
@@ -659,12 +659,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				debug('whitelistcheck refresh_token check '.$_COOKIE['refresh_token']);
 				// アクセストークンでの認証
 				if (AccessTokenAuth::validate('9', $_COOKIE['refresh_token'])){
-					debug('whitelistcheck refresh_token permission='.AccessTokenAuth::$permission);
 					// 認証元がパーミッション9以上(実質9)の場合はエンドユーザーなのでホワイトリストフィルターでAPIのアクセス認証をさらにきつくする
 					if (9 > (int)AccessTokenAuth::$permission){
 						// 8以上は管理ユーザーのパーミッションなので、オールホワイトとする
 						$_SERVER['ALLOW_ALL_WHITE'] = 1;
-						debug('whitelistcheck refresh_token ALLOW_ALL_WHITE');
+					}
+					if (0 === (int)AccessTokenAuth::$permission){
+						// 0はスーパーユーザーのパーミッションなので、フィールドの網掛けも外す
+						$_SERVER['__SUPER_USER__'] = TRUE;
 					}
 				}
 				debug('whitelistcheck refresh_token checked');
@@ -1368,7 +1370,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 					$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 				}
-				if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+				if (TRUE !== (isset($_SERVER['__SUPER_USER__']) && TRUE === $_SERVER['__SUPER_USER__'])){
 					Auth::init();
 					// Auth設定されているフィールドへの参照の場合、暗号化・ハッシュ化・マスク化を自動処理してあげる
 					if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
@@ -1553,7 +1555,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
-							if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+							if (TRUE !== (isset($_SERVER['__SUPER_USER__']) && TRUE === $_SERVER['__SUPER_USER__'])){
 								Auth::init();
 								// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
 								if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
@@ -1673,7 +1675,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if (isset($resources[count($resources)-1][$this->restResourceModifyDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceModifyDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceModifyDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
-							if (TRUE !== (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === ('1' === $_SERVER['ALLOW_ALL_WHITE'] || 1 === $_SERVER['ALLOW_ALL_WHITE'] || 'true' === $_SERVER['ALLOW_ALL_WHITE'] || true === $_SERVER['ALLOW_ALL_WHITE']))){
+							if (TRUE !== (isset($_SERVER['__SUPER_USER__']) && TRUE === $_SERVER['__SUPER_USER__'])){
 								Auth::init();
 								// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
 								if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
