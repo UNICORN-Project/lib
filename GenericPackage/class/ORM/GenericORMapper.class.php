@@ -104,10 +104,14 @@ class GenericORMapper {
 				// モデルクラス定義からクラス生成
 				eval($baseModelClassDefine);
 
-				// オートマイグレーションが有効だった場合
-				if(function_exists('getAutoMigrationEnabled') && TRUE === getAutoMigrationEnabled()){
-					// 定義の更新が無いか確認し、あれば新しいマイグレーションファイルを生成
-					MigrationManager::resolve($argDBO, $tableName, $lastMigrationHash);
+				// XXX Viewはテーブルマイグレーションはしない！
+				// XXX Viewのマイグレーションはそのうちやるけど、セレクトの条件定義をどうとるか・・・
+				if (FALSE === strpos($varDef, "\$tableEngine = \"View\"")){
+					// オートマイグレーションが有効だった場合
+					if(function_exists('getAutoMigrationEnabled') && TRUE === getAutoMigrationEnabled()){
+						// 定義の更新が無いか確認し、あれば新しいマイグレーションファイルを生成
+						MigrationManager::resolve($argDBO, $tableName, $lastMigrationHash);
+					}
 				}
 				// オートジェネレートが有効だった場合
 				if(function_exists('getAutoGenerateEnabled') && TRUE === getAutoGenerateEnabled()){
@@ -172,7 +176,7 @@ class GenericORMapper {
 			&& isset($tableStatuses[0]) && isset($tableStatuses[0]["Comment"])
 			&& strtolower($tableStatuses[0]["Comment"]) == "view"){
 			logging("is View:".$tableName);
-			$tableStatuses[0]["Engine"] = "InnoDB";
+			$tableStatuses[0]["Engine"] = "View";
 			$isView = TRUE;
 		}
 		

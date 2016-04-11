@@ -149,7 +149,7 @@ __CALLBACK__;
 			$StorageEngine = new WebStorage();
 			$fileName = $uploadDir.$dir.sha256($argUserID).'.php';
 			$res = $StorageEngine->save($fileName, $genFilePath);
-			$fwCorePath = getFrameworkCoreFilePath();
+			$fwCorePath = getFrameworkCoreFilePath(TRUE);
 			$projectName = '';
 			if (defined('PROJECT_NAME') && 0 < strlen(PROJECT_NAME)){
 				$projectName = PROJECT_NAME;
@@ -160,7 +160,7 @@ __CALLBACK__;
 mb_http_output("UTF-8");
 mb_internal_encoding("UTF-8");
 define('PROJECT_NAME', '$projectName');
-require_once '$fwCorePath';
+require_once realpath(\$_SERVER['DOCUMENT_ROOT'].'/$fwCorePath');
 
 if (!(is_array(\$_GET) && isset(\$_GET['token']))){
 	throw new Exception('カート画面から再度操作し直して下さい。');
@@ -204,10 +204,10 @@ require_once \$genFilePath;
 
 ?>
 __BOOTCODE__;
-			$bootCodePath = $_SERVER['DOCUMENT_ROOT'].dirname($_SERVER['REQUEST_URI']).'bitcashcallback.php';
+			$bootCodePath = str_replace('//', '/', $_SERVER['DOCUMENT_ROOT'].dirname($_SERVER['REQUEST_URI']).'/bitcashcallback.php');
 			@file_put_contents($bootCodePath, $callbackBootCode);
 			@chmod($bootCodePath, 0777);
-			$notifyURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).'bitcashcallback.php?token='.sha256($argUserID);
+			$notifyURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).'/bitcashcallback.php?token='.sha256($argUserID));
 		}
 		else if (NULL === $argNotifyURL){
 			// XXX 分散環境での動作は、自身で設計構築が必要です。
@@ -224,7 +224,7 @@ __BOOTCODE__;
 			$genFilePath = $path.$dir.sha256($argUserID).'.php';
 			@file_put_contents($genFilePath, str_replace(PHP_EOL."\t\t\t\t", PHP_EOL."\t", $callbackCode));
 			@chmod($genFilePath, 0777);
-			$notifyURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).$dir.sha256($argUserID).'.php';
+			$notifyURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).$dir.'/'.sha256($argUserID).'.php');
 		}
 		else {
 			$notifyURL = $argNotifyURL;
@@ -233,16 +233,16 @@ __BOOTCODE__;
 		$returnURL = $argReturnURL;
 		$cancelURL = $argCancelURL;
 		if (NULL === $returnURL){
-			$returnURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).'bitcashcallback-success.php';
+			$returnURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).'/bitcashcallback-success.php');
 		}
 		else if (FALSE === strpos($returnURL, '//'.$_SERVER['HTTP_HOST'])){
-			$returnURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).$returnURL;
+			$returnURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).'/'.$returnURL);
 		}
 		if (NULL === $cancelURL){
-			$cancelURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).'bitcashcallback-cancel.php';
+			$cancelURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).'/bitcashcallback-cancel.php');
 		}
 		else if (FALSE === strpos($cancelURL, '//'.$_SERVER['HTTP_HOST'])){
-			$cancelURL = $protocol.$_SERVER['HTTP_HOST'] . dirname($_SERVER['REQUEST_URI']).$cancelURL;
+			$cancelURL = $protocol.$_SERVER['HTTP_HOST'] . str_replace('//', '/', dirname($_SERVER['REQUEST_URI']).'/'.$cancelURL);
 		}
 
 		// ローカルからはBitcashに繋がらないので、処理フローをエミュレート

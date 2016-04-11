@@ -2469,9 +2469,29 @@ function getAutoMigrationPath(){
 
 /**
  * フレームワークのコアファイル(このファイル)のパスを返す
+ * bool $argRelative TRUE ドキュメントルートからの相対パス FALSE 絶対パス(デフォルト)
  */
-function getFrameworkCoreFilePath(){
-	return __FILE__;
+function getFrameworkCoreFilePath($argRelative=FALSE){
+	$_corepath = __FILE__;
+	if (TRUE === $argRelative){
+		$_documentRootPaths = explode('/', $_SERVER['DOCUMENT_ROOT']);
+		$_corepaths = explode('/', $_corepath);
+		$_corepath = '';
+		for ($_pathDepth=count($_corepaths)-1, $_depthCnt=0; $_pathDepth > 0; $_pathDepth--){
+			if (0 < strlen($_corepaths[$_pathDepth]) && FALSE !== strpos($_SERVER['DOCUMENT_ROOT'], $_corepaths[$_pathDepth])){
+				$_depthPaths = explode('/', $_SERVER['DOCUMENT_ROOT']);
+				$_relativeDepth= count($_depthPaths) - 1 - (int)array_search($_corepaths[$_pathDepth], $_depthPaths);
+				break;
+			}
+			$_corepath = '/'.$_corepaths[$_pathDepth].$_corepath;
+		}
+		// 相対パスなので、最初のスラッシュは要らない
+		$_corepath = substr($_corepath, 1);
+		for ($_relativeIdx=0; $_relativeIdx < $_relativeDepth; $_relativeIdx++){
+			$_corepath = '../'.$_corepath;
+		}
+	}
+	return $_corepath;
 }
 
 /**
