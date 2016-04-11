@@ -808,7 +808,7 @@ class FlowManager
 						$_code = $tab . PHP_TAB . 'if (!defined(\'PROJECT_NAME\')) {' . PHP_EOL
 						. $tab . PHP_TAB . PHP_TAB . 'define(\'PROJECT_NAME\', \'' . $projectName . '\');' . PHP_EOL
 						. $tab . PHP_TAB . '}' . PHP_EOL
-						. $tab . PHP_TAB . 'require_once \''.getFrameworkCoreFilePath() . '\';' . PHP_EOL.$_code;
+						. $tab . PHP_TAB . 'require_once realpath(\$_SERVER[\'DOCUMET_ROOT\'].\'/' . getFrameworkCoreFilePath(TRUE) . '\');' . PHP_EOL.$_code;
 					}
 					$code .= $_code;
 				}

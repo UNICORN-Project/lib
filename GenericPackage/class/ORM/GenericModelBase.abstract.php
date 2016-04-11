@@ -452,6 +452,14 @@ abstract class GenericModelBase {
 					elseif("int" === $val["type"] && "decrement" === strtolower($this->{$key})){
 						$replaceFields[$key] = " `".$key."` = (`".$key."` - 1)";
 					}
+					elseif("int" === $val["type"] && 0 === strpos($this->{$key}, '++')){
+						$val = substr($this->{$key}, 2);
+						$replaceFields[$key] = " `".$key."` = (`".$key."` + ".$val.")";
+					}
+					elseif("int" === $val["type"] && 0 === strpos($this->{$key}, '--')){
+						$val = substr($this->{$key}, 2);
+						$replaceFields[$key] = " `".$key."` = (`".$key."` - ".$val.")";
+					}
 					else{
 						$replaceFields[$key] = " `".$key."` = :".$key;
 						$binds[$key] = $this->{$key};
@@ -524,6 +532,24 @@ abstract class GenericModelBase {
 			}
 			elseif("int" === $this->describes[$key]["type"] && 'decrement' === $this->{$key}){
 				$this->{$key} = (int)$this->describes[$key]["before"] - 1;
+			}
+			elseif("int" === $this->describes[$key]["type"] && 0 === strpos($this->{$key}, '++')){
+				$val = substr($this->{$key}, 2);
+				if (is_numeric($val)){
+					$this->{$key} = (int)$this->describes[$key]["before"] + (int)$val;
+				}
+				else {
+					$this->{$key} = (int)$this->describes[$key]["before"] + (int)$this->{$val};
+				}
+			}
+			elseif("int" === $this->describes[$key]["type"] && 0 === strpos($this->{$key}, '--')){
+				$val = substr($this->{$key}, 2);
+				if (is_numeric($val)){
+					$this->{$key} = (int)$this->describes[$key]["before"] - (int)$val;
+				}
+				else {
+					$this->{$key} = (int)$this->describes[$key]["before"] - (int)$this->{$val};
+				}
 			}
 			$this->describes[$key]["replace"] = NULL;
 		}

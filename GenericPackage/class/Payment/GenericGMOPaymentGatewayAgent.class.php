@@ -60,7 +60,7 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 		$entryInput->setShopId($argAccessKey);
 		$entryInput->setShopPass($accessSecret);
 		// 処理区分
-		if (TRUE === $argCapture){
+		if (FALSE !== $argCapture){
 			// 即時決済
 			$entryInput->setJobCd('CAPTURE');
 		}
@@ -79,7 +79,7 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 			$entryInput->setTax($argTax);
 		}
 		// デフォルトは無し
-		if (FALSE !== $arg3DSecured){
+		if (TRUE === $arg3DSecured){
 			// 3Dセキュアで処理
 			$entryInput->setTdFlag(1);
 		}
@@ -106,13 +106,16 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 			$execInput->setHttpAccept($_SERVER['HTTP_ACCEPT']);
 		}
 		if (0 === strpos($argToken, 'cus_')){
+			logging('exists card payment', 'gpayclient');
 			// 登録カードでの決済
 			$execInput->setSiteId($siteID);
 			$execInput->setSitePass($sitePass);
 			$execInput->setMemberId($argToken);
 			$execInput->setCardSeq('0');
+			$cardToken = $argToken;
 		}
 		elseif (0 === strpos($argToken, 'cdn_')){
+			logging('new card payment', 'gpayclient');
 			$tokenTmp = explode(':', $argToken);
 			if (4 > count($tokenTmp)){
 				// バリデートエラー扱い
@@ -126,6 +129,7 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 			$cardToken = 'cus_'.substr(sha256(str_pad(sha256($argUserID), 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
 		}
 		else {
+			logging('new card onetimetoken payment', 'gpayclient');
 			// カードトークンとして扱う
 			$cardToken = $argToken;
 			// ワンタイムトークンでの決済
@@ -133,12 +137,18 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 			// カードトークンを生成
 			$cardToken = 'cus_'.substr(sha256(str_pad(sha256($argUserID), 11, 0, STR_PAD_LEFT).''.Utilities::date('YmdHis', NULL, NULL, 'GMT').rand(0,99)), 2, 56);
 		}
+		logging($argAccessKey, 'gpayclient');
+		logging($accessSecret, 'gpayclient');
+		logging($siteID, 'gpayclient');
+		logging($sitePass, 'gpayclient');
+		logging($cardToken, 'gpayclient');
 
 		// オーダーIDを生成してセット
 		$orderID = 'o'.substr(sha1($cardToken), 0, 11).'-'.Utilities::date('YmdHis', NULL, NULL, 'GMT');
 		if (function_exists('getLocalEnabled') && 1 === (int)getLocalEnabled()){
 			// ローカル環境の場合は強制OKにしてしまう
-			return $argCallbackFunction(array('status' => TRUE, 'userID' => $argUserID, 'amount' => $argAmount, 'orderID' => $orderID, 'accessID' => substr(sha256($orderID.time()), 0, 32), 'accessPass' => substr(sha256($orderID.time()), 0, 32), 'cardToken' => $cardToken, 'options' => $argOptions));
+			$function = create_lambdafunction($argCallbackFunction, '$results');
+			return $function(array('status' => TRUE, 'userID' => $argUserID, 'amount' => $argAmount, 'orderID' => $orderID, 'accessID' => substr(sha256($orderID.time()), 0, 32), 'accessPass' => substr(sha256($orderID.time()), 0, 32), 'cardToken' => $cardToken, 'options' => $argOptions));
 		}
 
 		$entryInput->setOrderId($orderID);
@@ -159,6 +169,7 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 		//実行後、その結果を確認します。
 		if( $exe->isExceptionOccured() ){
 			//取引の処理そのものがうまくいかない（通信エラー等）場合、例外が発生します。
+			logging('is?', 'gpayclient');
 			throw $exe->exception;
 		}
 		//出力パラメータにエラーコードが含まれていないか、チェックしています。
@@ -191,7 +202,8 @@ class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 			}
 			if (FALSE !== strpos($errorMsg, 'エラーコード表')){
 					$errorMsg = '致命的なエラー';
-				}
+			}
+			logging('is??', 'gpayclient');
 			throw new Exception($errorCode.':'.$errorMsg, (int)$errorCode);
 		}
 		// 今回の決済用のIDとPASSを取っておく
