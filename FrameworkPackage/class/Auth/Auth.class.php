@@ -511,6 +511,9 @@ class Auth
 	 */
 	public static function resolveEncrypted($argString, $argAlgorism = NULL){
 		debug('EncryptAlg='.$argAlgorism);
+		if(FALSE === self::$_initialized){
+			self::_init();
+		}
 		$string = $argString;
 		if('sha1' === strtolower($argAlgorism)){
 			$string = sha1($argString);
@@ -529,6 +532,9 @@ class Auth
 	 */
 	public static function resolveDecrypted($argString, $argAlgorism = NULL){
 		debug('DecryptAlg='.$argAlgorism);
+		if(FALSE === self::$_initialized){
+			self::_init();
+		}
 		$string = $argString;
 		if(FALSE !== strpos(strtolower($argAlgorism), 'aes')){
 			$string = Utilities::doHexDecryptAES($argString, self::$_authCryptKey, self::$_authCryptIV);

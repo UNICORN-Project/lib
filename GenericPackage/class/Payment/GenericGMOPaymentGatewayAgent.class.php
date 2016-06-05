@@ -9,9 +9,9 @@
 class GenericGMOPaymentGatewayAgent implements GenericPaymentIO
 {
 	/**
-	 * @var number 最低課金額 50円以下の決済は出来ない
+	 * @var number 最低課金額 1円以下の決済は出来ない
 	 */
-	public static $_minimumChargeAmount = 50;
+	public static $_minimumChargeAmount = 1;
 
 	/**
 	 * @var number 最高課金額 1000万以上の決済は出来ない

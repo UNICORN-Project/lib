@@ -2074,8 +2074,8 @@ function getDebugEnabled($argProjectName=NULL, $argHost=NULL){
 				if(TRUE !== is_file($debugEnabledFilepath)){
 					$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.debug';
 				}
-				if(TRUE !== is_file($autoStagecheckEnabledFilepath) && 'Project' === PROJECT_NAME){
-					$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.debug';
+				if(TRUE !== is_file($debugEnabledFilepath) && 'Project' === PROJECT_NAME){
+					$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.debug';
 				}
 			}
 			else{

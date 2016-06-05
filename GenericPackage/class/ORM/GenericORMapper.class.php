@@ -7,6 +7,7 @@ class GenericORMapper {
 
 	private static $_models;
 	public static $modelHashs = array();
+	public static $Locks = array();
 
 	/**
 	 * コンストラクタ
@@ -346,6 +347,75 @@ class GenericORMapper {
 		$modelName = ucwords($modelName);
 		$modelName = str_replace(" ", "", $modelName);
 		return $modelName;
+	}
+
+	/**
+	 * 悲観ロックテーブルにロックをかける
+	 */
+	public static function lock($argDBO, $argModelName, $argIdentifier, $argLockIdentifierName='identifier'){
+		if (isset(self::$Locks[strtolower($argModelName)]) && isset(self::$Locks[strtolower($argModelName)][sha1($argIdentifier)])){
+			logging('exists lock', 'query');
+			return;
+		}
+		logging('start check lock '.$argModelName.'&'.$argIdentifier, 'query');
+		logging(array_keys(self::$Locks), 'query');
+		if (!isset(self::$Locks[strtolower($argModelName)]) || !is_array(self::$Locks[strtolower($argModelName)])){
+			self::$Locks[strtolower($argModelName)] = array();
+		}
+		// トランザクションの明示的開始
+		$argDBO->begin();
+		// XXX この時点で、行ロックで別のプロセスは待たされます！！！
+		self::$Locks[strtolower($argModelName)][sha1($argIdentifier)] = self::getModel($argDBO, $argModelName, 'SELECT `'.$argLockIdentifierName.'` FROM '.$argModelName.' WHERE `'.$argLockIdentifierName.'` = '.$argIdentifier.' LIMIT 1 FOR UPDATE');
+		if (0 < strlen(self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]->{$argLockIdentifierName})){
+			// XXX デッドロックの可能性！！！
+			logging('dead lock!! '.$argModelName.'&'.$argIdentifier, 'query');
+			logging('dead lock!! '.$argModelName.'&'.$argIdentifier, 'deadlock');
+			return;
+		}
+		$method = 'set'.ucfirst($argLockIdentifierName);
+		self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]->$method($argIdentifier);
+		self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]->save();
+		// XXX コミットはしない！！
+		logging('start lock '.$argModelName.'&'.$argIdentifier, 'query');
+	}
+
+	/**
+	 * 悲観ロックテーブルのロックを外す
+	 */
+	public static function unlock($argModelName, $argIdentifier=NULL, $argLockIdentifierName='identifier'){
+		if (NULL !== $argIdentifier){
+			// ID指定で強制ロック解除
+			if (isset(self::$Locks[strtolower($argModelName)]) && self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]){
+				self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]->remove();
+				logging('remove lock force '.$argModelName.'&'.$argIdentifier, 'query');
+				self::$Locks[strtolower($argModelName)][sha1($argIdentifier)]->getDBO()->commit();
+				logging('end lock force '.$argModelName, 'query');
+			}
+			else {
+				// 相当強力な強制ロック解除
+				$DBO = DBO::sharedInstance();
+				$Lock = self::getModel($DBO, $argModelName, 'SELECT `'.$argLockIdentifierName.'` FROM '.$argModelName.' WHERE `'.$argLockIdentifierName.'` = '.$argIdentifier.' LIMIT 1');
+				if (0 < strlen($Lock->id)){
+					$Lock->remove();
+					logging('remove lock superforce '.$argModelName.'&'.$argIdentifier, 'query');
+					$DBO->commit();
+					logging('end lock superforce '.$argModelName, 'query');
+				}
+			}
+		}
+		else if (isset(self::$Locks[strtolower($argModelName)]) && 0 < count(self::$Locks[strtolower($argModelName)])){
+			$lockKeys = array_keys(self::$Locks[strtolower($argModelName)]);
+			for ($lockIdx=0; $lockIdx < count($lockKeys); $lockIdx++){
+				self::$Locks[strtolower($argModelName)][$lockKeys[$lockIdx]]->remove();
+				logging('remove lock '.$argModelName.'&'.$lockKeys[$lockIdx], 'query');
+			}
+			for ($lockIdx=0; $lockIdx < count($lockKeys); $lockIdx++){
+				self::$Locks[strtolower($argModelName)][$lockKeys[$lockIdx]]->getDBO()->commit();
+			}
+			// XXX トランザクションの明示的解放
+			self::$Locks[strtolower($argModelName)] = array();
+			logging('end lock '.$argModelName, 'query');
+		}
 	}
 }
 

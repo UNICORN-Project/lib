@@ -664,7 +664,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						// 8以上は管理ユーザーのパーミッションなので、オールホワイトとする
 						$_SERVER['ALLOW_ALL_WHITE'] = 1;
 					}
-					if (0 === (int)AccessTokenAuth::$permission){
+					if (isset($_SERVER['ALLOW_ALL_WHITE']) && TRUE === (TRUE === $_SERVER['ALLOW_ALL_WHITE'] || 1 === (int)$_SERVER['ALLOW_ALL_WHITE']) && 0 === (int)AccessTokenAuth::$permission){
 						// 0はスーパーユーザーのパーミッションなので、フィールドの網掛けも外す
 						$_SERVER['__SUPER_USER__'] = TRUE;
 					}
@@ -1389,6 +1389,16 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								// pass とか passphrasee とか password とかっぽいフィールだったら強制的に見えない用に！
 								unset($resources[count($resources)-1][Auth::$authPassField]);
 							}
+						}
+					}
+				}
+				else {
+					Auth::init();
+					// Auth設定されているフィールドへの参照の場合、暗号化・ハッシュ化・マスク化を自動処理してあげる
+					if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable)){
+						// IDフィールド用
+						if (isset($resources[count($resources)-1][Auth::$authIDField]) && 0 < strlen($resources[count($resources)-1][Auth::$authIDField])){
+							$resources[count($resources)-1][Auth::$authIDField] = Auth::resolveDecrypted($resources[count($resources)-1][Auth::$authIDField], Auth::$authIDEncrypted);
 						}
 					}
 				}

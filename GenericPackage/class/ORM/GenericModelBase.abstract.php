@@ -684,5 +684,9 @@ abstract class GenericModelBase {
 	public function getFieldKeys(){
 		return array_keys($this->describes);
 	}
+
+	public function getDBO(){
+		return $this->_DBO;
+	}
 }
 ?>
