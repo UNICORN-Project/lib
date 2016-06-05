@@ -2577,6 +2577,30 @@ function modifiyConfig($argKey, $argValue, $argConfigName=''){
 	}
 }
 
+function getProjectDisplayName(){
+	$prjectFlagFilePath = NULL;
+	if(NULL !== defined('PROJECT_NAME')){
+		// 併設されている事を前提とする！
+		$projectPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME;
+		if(TRUE === is_dir($projectPath)){
+			// パスとして認める
+			$prjectFlagFilePath = $projectPath.'/.projectpackage';
+		}
+		else {
+			$projectPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package';
+			if(TRUE === is_dir($projectPath)){
+				$prjectFlagFilePath = $projectPath.'/.projectpackage';
+			}
+		}
+	}
+	if (NULL === $prjectFlagFilePath){
+		return NULL;
+	}
+	if (!is_file($prjectFlagFilePath)){
+		return NULL;
+	}
+	return file_get_contents($prjectFlagFilePath);
+}
 /*------------------------------ 根幹関数定義 ココから ------------------------------*/
 
 

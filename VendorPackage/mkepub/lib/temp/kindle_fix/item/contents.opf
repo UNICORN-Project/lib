@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" xml:lang="ja" unique-identifier="BookID" prefix="rendition: http://www.idpf.org/vocab/rendition/# ebpaj: http://www.ebpaj.jp/">
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+
+<!-- 作品名 -->
+<dc:title id="title">{rval title}</dc:title>
+<!--{def title_kana}-->
+<meta refines="#title" property="file-as">{rval title_kana}</meta>
+<!--{/def}-->
+
+<!-- 著者名 -->
+<!--{each authors}-->
+<dc:creator id="{rval authors/id}">{rval authors/name}</dc:creator>
+<!--{def authors/role}-->
+<meta refines="#{rval authors/id}" property="role" scheme="marc:relators">{rval authors/role}</meta>
+<!--{/def}-->
+<!--{def authors/name_kana}-->
+<meta refines="#{rval authors/id}" property="file-as">{rval authors/name_kana}</meta>
+<!--{/def}-->
+<meta refines="#{rval authors/id}" property="display-seq">{rval authors/seq}</meta>
+<!--{/each}-->
+
+<!-- 購入者情報 -->
+<dc:purchaser id="purchaser">{rval purchaser}</dc:purchaser>
+
+<!-- 出版社名 -->
+<!--{def publisher}-->
+<dc:publisher id="publisher">{rval publisher}</dc:publisher>
+<!--{/def}-->
+<!--{def publisher_kana}-->
+<meta refines="#publisher" property="file-as">{rval publisher_kana}</meta>
+<!--{/def}-->
+
+<!-- 言語 -->
+<dc:language>ja</dc:language>
+
+<!-- ファイルid：hash -->
+<dc:identifier id="BookID">{rval hash}</dc:identifier>
+
+<!-- 更新日 -->
+<meta property="dcterms:modified">{rval mdate}</meta>
+
+<!-- Fixed-Layout Documents指定 -->
+<meta property="rendition:layout">pre-paginated</meta>
+<meta property="rendition:spread">landscape</meta>
+
+<!-- for kindle -->
+<meta content="cover-img" name="cover" />
+<meta name="fixed-layout" content="true" />
+<meta name="book-type" content="comic" />
+<meta name="orientation-lock" content="none" />
+<meta content="{rval kindle/size}" name="original-resolution" />
+
+<!-- etc. -->
+<meta property="ebpaj:guide-version">1.1</meta>
+
+</metadata>
+
+<manifest>
+
+<!-- navigation -->
+<item media-type="application/xhtml+xml" id="toc" href="nav.xhtml" properties="nav" />
+
+<!-- style -->
+<item media-type="text/css" id="fixed-layout-jp" href="style/fixed-layout-jp.css" />
+
+<!-- image -->
+<item media-type="{rval cover/type}" id="cover-img" href="image/{rval cover/img_name}" properties="cover-image" />
+<item media-type="image/jpeg" id="i-white" href="image/i-white.jpg" />
+<!--{each images}-->
+<item media-type="{rval images/type}" id="{rval images/id}" href="image/{rval images/img_name}" />
+<!--{/each}-->
+
+
+<!-- xhtml -->
+<!--{def pages/svg}-->
+<item media-type="application/xhtml+xml" id="p-white" href="xhtml/p-white.xhtml" properties="svg" fallback="i-white" />
+<!--{/def}-->
+<!--{undef pages/svg}-->
+<item media-type="application/xhtml+xml" id="p-white" href="xhtml/p-white.xhtml"  />
+<!--{/undef}-->
+<!--{each pages}-->
+<!--{def pages/svg}-->
+<item media-type="application/xhtml+xml" id="{rval pages/id}" href="xhtml/{rval pages/xhtml}" properties="svg" fallback="{rval pages/img_id}" />
+<!--{/def}-->
+<!--{undef pages/svg}-->
+<item media-type="application/xhtml+xml" id="{rval pages/id}" href="xhtml/{rval pages/xhtml}"  />
+<!--{/undef}-->
+<!--{/each}-->
+
+</manifest>
+
+
+<spine page-progression-direction="{rval page_dir}">
+
+<!--{def padding}-->
+<itemref linear="yes" idref="p-white" properties="{rval padding/lr}" />
+<!--{/def}-->
+<!--{each pages}-->
+<itemref linear="yes" idref="{rval pages/id}" properties="{rval pages/lr}" />
+<!--{/each}-->
+<itemref linear="no" idref="toc" />
+</spine>
+
+</package>

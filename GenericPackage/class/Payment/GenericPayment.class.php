@@ -5,6 +5,8 @@ class GenericPayment
 	const SERVICE_GMOPAY = 'GMOPaymentGatewayAgent';
 	const SERVICE_WEBPAY = 'WebPayAgent';
 	const SERVICE_BITCASH = 'BitCashAgent';
+	const SERVICE_LINEPAY = 'GMOPaymentGatewayLinePayAgent';
+	const SERVICE_SBPAY = 'GMOPaymentGatewaySBAgent';
 
 	/**
 	 * 決済処理

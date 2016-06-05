@@ -214,23 +214,39 @@
 		<package>SimpleEmail</package>
 		<link mapfrom="GenericMail" mapto="DeliveryMail">default.implement.Mail/GenericMail</link>
 	</DeliveryMail>
+	<Payment>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link>default.abstract.Payment/GenericPaymentBase</link>
+		<link mapfrom="GenericPayment" mapto="Payment">default.implement.Payment/GenericPayment</link>
+	</Payment>
 	<GMOPaymentGatewayAgent>
 		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link>default.abstract.Payment/GenericPaymentBase</link>
 		<link mapfrom="GenericGMOPaymentGatewayAgent" mapto="GMOPaymentGatewayAgent">default.implement.Payment/GenericGMOPaymentGatewayAgent</link>
 	</GMOPaymentGatewayAgent>
+	<GMOPaymentGatewayLinePayAgent>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link>default.abstract.Payment/GenericPaymentBase</link>
+		<link>default.implement.Payment/GenericGMOPaymentGatewayAgent</link>
+		<link mapfrom="GenericGMOPaymentGatewayLinePayAgent" mapto="GMOPaymentGatewayLinePayAgent">default.implement.Payment/GenericGMOPaymentGatewayLinePayAgent</link>
+	</GMOPaymentGatewayLinePayAgent>
+	<GMOPaymentGatewaySBAgent>
+		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link>default.abstract.Payment/GenericPaymentBase</link>
+		<link>default.implement.Payment/GenericGMOPaymentGatewayAgent</link>
+		<link mapfrom="GenericGMOPaymentGatewaySBAgent" mapto="GMOPaymentGatewaySBAgent">default.implement.Payment/GenericGMOPaymentGatewaySBAgent</link>
+	</GMOPaymentGatewaySBAgent>
 	<WebPayAgent>
 		<link>default.WebPay/vendor/autoload.php</link>
-		<link>default.interface.Payment/GenericPaymentIO</link>
+		<package>Payment</package>
 		<link mapfrom="GenericWebPayAgent" mapto="WebPayAgent">default.implement.Payment/GenericWebPayAgent</link>
 	</WebPayAgent>
 	<BitCashAgent>
 		<link>default.BitCash/settle.php</link>
 		<link>default.interface.Payment/GenericPaymentIO</link>
+		<link>default.abstract.Payment/GenericPaymentBase</link>
 		<link mapfrom="GenericBitCashAgent" mapto="BitCashAgent">default.implement.Payment/GenericBitCashAgent</link>
 	</BitCashAgent>
-	<Payment>
-		<link mapfrom="GenericPayment" mapto="Payment">default.implement.Payment/GenericPayment</link>
-	</Payment>
 	<TwitterOAuthAgent>
 		<package>Session</package>
 		<link>default.interface.OAuth/Twitter/TwitterSessionIO</link>

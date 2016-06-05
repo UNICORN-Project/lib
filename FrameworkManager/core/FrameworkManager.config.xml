@@ -7,9 +7,12 @@
 		<SAMPLE_PACKAGE_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'sample/packages/']]></SAMPLE_PACKAGE_PATH>
 		<SAMPLE_PROJECT_PACKAGE_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'sample/packages/ProjectPackage/']]></SAMPLE_PROJECT_PACKAGE_PATH>
 		<SAMPLE_APIDOC_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'sample/apidocs/']]></SAMPLE_APIDOC_PATH>
+		<DB_DSN stage="local">mysqli://fwmuser:fwmpass@localhost/fwm</DB_DSN>
+		<DB_DSN stage="dev">mysqli://fwmuser:fwmpass@localhost/fwm</DB_DSN>
 		<DB_DSN>mysqli://fwmuser:fwmpass@localhost/fwm</DB_DSN>
 		<!-- MVCフレームワークの定義 -->
 		<FLOWXML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'class/MVC/Controller/']]></FLOWXML_PATH>
+		<TEMPLATEHTML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'template/managedocs/static/']]></TEMPLATEHTML_PATH>
 		<!-- アプリケーションへのアクセスがhttpsで無い場合に405エラーとする設定 -->
 		<DENY_HTTP>false</DENY_HTTP>
 		<!-- アプリケーションへのアクセスをIPフィルタリングし、マッチしない場合に405エラーとする設定 falseの場合はフィルタリングチェックを実行しない(全てのIPが無条件で許可される) -->

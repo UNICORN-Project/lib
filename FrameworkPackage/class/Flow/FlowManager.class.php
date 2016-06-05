@@ -57,7 +57,7 @@ class FlowManager
 						if(strlen($query) > 0){
 							$query .= '&';
 						}
-						$query .= $key.'='.$val;
+						$query .= $key.'='.rawurlencode($val);
 					}
 				}
 			}
@@ -76,7 +76,8 @@ class FlowManager
 		if ('?' === trim($query)){
 			$query = '';
 		}
-		if (NULL !== $argSSLRequired && FALSE !== $argSSLRequired){
+		// SSLへ強制リダイレクトする判定処理
+		if (NULL !== $argSSLRequired && FALSE !== $argSSLRequired && TRUE !== (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'https'))){
 			if (0 === strpos($action, './')){
 				$action = substr($action, 2);
 			}
@@ -151,8 +152,8 @@ class FlowManager
 			if(isset($_POST['flowpostformsection-backflow-section'])){
 				$argClassName = $_POST['flowpostformsection-backflow-section'];
 			}
-			else if(isset($_COOKIE['flowpostformsection-backflow-section'])){
-				$argClassName = $_COOKIE['flowpostformsection-backflow-section'];
+			else if(isset($_COOKIE['flowpostformsection-backflow-section']) && 0 < strlen($_COOKIE['flowpostformsection-backflow-section'])){
+				$argClassName = urldecode($_COOKIE['flowpostformsection-backflow-section']);
 				setcookie('flowpostformsection-backflow-section', '', time() - 3600, '/');
 			}
 			// backflowはリダイレクトポスト(307リダイレクト)
@@ -183,7 +184,8 @@ class FlowManager
 				}
 				$action = self::reverseRewriteURL('?_c_=' . str_replace('_', '-', ucfirst($argClassName)) . '&_o_='.$output, $query);
 			}
-			if (FALSE !== strpos($action, '://')){
+			if (FALSE === strpos($action, '://')){
+				// ://があるURLは面倒を見ない・・・
 				$action = str_replace('//', '/', str_replace('//', '/', $action));
 			}
 			else if (false === strpos($action, '/')){

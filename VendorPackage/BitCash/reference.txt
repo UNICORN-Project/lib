@@ -1,0 +1,3 @@
+Bitcashは別途ご自身でご契約下さい。
+UNICORNはBitcashのサンプルとして同梱されている
+settle.phpを利用しています。
