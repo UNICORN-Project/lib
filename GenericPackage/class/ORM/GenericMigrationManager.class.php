@@ -55,7 +55,7 @@ class GenericMigrationManager {
 			$dbname = $matchies[1];
 			$res = mysqli_set_charset($connect, 'utf8');
 			$res = mysqli_multi_query($connect, $createdb);
-			if(FALSE === res){
+			if(FALSE === $res){
 				logging('DB Migration:DB Create Error.', 'migration');
 				exit;
 			}
