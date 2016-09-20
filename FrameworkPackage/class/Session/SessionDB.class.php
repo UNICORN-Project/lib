@@ -297,7 +297,16 @@ class SessionDB extends SessionDataDB implements SessionIO {
 		$Session = ORMapper::getModel(self::$_DBO, self::$_sessionTblName, '`' . self::$_sessionPKeyName . '` = :' . self::$_sessionPKeyName . ' AND `' . self::$_sessionDateKeyName . '` >= :expierddate ORDER BY `' . self::$_sessionDateKeyName . '` DESC limit 1', $binds, FALSE);
 		$Session->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', self::$_sessionPKeyName)))}(self::$_token);
 		$Session->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', self::$_sessionDateKeyName)))}(Utilities::date('Y-m-d H:i:s', NULL, NULL, 'GMT'));
-		$Session->save();
+		try {
+			$Session->save();
+		}
+		catch(Exception $Exception){
+			if (FALSE !== strpos($Exception->getMessage(), 'Duplicate entry')){
+				return;
+			}
+			throw $Exception;
+		}
+		
 	}
 
 	/**

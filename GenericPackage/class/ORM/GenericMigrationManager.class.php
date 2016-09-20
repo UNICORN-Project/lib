@@ -9,6 +9,7 @@ class GenericMigrationManager {
 	 * @return boolean
 	 */
 	public static function dispatchDatabase(){
+		logging('DB Migration:is init? '.getConfig('PROJECT_ROOT_PATH').'.dbinitialized'.'='.(is_file(getConfig('PROJECT_ROOT_PATH').'.dbinitialized')), 'migration');
 		// DBマイグレーションを実行
 		if (!is_file(getConfig('PROJECT_ROOT_PATH').'.dbinitialized')){
 			$connect = FALSE;
@@ -36,12 +37,16 @@ class GenericMigrationManager {
 				$user = parse_url($dsn, PHP_URL_USER);
 				$pass = parse_url($dsn, PHP_URL_PASS);
 				$path = parse_url($dsn, PHP_URL_PATH);
+				if (0 === strpos($path, '/')){
+					$path = substr($path, 1);
+				}
 			}
 			if (0 >= strlen($port)){
 				$port = '3306';
 			}
 			$ok = false;
 			if (isset($path)){
+				logging('DB Migration:DB Connect '.$host.', '.$user.', '.$pass.', '.$path.', '.$port.'.', 'migration');
 				// 先ず、そもそもDBマイグレーションする必要があるかどうかを確認
 				$connect = @mysqli_connect($host, $user, $pass, $path, $port);
 				if (FALSE !== $connect){

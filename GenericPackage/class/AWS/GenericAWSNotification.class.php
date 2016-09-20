@@ -89,11 +89,12 @@ class GenericAWSNotification
 					$region = $ProjectConfigure::AWS_SNS_REGION;
 				}
 			}
-			$regions = Region::values();
-			if(!isset($regions[$region])){
-				return FALSE;
-			}
-			$this->_region = $regions[$region];
+// 			$regions = Region::values();
+// 			if(!isset($regions[$region])){
+// 				return FALSE;
+// 			}
+// 			$this->_region = $regions[$region];
+			$this->_region = $region;
 			$arns = explode('://', $baseArn);
 			$this->_arnBase = 'arn:aws:sns:'.$arns[0].':app/%target_pratform%/'.$arns[1];
 			$this->_initialized = TRUE;

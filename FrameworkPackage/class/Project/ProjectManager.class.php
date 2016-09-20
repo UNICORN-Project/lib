@@ -40,14 +40,12 @@ class ProjectManager
 				}
 				// Nginx再起動
 				@exec('sudo /Applications/MAMP/Library/bin/nginxctl -s reload');
-				// 						sleep(10);
+				sleep(10);
 				// 						@exec('sudo sh /Applications/MAMP/bin/startNginx.sh');
 				// 						sleep(5);
 			}
 			// XXX リモートサーバの場合の自動設定などをする場合はココに追記
 		}
-				echo 'is???';
-				//exit;
 		return TRUE;
 	}
 
