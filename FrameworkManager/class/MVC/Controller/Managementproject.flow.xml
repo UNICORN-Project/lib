@@ -439,6 +439,19 @@
 			</else>
 		</execute>
 	</section>
+	<section id="Managementproject-dispathcconfigure">
+		<execute>
+			<if condition="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<assign var="res" method="isset" arg1="Flow::$params['get']['target_project']"/>
+			<if var="res" val="false">
+				<exception/>
+			</if>
+			<assign var="out" class="ProjectManager" method="dispatchProjectConfig" arg1="Flow::$params['get']['target_project']"/>
+			<flow section="Managementproject"/>
+		</execute>
+	</section>
 	<section id="Managementproject-downloadzip">
 		<execute>
 			<if condition="true !== Auth::isCertification()">

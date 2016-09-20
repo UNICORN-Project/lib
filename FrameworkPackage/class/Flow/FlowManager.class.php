@@ -143,7 +143,7 @@ class FlowManager
 				$defaultBackFlow = getConfig('DEFAULT_BACKFLOW', PROJECT_NAME);
 				if (0 < strlen($defaultBackFlow)){
 					$argClassName = $defaultBackFlow;
-				} 
+				}
 			}
 			if(strlen($argTargetPath) > 0){
 				$argClassName = $argTargetPath.'/'.$argClassName;
@@ -151,10 +151,16 @@ class FlowManager
 			// PostパラメータからBackflowを特定する
 			if(isset($_POST['flowpostformsection-backflow-section'])){
 				$argClassName = $_POST['flowpostformsection-backflow-section'];
+				if(FALSE !== strrpos($argClassName, '/') && strrpos($argClassName, '/') == strlen($argClassName)-1){
+					$argClassName .= "index";
+				}
 			}
 			else if(isset($_COOKIE['flowpostformsection-backflow-section']) && 0 < strlen($_COOKIE['flowpostformsection-backflow-section'])){
 				$argClassName = urldecode($_COOKIE['flowpostformsection-backflow-section']);
 				setcookie('flowpostformsection-backflow-section', '', time() - 3600, '/');
+				if(FALSE !== strrpos($argClassName, '/') && strrpos($argClassName, '/') == strlen($argClassName)-1){
+					$argClassName .= "index";
+				}
 			}
 			// backflowはリダイレクトポスト(307リダイレクト)
 			if(isset($_POST['flowpostformsection-backflow-section-query']) && strlen($_POST['flowpostformsection-backflow-section-query']) > 0){
@@ -167,13 +173,57 @@ class FlowManager
 			if (isset($_SERVER['__loginID__'])){
 				setcookie('__loginID__', $_SERVER['__loginID__'], time() + 60, '/');
 			}
+			debug("argClassNameBefore: ".$argClassName);
+			// argClassNameがフルパスじゃない場合
+			if(0 > strpos($argClassName, 'http://') && 0 > strpos($argClassName, 'https://') && 0 > strpos($argClassName, 'file://')){
+				// Flowをディレクトリに対応
+				if (isset($_GET['_c_']) && $_GET['_c_'] != '') {
+					$cls = $_GET['_c_'];
+					if (strpos($cls, '/') === 0) {
+						$cls = substr($cls, 1);
+					}
+					$clsCount = count(explode('/', $cls));
+					$moveCount = $clsCount - 1;
+					if ($moveCount < 0) {
+						$moveCount = 0;
+					}
+					$checkClassName = $argClassName;
+					if (strpos($checkClassName, '/') === 0) {
+						$checkClassName = substr($checkClassName, 1);
+					}
+					$checkCount = count(explode('/', $checkClassName));
+
+					$dirs = explode('/', $cls);
+					$checkDirs = explode('/', $checkClassName);
+					// 現在のディレクトリがSP内にあり、
+					// argClassNameにspが付いていない場合
+					debug("argClassDirs: " . $dirs[0] . " <> " . $checkDirs[0]);
+					if ($dirs[0] === 'sp' && $checkDirs[0] !== 'sp') {
+						// パスに/spを付与
+						$argClassName = "/sp/" . $checkClassName;
+						if ($moveCount > 0) {
+							$moveCount -= 1;
+						}
+					}
+					// ディレクトリの差分移動する
+					if ($moveCount > 0) {
+						for ($i = 0; $i < $moveCount; $i++) {
+							$checkClassName = "../" . $checkClassName;
+						}
+						$argClassName = $checkClassName;
+					}
+					debug("argClassMoveCount: " . $moveCount);
+				}
+			}
+			debug("argClassDir: ".$_GET['_c_']);
+			debug("argClassName: ".$argClassName);
 			// XXX Redirectを今のところ強制
 			$argRedirect = TRUE;
 		}
 		if (TRUE === $argRedirect){
 			$locationStatus = 302;
 			$action = $argClassName;
-			if (FALSE === (0 === strpos($argClassName, 'http://') || 0 === strpos($argClassName, 'https://')) && FALSE === strpos($argClassName, '.html')){
+			if (FALSE === (0 === strpos($argClassName, 'http://') || 0 === strpos($argClassName, 'https://') || 0 === strpos($argClassName, 'file://')) && FALSE === strpos($argClassName, '.html')){
 				$argClassName = str_replace('//', '/', str_replace('//', '/', $argClassName));
 				if (isset($_POST['backflow']) && is_array($_POST['backflow']) && 0 < count($_POST['backflow'])){
 					$locationStatus = 307;
@@ -184,6 +234,12 @@ class FlowManager
 				}
 				$action = self::reverseRewriteURL('?_c_=' . str_replace('_', '-', ucfirst($argClassName)) . '&_o_='.$output, $query);
 			}
+			else if (isset($query) && 0 < strlen($query) && FALSE === strpos($action, $query)){
+				if (FALSE === strpos($action, '?')){
+					$action = $action.'?';
+				}
+				$action = $action.''.$query;
+			}
 			if (FALSE === strpos($action, '://')){
 				// ://があるURLは面倒を見ない・・・
 				$action = str_replace('//', '/', str_replace('//', '/', $action));
@@ -192,6 +248,10 @@ class FlowManager
 				// ターゲット指定が無いので相対パスにしてあげる
 				$action = str_replace('.//', './', './'.$action);
 			}
+			if (0 === strpos($action, 'file://')){
+				$action = 'http://localhost'.substr($action, strlen('file://'));
+			}
+			debug('Location: '.$action);
 			header('Location: '.$action, TRUE, $locationStatus);
 			return TRUE;
 		}

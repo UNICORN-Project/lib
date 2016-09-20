@@ -2,6 +2,55 @@
 
 class ProjectManager
 {
+	public static function dispatchProjectConfig($argProjectName){
+		if ('' === $argProjectName || 0 >= strlen($argProjectName)){
+			return;
+		}
+		// Nginxで稼働中の場合はconfを探して書き換える
+		if (FALSE !== strpos($_SERVER['HTTP_HOST'], 'localhost') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm') && FALSE !== strpos($_SERVER['SERVER_SOFTWARE'], 'nginx')){
+			// ローカルサーバかどうか
+			if (is_file('/Applications/MAMP/conf/nginx/nginx.conf')){
+				// ローカルNginxなので、confを自動生成して上げる
+				if (0 < strpos($argProjectName, 'Package')){
+					$argProjectName = substr($argProjectName, 0, strlen($argProjectName) - 7);
+				}
+				$conName = PROJECT_NAME.'Configure';
+				// Nginx用の設定
+				if (!is_dir('/Applications/MAMP/conf/nginx/conf.d')){
+					echo 'mkdir -m 777 /Applications/MAMP/conf/nginx/conf.d'.PHP_EOL;
+					@mkdir('/Applications/MAMP/conf/nginx/conf.d', 0777, TRUE);
+				}
+				$confSuppleBasePath = dirname(dirname($conName::PROJECT_ROOT_PATH));
+				$pjdirname = basename($confSuppleBasePath);
+				if (!is_file('/Applications/MAMP/conf/nginx/conf.d/nginx-mamp-'.$argProjectName.'.conf')){
+					// 設定を書き換えてリンクを貼る
+					@copy($confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-fwm.conf', $confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$argProjectName.'.conf');
+					file_put_contents($confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$argProjectName.'.conf', str_replace(array('/UNICORN/lib/FrameworkManager/sample/packages/ProjectPackage/', '/UNICORN/lib/FrameworkManager/template/managedocs', corefilename()), array('/'.$pjdirname.'/'.basename(dirname($conName::PROJECT_ROOT_PATH)).'/'.$argProjectName.'Package/', '/'.$pjdirname.'/lib/FrameworkManager/template/managedocs', strtolower($argProjectName)), file_get_contents($confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$argProjectName.'.conf')));
+					@exec('chmod -R 0777 ' .$confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$argProjectName.'.conf');
+					@exec('ln -s '.$confSuppleBasePath.'/supple/setting/NginxWithMAMP/conf.d/nginx-mamp-'.$argProjectName.'.conf /Applications/MAMP/conf/nginx/conf.d/nginx-mamp-'.$argProjectName.'.conf');
+				}
+				if (FALSE === strpos(@file_get_contents('/etc/hosts'), strtolower($argProjectName).'api.localhost')){
+					@exec('sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($argProjectName).'api.localhost \\\\\\n/\' /etc/hosts');
+				}
+				if (FALSE === strpos(@file_get_contents('/etc/hosts'), strtolower($argProjectName).'.localhost')){
+					@exec('sed -i "" -e $\'1s/^/127.0.0.1       '.strtolower($argProjectName).'.localhost \\\\\\n/\' /etc/hosts');
+				}
+				if (FALSE === strpos(@file_get_contents('/etc/hosts'), 'fwm'.strtolower($argProjectName).'.localhost')){
+					@exec('sed -i "" -e $\'1s/^/127.0.0.1       fwm'.strtolower($argProjectName).'.localhost \\\\\\n/\' /etc/hosts');
+				}
+				// Nginx再起動
+				@exec('sudo /Applications/MAMP/Library/bin/nginxctl -s reload');
+				// 						sleep(10);
+				// 						@exec('sudo sh /Applications/MAMP/bin/startNginx.sh');
+				// 						sleep(5);
+			}
+			// XXX リモートサーバの場合の自動設定などをする場合はココに追記
+		}
+				echo 'is???';
+				//exit;
+		return TRUE;
+	}
+
 	public static function createProject($argProjectName='', $argProjectDisplayName='', $argProjectUser='', $argProjectGroup='', $argIOSEnabled=TRUE, $argAndroidEnabled=TRUE){
 		$conName = PROJECT_NAME.'Configure';
 		debug('$argProjectName='.$argProjectName);

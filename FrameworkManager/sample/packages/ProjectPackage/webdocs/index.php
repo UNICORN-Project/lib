@@ -26,6 +26,11 @@ if (defined($conName."::FLOWXML_PATH")){
 	$flowPath = $conName::FLOWXML_PATH;
 }
 
+// DBマイグレーション(ローカル開発環境の時に基本は発火する)
+if(function_exists('getAutoMigrationEnabled') && TRUE === getAutoMigrationEnabled()){
+	MigrationManager::dispatchDatabase();
+}
+
 // フレームワークのMVCフレームワーク機能(REST)を使う
 Core::webmain($flowPath);
 

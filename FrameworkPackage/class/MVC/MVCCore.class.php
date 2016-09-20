@@ -995,6 +995,30 @@ class MVCCore {
 				$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
 			}
 			else {
+				// ターゲットを絞って見る
+				if (NULL === $HtmlView) {
+					if(false != strpos($targetPath, '/')){
+						$targetDirs = explode('/', $targetPath);
+						$basePath =  $targetDirs[0].'/';
+						// バージョンを抜いてインクルード
+						if (TRUE === file_exists_ip ( $basePath . $controlerClassName . $argViewType )) {
+							if (TRUE === $argFileExistsCalled) {
+								return $basePath . $controlerClassName . $argViewType;
+							}
+							debug('is???'.$basePath . $controlerClassName . $argViewType);
+							// Viewインスタンスの生成
+							$HtmlView = new $argTemplateEngine ( $basePath . $controlerClassName . $argViewType, $controlerClassName);
+						}
+						elseif (TRUE === file_exists_ip ( $basePath . strtolower ( $controlerClassName ) . $argViewType )) {
+							if (TRUE === $argFileExistsCalled) {
+								return $basePath . strtolower ( $controlerClassName ) . $argViewType;
+							}
+							debug('is????'.$basePath . strtolower ( $controlerClassName ) . $argViewType);
+							// Viewインスタンスの生成
+							$HtmlView = new $argTemplateEngine ( $basePath . strtolower ( $controlerClassName ) . $argViewType, strtolower ( $controlerClassName ));
+						}
+					}
+				}
 				// ターゲットを抜いて見る
 				if (NULL === $HtmlView) {
 					$basePath =  '';

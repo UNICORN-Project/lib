@@ -7,9 +7,10 @@ Breakpoints.xcbkptlist
 *.xcodeproj/*
 *xcuserdata
 !*.xcodeproj/project.pbxproj
-!*.xcodeproj/xcshareddata
 **/*.xcodeproj/*
 !**/*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata
+!xcshareddata
 *~
 *.bak
 desktop.ini

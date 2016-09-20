@@ -1118,7 +1118,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										// XXX 動画との判別を入れる！
 										$basehtml .= '<img width="50"';
 										if (0 < strlen($val)){
-											$basehtml .= ' src="data:octet-stream;base64,'.base64_encode($val).'"';
+											$basehtml .= ' src="data:application/octet-stream;base64,'.base64_encode($val).'"';
 										}
 										$basehtml .= '/>';
 									}

@@ -1,9 +1,8 @@
 <?php
 
 // AWS利用クラスの定義
-use Aws\Common\Aws;
-use Aws\Common\Enum\Region;
 use Aws\Sns\SnsClient;
+use Aws\Sns\Exception\SnsException;
 
 /**
  * Amazon Simple Notification Service(Amazon SNS)を利用してモバイルデバイスに対してプッシュ通知を行います。
@@ -99,12 +98,14 @@ class GenericAWSNotification
 			$this->_arnBase = 'arn:aws:sns:'.$arns[0].':app/%target_pratform%/'.$arns[1];
 			$this->_initialized = TRUE;
 			if (NULL === $this->_AWS) {
-				$this->_AWS = Aws::factory(array(
-						'key'    => $apiKey,
-						'secret' => $apiSecret,
-						//'region' => constant('Region::'.$region)
-						'region' => $this->_region
-				))->get('sns');
+				$this->_AWS = new SnsClient(array(
+						'version' => 'latest',
+						'region' => $this->_region,
+						'credentials' => array(
+							'key'    => $apiKey,
+							'secret' => $apiSecret,
+						),
+				));
 			}
 		}
 	}
@@ -148,7 +149,7 @@ class GenericAWSNotification
 		try {
 			logging('PlatformApplicationArn='.$arn, 'push');
 			$res = $this->_AWS->createPlatformEndpoint($options);
-		} catch (Exception $e) {
+		} catch (SnsException $e) {
 			logging($e->__toString(), 'push');
 			return FALSE;
 		}
@@ -273,7 +274,7 @@ class GenericAWSNotification
 			logging($json, 'push');
 			$res = $this->_AWS->publish($json);
 		}
-		catch (Exception $e) {
+		catch (SnsException $e) {
 			logging($e->__toString(), 'push');
 			return FALSE;
 		}

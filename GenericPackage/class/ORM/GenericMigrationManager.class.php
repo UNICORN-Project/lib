@@ -25,27 +25,57 @@ class GenericMigrationManager {
 			}
 			else {
 				$dsn = getConfig('DB_DSN');
-				if (0 >= strlen($DSN) && defined("DB_DSN")){
+				if (0 >= strlen($dsn) && defined("DB_DSN")){
 					// 定数を使う
 					$dsn = DB_DSN;
 				}
-				logging('DB Migration:DB Connect '.paers_url($dsn, PHP_URL_HOST).' '. paers_url($dsn, PHP_URL_USER).' '. paers_url($dsn, PHP_URL_PASS).' '. 'mysql'.' '. paers_url($dsn, PHP_URL_PORT).'.', 'migration');
+				logging('DB Migration:DB Connect '.parse_url($dsn, PHP_URL_HOST).' '. parse_url($dsn, PHP_URL_USER).' '. parse_url($dsn, PHP_URL_PASS).' '. 'mysql'.' '. parse_url($dsn, PHP_URL_PORT).'.', 'migration');
 				// コンフィグから接続先を特定
-				$host = paers_url($dsn, PHP_URL_HOST);
-				$port = paers_url($dsn, PHP_URL_PORT);
-				$user = paers_url($dsn, PHP_URL_USER);
-				$pass = paers_url($dsn, PHP_URL_PASS);
+				$host = parse_url($dsn, PHP_URL_HOST);
+				$port = parse_url($dsn, PHP_URL_PORT);
+				$user = parse_url($dsn, PHP_URL_USER);
+				$pass = parse_url($dsn, PHP_URL_PASS);
+				$path = parse_url($dsn, PHP_URL_PATH);
 			}
 			if (0 >= strlen($port)){
 				$port = '3306';
 			}
-			logging('DB Migration:DB Connect '.$host.', '.$user.', '.$pass.', '.$port.'.', 'migration');
-			$connect = @mysqli_connect($host, $user, $pass, 'mysql', $port);
-			if (FALSE === $connect){
-				logging('DB Migration:DB Connect Error.', 'migration');
-				exit;
+			$ok = false;
+			if (isset($path)){
+				// 先ず、そもそもDBマイグレーションする必要があるかどうかを確認
+				$connect = @mysqli_connect($host, $user, $pass, $path, $port);
+				if (FALSE !== $connect){
+					// マイグレーション済みとして、処理を即正常終了させる
+					logging('DB Migration:DB Connect ok. '.$host.' '.$user.' '.$pass.' '.$path.' '.$port, 'migration');
+					$ok = true;
+				}
 			}
-			// DBマイグレーション
+			if (false === $ok){
+				logging('DB Migration:DB Connect '.$host.', '.$user.', '.$pass.', '.$port.'.', 'migration');
+				$connect = @mysqli_connect($host, $user, $pass, 'mysql', $port);
+				$tryroot = false;
+				if (FALSE === $connect){
+					logging('DB Migration:DB Connect Error.', 'migration');
+					$tryroot = true;
+				}
+				// rootを試す
+				if (true === $tryroot){
+					$connect = @mysqli_connect($host, 'root', 'root', 'mysql', $port);
+					if (FALSE === $connect){
+						logging('DB Migration:DB Root:Root Connect Error.', 'migration');
+						$tryroot = true;
+					}
+				}
+				// passなしも試す
+				if (true === $tryroot){
+					$connect = @mysqli_connect($host, 'root', 'root', 'mysql', $port);
+					if (FALSE === $connect){
+						logging('DB Migration:DB Root: Connect Error.', 'migration');
+						exit;
+					}
+				}
+			}
+			// 初期テーブルマイグレーション
 			$createdb = file_get_contents(getConfig('PROJECT_ROOT_PATH').'core/createdb.sql');
 			$matchies = NULL;
 			if (!preg_match('/`(.+)?`/', $createdb, $matchies)){

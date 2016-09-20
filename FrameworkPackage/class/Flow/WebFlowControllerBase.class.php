@@ -275,8 +275,8 @@ class WebFlowControllerBase extends WebControllerBase {
 			if(NULL === Flow::$params['view']){
 				Flow::$params['view'] = array();
 			}
-			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
-			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="flowpostformsection-backflow-section-query" value="' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['query'] . '"/>'));
+			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class="auto-backflow" name="flowpostformsection-backflow-section" value="' . $backFrowID . '"/>'));
+			Flow::$params['view'][] = array('form[flowpostformsection]' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" class="auto-backflow" name="flowpostformsection-backflow-section-query" value="' . Flow::$params['backflow'][count(Flow::$params['backflow']) -1]['query'] . '"/>'));
 			self::$flowpostformsectionUsed = TRUE;
 		}
 
