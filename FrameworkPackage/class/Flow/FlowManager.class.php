@@ -19,14 +19,15 @@ class FlowManager
 		if(@isset(Core::$CurrentController) && @isset(Core::$CurrentController->section)){
 			$uris = explode('?', $_SERVER['REQUEST_URI']);
 			$uri = $uris[0];
-			$nowURI = strtolower($uri);
-			$searchURI = str_replace('_', '-', strtolower(Core::$CurrentController->section));
-			if (1 < strpos($nowURI, $searchURI)){
-				// 上位階層がある状態でリクエストされているので、その階層を全部取り出す
-				$targetPath = substr($nowURI, 0, strpos($nowURI, $searchURI));
-				if (0 === strpos($targetPath, '/')){
-					$targetPath = substr($targetPath, 1);
-				}
+			$nowURIPaths = explode('/', strtolower($uri));
+			$searchURIPaths = explode('/', str_replace('_', '-', strtolower(Core::$CurrentController->section)));
+			for ($pathDepth=0; $pathDepth < count($searchURIPaths); $pathDepth++){
+				unset($nowURIPaths[count($nowURIPaths) - count($searchURIPaths)]);
+				unset($searchURIPaths[count($searchURIPaths)]);
+			}
+			$targetPath = implode('/', $nowURIPaths);
+			if (0 < strlen($targetPath)){
+				$targetPath = $targetPath.'/';
 			}
 		}
 		return $targetPath;
@@ -155,7 +156,7 @@ class FlowManager
 					$argClassName .= "index";
 				}
 			}
-			else if(isset($_COOKIE['flowpostformsection-backflow-section']) && 0 < strlen($_COOKIE['flowpostformsection-backflow-section'])){
+			if(isset($_COOKIE['flowpostformsection-backflow-section']) && 0 < strlen($_COOKIE['flowpostformsection-backflow-section'])){
 				$argClassName = urldecode($_COOKIE['flowpostformsection-backflow-section']);
 				setcookie('flowpostformsection-backflow-section', '', time() - 3600, '/');
 				if(FALSE !== strrpos($argClassName, '/') && strrpos($argClassName, '/') == strlen($argClassName)-1){
@@ -166,7 +167,7 @@ class FlowManager
 			if(isset($_POST['flowpostformsection-backflow-section-query']) && strlen($_POST['flowpostformsection-backflow-section-query']) > 0){
 				$query = $_POST['flowpostformsection-backflow-section-query'];
 			}
-			else if(isset($_COOKIE['flowpostformsection-backflow-section-query']) && strlen($_COOKIE['flowpostformsection-backflow-section-query']) > 0){
+			if(isset($_COOKIE['flowpostformsection-backflow-section-query']) && strlen($_COOKIE['flowpostformsection-backflow-section-query']) > 0){
 				$query = $_COOKIE['flowpostformsection-backflow-section-query'];
 				setcookie('flowpostformsection-backflow-section-query', '', time() - 3600, '/');
 			}
