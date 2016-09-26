@@ -34,16 +34,6 @@
 -keep public class * extends android.widget.ScrollView
 -keep public class * extends android.widget.OverScroller
 -keep public class com.android.vending.licensing.ILicensingService
--keep public class jp.kanokare.kanokare.webview.GmatchAdWebView { *; }
--keep public class jp.kanokare.kanokare.webview.WebViewActivity { *; }
--keep public class jp.kanokare.kanokare.webview.WebViewWithTokenActivity { *; }
--keep public class jp.kanokare.kanokare.search.SearchSettingActivity { *; }
--keep public class jp.kanokare.kanokare.search.SearchConditionJavaScriptInterface { *; }
--keep public class jp.kanokare.kanokare.setting.InquiryActivity { *; }
--keep public class jp.kanokare.kanokare.webview.WebViewWithTokenActivity { *; }
--keep public class jp.kanokare.kanokare.setting.WebViewJavaScriptInterface { *; }
--keep public class jp.kanokare.kanokare.setting.WebViewJavaScriptInterface { *; }
--keep public class jp.kanokare.kanokare.setting.WebViewJavaScriptInterface { *; }
 -keep public class android.app.INotificationManager { *; }
 -keep public class android.app.ITransientNotification { *; }
 

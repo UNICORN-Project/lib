@@ -1,14 +1,14 @@
 {
   "project_info": {
-    "project_number": "794995470165",
-    "project_id": "api-project-794995470165"
+    "project_number": "794095470165",
+    "project_id": "api-project-794995370165"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:794995470165:android:14c0f6d36baf399e",
+        "mobilesdk_app_id": "1:794995370165:android:14c0f6d36baf399e",
         "android_client_info": {
-          "package_name": "jp.co.cybird.apps.lifestyle.cal"
+          "package_name": "jp.co.project"
         }
       },
       "oauth_client": [
@@ -16,21 +16,21 @@
           "client_id": "794995470165.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "jp.co.cybird.apps.lifestyle.cal",
-            "certificate_hash": "6D25B6B51B6FE0BED088C775B09201D6310E5D0B"
+            "package_name": "jp.co.project",
+            "certificate_hash": "6D25B6B51B6FE0BEF088C775B09201D6310E5D0B"
           }
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyBpdXdfdbAJT2EPNBrXv2tCk-XEyLIy4ZA"
+          "current_key": "AIzaSyBpdXdfbbAFT2EPNBrXv2tCk-XEyLIy4ZA"
         }
       ],
       "services": {
         "analytics_service": {
           "status": 2,
           "analytics_property": {
-            "tracking_id": "UA-44687220-4"
+            "tracking_id": "UA-44684220-4"
           }
         },
         "appinvite_service": {
