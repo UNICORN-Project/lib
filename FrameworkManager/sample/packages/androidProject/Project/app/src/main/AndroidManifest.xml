@@ -45,6 +45,11 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="jp.co.project.activity.ImageEditActivity"
+            android:label="@string/app_name"
+            android:screenOrientation="portrait" >
+        </activity>
     </application>
 
 </manifest>

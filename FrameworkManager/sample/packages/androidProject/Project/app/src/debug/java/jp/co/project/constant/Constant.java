@@ -8,4 +8,6 @@ public class Constant {
 
 	public static final int RESULT_OK = 10;
 	public static final int RESULT_FINISH = 20;
+
+	public static final int REQUEST_IMAGE_EDIT = 10;
 }

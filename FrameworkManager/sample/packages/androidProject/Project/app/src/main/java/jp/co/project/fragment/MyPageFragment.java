@@ -4,15 +4,18 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Matrix;
+import android.graphics.Point;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EdgeEffect;
 import android.widget.EditText;
@@ -25,6 +28,8 @@ import com.unicorn.manager.DataManager;
 import com.unicorn.view.Toast;
 
 import jp.co.project.R;
+import jp.co.project.activity.ImageEditActivity;
+import jp.co.project.constant.Constant;
 
 /**
  * 設定
@@ -165,9 +170,26 @@ public class MyPageFragment extends BaseFragment {
 					null
 			);
 
-			// 画像を設定
-			ImageView imageView = (ImageView)rootView.findViewById(R.id.mypage_image);
-			imageView.setImageURI(resultUri);
+			Intent intent = new Intent(getActivity(), ImageEditActivity.class);
+			intent.putExtra("image_url", "");
+			intent.putExtra("image_uri", resultUri);
+			startActivityForResult(intent, Constant.REQUEST_IMAGE_EDIT);
+			getActivity().overridePendingTransition(0, 0);
+
+		}else if(requestCode == Constant.REQUEST_IMAGE_EDIT) {
+
+			System.gc();
+			if (resultCode == Activity.RESULT_OK) {
+				if (data != null) {
+					Uri resultUri = (Uri) data.getExtras().get("image_uri");
+					if (resultUri != null) {
+						// 画像を設定
+						ImageView imageView = (ImageView)rootView.findViewById(R.id.mypage_image);
+						imageView.setImageURI(resultUri);
+					}
+				}
+			}
+
 		}
 	}
 }
