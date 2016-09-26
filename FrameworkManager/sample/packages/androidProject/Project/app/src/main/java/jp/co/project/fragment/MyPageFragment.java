@@ -27,6 +27,8 @@ import com.unicorn.handler.ModelHandler;
 import com.unicorn.manager.DataManager;
 import com.unicorn.view.Toast;
 
+import java.io.File;
+
 import jp.co.project.R;
 import jp.co.project.activity.ImageEditActivity;
 import jp.co.project.constant.Constant;
@@ -186,6 +188,11 @@ public class MyPageFragment extends BaseFragment {
 						// 画像を設定
 						ImageView imageView = (ImageView)rootView.findViewById(R.id.mypage_image);
 						imageView.setImageURI(resultUri);
+
+						File file = new File(resultUri.getPath());
+						if (file != null) {
+							file.delete();
+						}
 					}
 				}
 			}
