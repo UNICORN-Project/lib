@@ -412,7 +412,7 @@ function loadModule($argHint, $argClassExistsCalled = FALSE){
 				// ジェネレート処理
 				if(TRUE !== $fileget && TRUE === $autoGenerateFlag){
 					@file_put_contents_e($generatedIncFileName, '<?php' . PHP_EOL . 'if(FALSE === $unlink' . $classCheck . '){ ' . $mapClass . ' }' . PHP_EOL . '?>', FILE_APPEND);
-					@chmod($generatedIncFileName, 0666);
+					@chmod($generatedIncFileName, 0777);
 				}
 				unset($mapClass);
 			}
@@ -694,7 +694,7 @@ function loadConfig($argConfigPath){
 					$flagchaceBody = '$flagchaces = array(\'autoMigrationFlag\'=>' . (int)$autoMigrationFlag . ', \'localFlag\'=>' . (int)$localFlag . ', \'devFlag\'=>' . (int)$devFlag . ', \'testFlag\'=>' . (int)$testFlag . ', \'stagingFlag\'=>' . (int)$stagingFlag . ', \'debugFlag\'=>' . (int)$debugFlag . ', \'errorReportFlag\'=>' . (int)$errorReportFlag . ', \'loggingFlag\'=>' . (int)$loggingFlag . ');';
 					// フラグメントキャッシュを更新
 					file_put_contents($flagcacheFileName, '<?php' . PHP_EOL . $flagchaceBody . PHP_EOL . '?>');
-					@chmod($flagcacheFileName,0666);
+					@chmod($flagcacheFileName,0777);
 				}
 			}
 			if(TRUE !== $regenerateFlag){
@@ -967,7 +967,7 @@ _CLASSDEF_;
 		// 改行文字削除
 		$configGeneratClassDefine = str_replace(array(PHP_CR, PHP_LF), '', $configGeneratClassDefine);
 		file_put_contents($generatedConfigFileName, '<?php' . PHP_EOL . $configGeneratClassDefine . PHP_EOL . '?>');
-		@chmod($generatedConfigFileName,0666);
+		@chmod($generatedConfigFileName,0777);
 		// 静的ファイル化されたコンフィグクラスファイルを読み込む
 		require_once $generatedConfigFileName;
 	}
@@ -1368,7 +1368,21 @@ function file_put_contents_e($argFilePath, $argData, $argMode=0){
 		fclose($handle);
 	}
 	else{
-		return FALSE;
+		if (true === is_file($argFilePath) && false === is_writable($argFilePath)){
+			// XXX 権限を変えてリトライ
+			@chmod($argFilePath, 0777);
+			$handle = @fopen($argFilePath, $mode);
+			if($handle){
+				fwrite($handle, $argData);
+				fclose($handle);
+			}
+			else {
+				// XXX 失敗したファイルを削除
+				@chmod($argFilePath, 0777);
+				@unlink($argFilePath);
+				return FALSE;
+			}
+		}
 	}
 	return TRUE;
 }
@@ -1489,7 +1503,7 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 		// 最終ロギング時間の記録
 		if(!is_file($logpath.'date')){
 			@touch($logpath.'date');
-			@chmod($logpath.'date', 0666);
+			@chmod($logpath.'date', 0777);
 			@file_put_contents($logpath.'date', $date);
 		}
 		else {
@@ -1560,22 +1574,22 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 			// process_logは常に出す
 			if(!is_file($logpath.'process.log')){
 				@touch($logpath.'process.log');
-				@chmod($logpath.'process.log', 0666);
+				@chmod($logpath.'process.log', 0777);
 			}
 			if(!is_file($logpath.'process'.$phour.'.log')){
 				@touch($logpath.'process'.$phour.'.log');
-				@chmod($logpath.'process'.$phour.'.log', 0666);
+				@chmod($logpath.'process'.$phour.'.log', 0777);
 			}
 			@file_put_contents($logpath.'process.log', $logstr.PHP_EOL, FILE_APPEND);
 			@file_put_contents($logpath.'process'.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
 		}
 		if(!is_file($logpath.$argLogName.'.log')){
 			@touch($logpath.$argLogName.'.log');
-			@chmod($logpath.$argLogName.'.log', 0666);
+			@chmod($logpath.$argLogName.'.log', 0777);
 		}
 		if(!is_file($logpath.$argLogName.$phour.'.log')){
 			@touch($logpath.$argLogName.$phour.'.log');
-			@chmod($logpath.$argLogName.$phour.'.log', 0666);
+			@chmod($logpath.$argLogName.$phour.'.log', 0777);
 		}
 		@file_put_contents($logpath.$argLogName.'.log', $logstr.PHP_EOL, FILE_APPEND);
 		@file_put_contents($logpath.$argLogName.$phour.'.log', $logstr.PHP_EOL, FILE_APPEND);
@@ -2423,7 +2437,7 @@ function generateIncCache($argGeneratedPath, $argIncludePath){
 	@file_put_contents_e($argGeneratedPath, '<?php' . sprintf(_getAutoGenerateIncPHPMainBase(), $argIncludePath) . '?>', FILE_PREPEND);
 	// ファイルの終端に処理を追加
 	@file_put_contents_e($argGeneratedPath, '<?php if(FALSE === $unlink){ @include_once(\'' . $argIncludePath . '\'); } ?>', FILE_APPEND);
-	@chmod($argGeneratedPath, 0666);
+	@chmod($argGeneratedPath, 0777);
 }
 
 /**
@@ -2438,7 +2452,7 @@ function generateClassCache($argGeneratedPath, $argIncludePath, $argClassBuffer,
 	@file_put_contents_e($argGeneratedPath, '<?php' . sprintf(_getAutoGenerateIncPHPMainBase(), $argIncludePath) . '?>', FILE_PREPEND);
 	// ファイルの終端に処理を追加
 	@file_put_contents_e($argGeneratedPath, '<?php' . PHP_EOL . 'if(FALSE === $unlink' . $classCheck . '){ ' . PHP_EOL . $argClassBuffer . PHP_EOL . '}' . PHP_EOL . '?>', FILE_APPEND);
-	@chmod($argGeneratedPath, 0666);
+	@chmod($argGeneratedPath, 0777);
 }
 
 /**
@@ -2730,7 +2744,7 @@ if(TRUE === $_consoled){
 							exit;
 						}
 						// Apache用の設定
-						// XXX Apacheはパスさえ合っていれば動くのconfなどのコピーはしない
+						// XXX Apacheはパスさえ合っていれば動くのでconfなどのコピーはしない
 						$_SERVER['argv'][3] = 'http://localhost/'.basename($linkWorkspace).'/'.$pjdirname.'/';
 					}
 					else if ('nginx' === strtolower($_SERVER['argv'][4])){
@@ -2925,13 +2939,30 @@ if(TRUE === $_consoled){
 		echo ' Webベースナビゲーションのインストーラー"NT-D"が起動します。' . PHP_EOL;
 		echo PHP_EOL;
 		echo PHP_EOL;
+		echo ' (!)お使いのPCがMACで、且つローカル開発環境に"Vagrant"を利用したい場合は、全てを自動で設定するコマンドとモードがお使い頂けます。' . PHP_EOL;
+		echo PHP_EOL;
+		echo ' MAC Vagrantで、WebサーバにNginxを利用する場合'.PHP_EOL;
+		echo ' sh '.dirname(dirname(dirname(dirname(__FILE__)))).'/vagrant-nginx.sh start'.PHP_EOL;
+		echo ' 「sh '.dirname(dirname(dirname(dirname(__FILE__)))).'/vagrant-nginx.sh」には以下の機能があります。'.PHP_EOL;
+		echo 'start :VMを作成起動します。'.PHP_EOL;
+		echo 'login :VMにログインします。'.PHP_EOL;
+		echo 'reload :VMを再起動し、VMにログインします。その際、新しい設定の読み込みを試みます。'.PHP_EOL;
+		echo PHP_EOL;
+		echo ' MAC Vagrantで、WebサーバにApacheを利用する場合(※準備中)'.PHP_EOL;
+		echo ' sh '.dirname(dirname(dirname(dirname(__FILE__)))).'/vagrant-apache.sh start'.PHP_EOL;
+		echo ' 「sh '.dirname(dirname(dirname(dirname(__FILE__)))).'/vagrant-apache.sh」には以下の機能があります。'.PHP_EOL;
+		echo 'start :VMを作成起動します。'.PHP_EOL;
+		echo 'login :VMにログインします。'.PHP_EOL;
+		echo 'reload :VMを再起動し、VMにログインします。その際、新しい設定の読み込みを試みます。'.PHP_EOL;
+		echo PHP_EOL;
+		echo PHP_EOL;
 		echo ' (!)お使いのPCがMACで、且つローカル開発環境"MAMP"にインストールする場合は、全てを自動で設定するコマンドとモードがお使い頂けます。' . PHP_EOL;
 		echo PHP_EOL;
 		echo ' MAC MAMPで、WebサーバにNginxを利用する場合'.PHP_EOL;
-		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D Psycho Burst Apache'.PHP_EOL;
-		echo PHP_EOL;
-		echo ' MAC MAMPで、WebサーバにApacheを利用する場合'.PHP_EOL;
 		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D Psycho Burst Nginx'.PHP_EOL;
+		echo PHP_EOL;
+		echo ' MAC MAMPで、WebサーバにApacheを利用する場合(※準備中)'.PHP_EOL;
+		echo ' php '.dirname(dirname(dirname(__FILE__))).'/'.basename(__FILE__, '.php').' NT-D Psycho Burst Apache'.PHP_EOL;
 		echo PHP_EOL;
 		echo PHP_EOL;
 		echo ' それ以外の場合'.PHP_EOL;
