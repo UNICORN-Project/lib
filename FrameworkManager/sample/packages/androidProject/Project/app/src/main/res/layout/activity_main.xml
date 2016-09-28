@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/root"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/ll_main"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="#ffffff">
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/ll_footer"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/footer_height"
+            android:background="#00ffffff"
+            android:orientation="horizontal"
+            android:visibility="gone" >
+
+            <FrameLayout style="@style/ll_footer_button" >
+
+                <ImageButton
+                    android:id="@+id/btn_fragment1"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/tab_on"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:text="タイムライン"/>
+            </FrameLayout>
+
+            <FrameLayout style="@style/ll_footer_button" >
+
+                <ImageButton
+                    android:id="@+id/btn_fragment2"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/tab_off"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:text="マイタイムライン"/>
+            </FrameLayout>
+
+            <FrameLayout style="@style/ll_footer_button" >
+
+                <ImageButton
+                    android:id="@+id/btn_fragment3"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/tab_off"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="bottom|center_horizontal"
+                    android:text="設定"/>
+            </FrameLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</RelativeLayout>
