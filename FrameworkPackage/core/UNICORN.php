@@ -1396,7 +1396,11 @@ function dir_copy($dir_name, $new_dir, $permission = 0755) {
 		if(!$res){
 			return FALSE;
 		}
-		@exec('chmod -R '.sprintf('%04d', $permission).' ' .$new_dir);
+		@chmod($new_dir, 0777);
+		if (false === is_writable($new_dir)){
+			// XXX 権限を変えてリトライ
+			@exec('chmod -R '.sprintf('%04d', $permission).' ' .$new_dir);
+		}
 	}
 	if (is_dir($dir_name)) {
 		if ($dh = opendir($dir_name)) {
@@ -1409,6 +1413,11 @@ function dir_copy($dir_name, $new_dir, $permission = 0755) {
 				}
 				else {
 					copy($dir_name . "/" . $file, $new_dir . "/" . $file);
+					@chmod($new_dir, 0777);
+					if (false === is_writable($new_dir . "/" . $file)){
+						// XXX 権限を変えてリトライ
+						@exec('chmod -R '.sprintf('%04d', $permission).' ' .$new_dir);
+					}
 				}
 			}
 			closedir($dh);
