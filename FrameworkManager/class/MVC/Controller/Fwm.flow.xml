@@ -23,6 +23,10 @@
 				<execute val="$_SESSION['PMA_single_signon_user'] = parse_url(getConfig('DB_DSN'), PHP_URL_USER);"/>
 				<execute val="$_SESSION['PMA_single_signon_password'] = parse_url(getConfig('DB_DSN'), PHP_URL_PASS);"/>
 				<execute val="$_SESSION['PMA_single_signon_host'] = parse_url(getConfig('DB_DSN'), PHP_URL_HOST);"/>
+				<if val="1 === (int)getLocalEnabled()">
+					<execute val="$_SESSION['PMA_single_signon_user'] = 'root';"/>
+					<execute val="$_SESSION['PMA_single_signon_password'] = 'root';"/>
+				</if>
 				<execute val="@session_write_close();"/>
 				<execute val="$callback = './supple/myadm/'"/>
 				<if val="isset($_GET['callback'])">

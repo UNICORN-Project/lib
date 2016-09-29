@@ -89,6 +89,7 @@ class GenericMigrationManager {
 			}
 			$dbname = $matchies[1];
 			$res = mysqli_set_charset($connect, 'utf8');
+			$res = mysqli_query($connect, 'set names utf8');
 			$res = mysqli_multi_query($connect, $createdb);
 			if(FALSE === $res){
 				logging('DB Migration:DB Create Error.', 'migration');
@@ -101,12 +102,20 @@ class GenericMigrationManager {
 			$connect = @mysqli_connect($host, $user, $pass, $dbname, $port);
 			$res = mysqli_set_charset($connect, 'utf8');
 			logging('DB Migration:Connect Created db '.$dbname.'.', 'migration');
-			$res = mysqli_multi_query($connect, file_get_contents(getConfig('PROJECT_ROOT_PATH').'core/createtable.sql'));
-			if(FALSE === $res){
-				logging('DB Migration:Table Create Error.', 'migration');
-				exit;
+			$createTableTmp = file_get_contents(getConfig('PROJECT_ROOT_PATH').'core/createtable.sql');
+			$createTables = explode("\n", $createTableTmp);
+			logging('DB Migration:Create tables='.var_export($createTables, TRUE), 'migration');
+			for ($tidx=0; $tidx < count($createTables); $tidx++) {
+				if (0 < strlen($createTables[$tidx]) && 0 !== strpos($createTables[$tidx], '--')){
+					logging('DB Migration:Create table='.$createTables[$tidx], 'migration');
+					$res = mysqli_query($connect, $createTables[$tidx]);
+					if(FALSE === $res){
+						logging('DB Migration:Table Create Error.', 'migration');
+						exit;
+					}
+					mysqli_commit($connect);
+				}
 			}
-			mysqli_commit($connect);
 			mysqli_close($connect);
 			logging('DB Migration:Table Created.', 'migration');
 			touch(getConfig('PROJECT_ROOT_PATH').'.dbinitialized');
