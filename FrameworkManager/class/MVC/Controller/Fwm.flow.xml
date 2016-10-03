@@ -33,7 +33,7 @@
 					<execute val="$callback = $_GET['callback']"/>
 					<execute val="unset($_GET['callback'])"/>
 				</if>
-				<execute val="header('location:./supple/myadm/')"/>
+				<execute val="header('location:'.$callback)"/>
 			</else>
 		</execute>
 	</section>
