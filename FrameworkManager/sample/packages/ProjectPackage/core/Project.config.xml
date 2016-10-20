@@ -7,8 +7,8 @@
 		<APPAPI_BASE_URL>http://yourdomain/</APPAPI_BASE_URL>
 		<PROJECT_ROOT_PATH code="TRUE"><![CDATA[dirname(dirname(__FILE__)).'/']]></PROJECT_ROOT_PATH>
 		<PACKAGE_CONFIG_XML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'core/'.PROJECT_NAME.'.package.xml']]></PACKAGE_CONFIG_XML_PATH>
-		<DB_DSN>mysqli://projectuser:projectpass@localhost/project</DB_DSN>
-		<!--<DB_DSN_READABLE>mysqli://projectuser:projectpass@localhost/project_readable</DB_DSN_READABLE>-->
+		<DB_DSN>mysqli://projectuser:projectpass@mysqld/project</DB_DSN>
+		<!--<DB_DSN_READABLE>mysqli://projectuser:projectpass@mysqld/project_readable</DB_DSN_READABLE>-->
 		<!-- MVCフレームワークの定義 -->
 		<FLOWXML_PATH code="TRUE"><![CDATA[%PROJECT_ROOT_PATH%.'class/MVC/Controller/']]></FLOWXML_PATH>
 		<DEFAULT_BACKFLOW>index</DEFAULT_BACKFLOW>

@@ -1874,7 +1874,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									// Pkeyも入れておく(複合キーの為の処理)
 									$datas[$fields[$fieldIdx]] = $this->restResource['ids'][$IDIdx];
 								}
-								elseif($fields[$fieldIdx] == $this->authUserIDFieldName && 0 < (int)$this->authUserID && 0 >= @(int)$datas[$fields[$fieldIdx]] && $this->authUserID !== $datas[$fields[$fieldIdx]]){
+								elseif($fields[$fieldIdx] == $this->authUserIDFieldName && 0 < (int)$this->authUserID && isset($datas[$fields[$fieldIdx]]) && 0 >= @(int)$datas[$fields[$fieldIdx]] && $this->authUserID !== $datas[$fields[$fieldIdx]]){
 									// 自分自身のIDを入れる
 									$datas[$fields[$fieldIdx]] = $this->authUserID;
 								}

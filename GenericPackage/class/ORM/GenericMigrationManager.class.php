@@ -19,7 +19,7 @@ class GenericMigrationManager {
 			$pass = '';
 			if (getLocalEnabled()){
 				// ローカルの場合
-				$host = 'localhost';
+				$host = 'mysqld';
 				$port = '';
 				$user = 'root';
 				$pass = 'root';
