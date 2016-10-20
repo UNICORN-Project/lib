@@ -9,16 +9,11 @@ class GenericGoogleOAuthAgent {
 		//Google_Client をインスタンス化
 		$googleClient = new Google_Client();
 
-		//ローカルのURLが怒られるので置換(コーディング完了後削除)
-		if ( preg_match("/anlimited.localhost/",$argCallbackURL)===1){
-			$argCallbackURL = preg_replace("/anlimited.localhost/", "localhost", $argCallbackURL);
-		}
-		
 		$googleClient->setClientID($argClientId);
 		$googleClient->setClientSecret($argAccessSecret);
 		$googleClient->setScopes('email profile');
 		$googleClient->setRedirectUri($argCallbackURL);
-		
+
 		$access_token = $googleClient->getAccessToken();
 
 		//callback.phpで使うのでセッションに入れる

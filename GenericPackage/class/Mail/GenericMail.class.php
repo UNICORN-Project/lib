@@ -2,7 +2,7 @@
 
 class GenericMail
 {
-	const SUPPORT_MAIL = 'support@3bk.jp';
+	const SUPPORT_MAIL = 'webmaster@example.com';
 	const SUBJECT = '';
 	const DEFAULT_CHARSET = 'iso-2022-jp';
 
