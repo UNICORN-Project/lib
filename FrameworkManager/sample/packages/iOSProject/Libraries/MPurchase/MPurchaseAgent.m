@@ -248,7 +248,7 @@ static NSMutableDictionary *alerts = nil;
                 // 和暦回避
                 [dateFormatter setLocale:[NSLocale systemLocale]];
                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                 // 出力フォーマット指定
                 [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                 // 保存用に文字列に変換
@@ -263,7 +263,7 @@ static NSMutableDictionary *alerts = nil;
                 [dateFormatter setLocale:[NSLocale systemLocale]];
                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                 [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                 NSDate *nowdate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[NSDate date]]];
                 NSTimeInterval now = [[NSDate date] timeIntervalSinceDate:nowdate];
                 NSLog(@"old=%f %@", old, [lastExpiredDate description]);
@@ -355,7 +355,7 @@ static NSMutableDictionary *alerts = nil;
                         // 和暦回避
                         [dateFormatter setLocale:[NSLocale systemLocale]];
                         [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                         // 出力フォーマット指定
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
                         // 保存用に文字列に変換
@@ -370,7 +370,7 @@ static NSMutableDictionary *alerts = nil;
                         [dateFormatter setLocale:[NSLocale systemLocale]];
                         [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                         [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                        [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                         NSDate *nowdate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[NSDate date]]];
                         NSTimeInterval now = [[NSDate date] timeIntervalSinceDate:nowdate];
                         NSLog(@"old=%f %@", old, [lastExpiredDate description]);
@@ -1334,7 +1334,7 @@ static NSMutableDictionary *alerts = nil;
     // 和暦回避
     [dateFormatter setLocale:[NSLocale systemLocale]];
     [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
     [dateFormatter setDateFormat:[NSString stringWithFormat:@"yyyy-MM-dd HH:mm:ss %@%@%@", tzSignPart, tzHourPart, tzMinPart]];
 
     return [dateFormatter dateFromString:dateStr];

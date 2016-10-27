@@ -274,6 +274,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 		try{
 			$DBO = self::_getDBO();
+			debug('oooooo='.var_export($_SERVER, true));
 			// UIDAuth
 			if (0 < strlen((string)getConfig('APP_AUTH_TBL_NAME'))){
 				// アプリ用のAuth設定を適用する
@@ -284,6 +285,23 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				Auth::$authPassField = getConfig('APP_AUTH_PASS_FIELD_NAME');
 				Auth::$authIDEncrypted = getConfig('APP_AUTH_ID_ENCRYPTED');
 				Auth::$authPassEncrypted = getConfig('APP_AUTH_PASS_ENCRYPTED');
+				Session::init();
+				if(isset($ProjectConfigure) && NULL !== $ProjectConfigure::constant('APP_AUTH_CRYPT_KEY') && NULL !== $ProjectConfigure::constant('APP_AUTH_CRYPT_IV')){
+					Auth::$sessionCryptKey = $ProjectConfigure::APP_AUTH_CRYPT_KEY;
+					Auth::$sessionCryptIV = $ProjectConfigure::APP_AUTH_CRYPT_IV;
+					Auth::$authCryptKey = $ProjectConfigure::APP_AUTH_CRYPT_KEY;
+					Auth::$authCryptIV = $ProjectConfigure::APP_AUTH_CRYPT_IV;
+					Session::$cryptKey = $ProjectConfigure::APP_AUTH_CRYPT_KEY;
+					Session::$cryptIV = $ProjectConfigure::APP_AUTH_CRYPT_IV;
+				}
+				else if (0 < strlen(getConfig('APP_AUTH_CRYPT_KEY'))){
+					Auth::$sessionCryptKey = getConfig('APP_AUTH_CRYPT_KEY');
+					Auth::$sessionCryptIV = getConfig('APP_AUTH_CRYPT_IV');
+					Auth::$authCryptKey = getConfig('APP_AUTH_CRYPT_KEY');
+					Auth::$authCryptIV = getConfig('APP_AUTH_CRYPT_IV');
+					Session::$cryptKey = getConfig('APP_AUTH_CRYPT_KEY');
+					Session::$cryptIV = getConfig('APP_AUTH_CRYPT_IV');
+				}
 			}
 			$Device = Auth::getCertifiedUser();
 			if(FALSE === $Device){
@@ -1118,7 +1136,11 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										// XXX 動画との判別を入れる！
 										$basehtml .= '<img width="50"';
 										if (0 < strlen($val)){
-											$basehtml .= ' src="data:application/octet-stream;base64,'.base64_encode($val).'"';
+											if (base64_encode(base64_decode($val, true)) !== $val){
+												// 非base64(多分バイナリ)
+												$val = base64_encode($val);
+											}
+											$basehtml .= ' src="data:application/octet-stream;base64,'.$val.'"';
 										}
 										$basehtml .= '/>';
 									}
@@ -1193,7 +1215,11 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									$basehtml .= '<tr><td>';
 									$basehtml .= '<img width="200"';
 									if (0 < strlen($val)){
-										$basehtml .= ' src="data:octet-stream;base64,'.base64_encode($val).'"';
+										if (base64_encode(base64_decode($data, true)) !== $val){
+											// 非base64(多分バイナリ)
+											$val = base64_encode($val);
+										}
+										$basehtml .= ' src="data:octet-stream;base64,'.$val.'"';
 									}
 									$basehtml .= '/>';
 									$basehtml .= '<br/><input class="form-input" type="file" name="'.$key.'"/></td></tr>'.PHP_EOL;
@@ -1220,7 +1246,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				$res = $basehtml;
 			}
 		}
-
+		debug($res);
 		// MVCCoreのアクセス時間をRESTが持っている現在時刻で差し替える
 		Core::$accessed = self::$nowGMT;
 
@@ -1878,6 +1904,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									// 自分自身のIDを入れる
 									$datas[$fields[$fieldIdx]] = $this->authUserID;
 								}
+								elseif($fields[$fieldIdx] == $this->authUserIDFieldName && 0 < (int)$this->authUserID && !isset($datas[$fields[$fieldIdx]]) && 0 >= @(int)$Model->id){
+									// 自分自身のIDを入れる
+									$datas[$fields[$fieldIdx]] = $this->authUserID;
+								}
 								// blobの自動処理
 								elseif(FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'blob')){
 									// リアルなリクエストメソッドで処理を分岐
@@ -1886,6 +1916,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										if ($PUT[$fields[$fieldIdx]]){
 											// ファイルが存在したので、更新データにセットする
 											$datas[$fields[$fieldIdx]] = $PUT[$fields[$fieldIdx]];
+											if (base64_encode(base64_decode($datas[$fields[$fieldIdx]], true)) !== $datas[$fields[$fieldIdx]]){
+												// 非base64(多分バイナリ)
+												$datas[$fields[$fieldIdx]] = base64_encode($datas[$fields[$fieldIdx]]);
+											}
 										}
 									}
 									elseif ('POST' === $_SERVER['REQUEST_METHOD']){
@@ -1893,6 +1927,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 										if(isset($_FILES) && isset($_FILES[$fields[$fieldIdx]]) && is_array($_FILES[$fields[$fieldIdx]]) && isset($_FILES[$fields[$fieldIdx]]['tmp_name']) && isset($_FILES[$fields[$fieldIdx]]['type']) && isset($_FILES[$fields[$fieldIdx]]['size']) && isset($_FILES[$fields[$fieldIdx]]['error']) && 0 === $_FILES[$fields[$fieldIdx]]['error']){
 											// ファイルが存在したので、更新データにセットする
 											$datas[$fields[$fieldIdx]] = file_get_contents($_FILES[$fields[$fieldIdx]]["tmp_name"]);
+											if (base64_encode(base64_decode($datas[$fields[$fieldIdx]], true)) !== $datas[$fields[$fieldIdx]]){
+												// 非base64(多分バイナリ)
+												$datas[$fields[$fieldIdx]] = base64_encode($datas[$fields[$fieldIdx]]);
+											}
 										}
 									}
 								}
@@ -2055,6 +2093,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if ($PUT[$fields[$fieldIdx]]){
 								// ファイルが存在したので、更新データにセットする
 								$datas[$fields[$fieldIdx]] = $PUT[$fields[$fieldIdx]];
+								if (base64_encode(base64_decode($datas[$fields[$fieldIdx]], true)) !== $datas[$fields[$fieldIdx]]){
+									// 非base64(多分バイナリ)
+									$datas[$fields[$fieldIdx]] = base64_encode($datas[$fields[$fieldIdx]]);
+								}
 							}
 						}
 						elseif ('POST' === $_SERVER['REQUEST_METHOD']){
@@ -2062,6 +2104,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 							if(isset($_FILES) && isset($_FILES[$fields[$fieldIdx]]) && is_array($_FILES[$fields[$fieldIdx]]) && isset($_FILES[$fields[$fieldIdx]]['tmp_name']) && isset($_FILES[$fields[$fieldIdx]]['type']) && isset($_FILES[$fields[$fieldIdx]]['size']) && isset($_FILES[$fields[$fieldIdx]]['error']) && 0 === $_FILES[$fields[$fieldIdx]]['error']){
 								// ファイルが存在したので、更新データにセットする
 								$datas[$fields[$fieldIdx]] = file_get_contents($_FILES[$fields[$fieldIdx]]["tmp_name"]);
+								if (base64_encode(base64_decode($datas[$fields[$fieldIdx]], true)) !== $datas[$fields[$fieldIdx]]){
+									// 非base64(多分バイナリ)
+									$datas[$fields[$fieldIdx]] = base64_encode($datas[$fields[$fieldIdx]]);
+								}
 							}
 						}
 					}

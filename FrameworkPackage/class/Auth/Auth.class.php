@@ -2,10 +2,6 @@
 
 class Auth
 {
-	protected static $_sessionCryptKey = NULL;
-	protected static $_sessionCryptIV = NULL;
-	protected static $_authCryptKey = NULL;
-	protected static $_authCryptIV = NULL;
 	protected static $_DBO = NULL;
 	protected static $_initialized = FALSE;
 
@@ -17,6 +13,10 @@ class Auth
 	public static $authModifiedField = 'modify_date';
 	public static $authIDEncrypted = 'AES128CBC';
 	public static $authPassEncrypted = 'SHA256';
+	public static $sessionCryptKey = NULL;
+	public static $sessionCryptIV = NULL;
+	public static $authCryptKey = NULL;
+	public static $authCryptIV = NULL;
 	public static $authAutoRefreshKey = 'autoauthorize';
 
 	protected static function _init($argDSN=NULL){
@@ -62,45 +62,45 @@ class Auth
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_sessionCryptKey = Configure::CRYPT_KEY;
-				self::$_authCryptKey = Configure::CRYPT_KEY;
+				self::$sessionCryptKey = Configure::CRYPT_KEY;
+				self::$authCryptKey = Configure::CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_sessionCryptKey = Configure::NETWORK_CRYPT_KEY;
+				self::$sessionCryptKey = Configure::NETWORK_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_sessionCryptKey = Configure::SESSION_CRYPT_KEY;
+				self::$sessionCryptKey = Configure::SESSION_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('DB_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_authCryptKey = Configure::DB_CRYPT_KEY;
+				self::$authCryptKey = Configure::DB_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('AUTH_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_authCryptKey = Configure::AUTH_CRYPT_KEY;
+				self::$authCryptKey = Configure::AUTH_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_sessionCryptIV = Configure::CRYPT_IV;
-				self::$_authCryptIV = Configure::CRYPT_KEY;
+				self::$sessionCryptIV = Configure::CRYPT_IV;
+				self::$authCryptIV = Configure::CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_sessionCryptIV = Configure::NETWORK_CRYPT_IV;
+				self::$sessionCryptIV = Configure::NETWORK_CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_sessionCryptIV = Configure::SESSION_CRYPT_IV;
+				self::$sessionCryptIV = Configure::SESSION_CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('DB_CRYPT_IV')){
 				// 定義から暗号化キーを設定
-				self::$_authCryptKIV = Configure::DB_CRYPT_IV;
+				self::$authCryptKIV = Configure::DB_CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('AUTH_CRYPT_IV')){
 				// 定義から暗号化キーを設定
-				self::$_authCryptIV = Configure::AUTH_CRYPT_IV;
+				self::$authCryptIV = Configure::AUTH_CRYPT_IV;
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
@@ -142,44 +142,44 @@ class Auth
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_sessionCryptKey = $ProjectConfigure::CRYPT_KEY;
+					self::$sessionCryptKey = $ProjectConfigure::CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_sessionCryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
+					self::$sessionCryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_sessionCryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
+					self::$sessionCryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('DB_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_authCryptKey = $ProjectConfigure::DB_CRYPT_KEY;
+					self::$authCryptKey = $ProjectConfigure::DB_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('AUTH_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_authCryptKey = $ProjectConfigure::AUTH_CRYPT_KEY;
+					self::$authCryptKey = $ProjectConfigure::AUTH_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_sessionCryptIV = $ProjectConfigure::CRYPT_IV;
-					self::$_authCryptIV = $ProjectConfigure::CRYPT_KEY;
+					self::$sessionCryptIV = $ProjectConfigure::CRYPT_IV;
+					self::$authCryptIV = $ProjectConfigure::CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_sessionCryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
+					self::$sessionCryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_sessionCryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
+					self::$sessionCryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('DB_CRYPT_IV')){
 					// 定義から暗号化キーを設定
-					self::$_authCryptKIV = $ProjectConfigure::DB_CRYPT_IV;
+					self::$authCryptKIV = $ProjectConfigure::DB_CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('AUTH_CRYPT_IV')){
 					// 定義から暗号化キーを設定
-					self::$_authCryptIV = $ProjectConfigure::AUTH_CRYPT_IV;
+					self::$authCryptIV = $ProjectConfigure::AUTH_CRYPT_IV;
 				}
 			}
 			$authAutoRefreshKey = getConfig('AUTH_AUTOREFRESH_KEY');
@@ -214,7 +214,7 @@ class Auth
 		if(NULL === $argIdentifier){
 			$argIdentifier = Session::sessionID();
 		}
-		return Utilities::doHexEncryptAES($argIdentifier, self::$_sessionCryptKey, self::$_sessionCryptIV);
+		return Utilities::doHexEncryptAES($argIdentifier, self::$sessionCryptKey, self::$sessionCryptIV);
 
 	}
 
@@ -227,7 +227,7 @@ class Auth
 		if(NULL === $argIdentifier){
 			$argIdentifier = Session::sessionID();
 		}
-		return Utilities::doHexDecryptAES($argIdentifier, self::$_sessionCryptKey, self::$_sessionCryptIV);
+		return Utilities::doHexDecryptAES($argIdentifier, self::$sessionCryptKey, self::$sessionCryptIV);
 	}
 
 	/**
@@ -240,7 +240,7 @@ class Auth
 		}
 		Session::start();
 		$sessionIdentifier = Session::sessionID();
-		debug( self::$_sessionCryptKey . ':' . self::$_sessionCryptIV);
+		debug( self::$sessionCryptKey . ':' . self::$sessionCryptIV);
 		debug("session identifier=".$sessionIdentifier);
 		$userID = self::getDecryptedAuthIdentifier($sessionIdentifier);
 		debug("decrypted userID=".$userID);
@@ -522,7 +522,7 @@ class Auth
 			$string = sha256($argString);
 		}
 		elseif(FALSE !== strpos(strtolower($argAlgorism), 'aes')){
-			$string = Utilities::doHexEncryptAES($argString, self::$_authCryptKey, self::$_authCryptIV);
+			$string = Utilities::doHexEncryptAES($argString, self::$authCryptKey, self::$authCryptIV);
 		}
 		return $string;
 	}
@@ -537,7 +537,7 @@ class Auth
 		}
 		$string = $argString;
 		if(FALSE !== strpos(strtolower($argAlgorism), 'aes')){
-			$string = Utilities::doHexDecryptAES($argString, self::$_authCryptKey, self::$_authCryptIV);
+			$string = Utilities::doHexDecryptAES($argString, self::$authCryptKey, self::$authCryptIV);
 		}
 		return $string;
 	}

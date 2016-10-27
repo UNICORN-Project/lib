@@ -19,8 +19,8 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 	protected static $_sessionTblName = 'session_table';
 	protected static $_sessionPKeyName = 'token';
 	protected static $_sessionDateKeyName = 'create_date';
-	protected static $_cryptKey = NULL;
-	protected static $_cryptIV = NULL;
+	public static $cryptKey = NULL;
+	public static $cryptIV = NULL;
 
 	/**
 	 * Sessionクラスの初期化
@@ -74,27 +74,27 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::CRYPT_KEY;
+				self::$cryptKey = Configure::CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::NETWORK_CRYPT_KEY;
+				self::$cryptKey = Configure::NETWORK_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::SESSION_CRYPT_KEY;
+				self::$cryptKey = Configure::SESSION_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::CRYPT_IV;
+				self::$cryptIV = Configure::CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::NETWORK_CRYPT_IV;
+				self::$cryptIV = Configure::NETWORK_CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::SESSION_CRYPT_IV;
+				self::$cryptIV = Configure::SESSION_CRYPT_IV;
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
@@ -132,27 +132,27 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
 				}
 			}
 
@@ -188,8 +188,8 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 	 * @return mixed パースに失敗したらFALSE 成功した場合はstring 固有識別子を返す
 	 */
 	protected static function _tokenToIdentifier($argToken, $argUncheck=FALSE){
-		logging(self::$_cryptKey, 'session');
-		logging(self::$_cryptIV, 'session');
+		logging(self::$cryptKey, 'session');
+		logging(self::$cryptIV, 'session');
 		logging(self::$_expiredtime, 'session');
 		$token = $argToken;
 		// 暗号化されたトークンの本体を取得
@@ -199,7 +199,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 		logging('$tokenExpierd=' . $tokenExpierd, 'session');
 		logging('$encryptedToken=' . $encryptedToken, 'session');
 		// トークンを複合
-		$decryptToken = Utilities::doHexDecryptAES($encryptedToken, self::$_cryptKey, self::$_cryptIV);
+		$decryptToken = Utilities::doHexDecryptAES($encryptedToken, self::$cryptKey, self::$cryptIV);
 		logging('$decryptToken=' . $decryptToken, 'session');
 		// XXXデフォルトのUUIDはSHA256
 		$identifier = substr($decryptToken, 0, strlen($decryptToken) - 14);
@@ -243,7 +243,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 	protected static function _identifierToToken($argIdentifier){
 		$identifier = $argIdentifier;
 		$newExpiredDatetime = Utilities::modifyDate('+'.(string)self::$_expiredtime . 'sec', 'YmdHis', NULL, NULL, 'GMT');
-		$token = Utilities::doHexEncryptAES($identifier.$newExpiredDatetime, self::$_cryptKey, self::$_cryptIV).$newExpiredDatetime;
+		$token = Utilities::doHexEncryptAES($identifier.$newExpiredDatetime, self::$cryptKey, self::$cryptIV).$newExpiredDatetime;
 		return $token;
 	}
 
@@ -340,7 +340,7 @@ class SessionMemcache extends SessionDataMemcache implements SessionIO {
 			}
 			if(NULL === self::$_identifier){
 				// idetifierが未セットの場合は自動生成
-				self::$_identifier = Utilities::doHexEncryptAES(uniqid(), self::$_cryptKey, self::$_cryptIV);
+				self::$_identifier = Utilities::doHexEncryptAES(uniqid(), self::$cryptKey, self::$cryptIV);
 			}
 		}
 		if(NULL === $argIdentifier){

@@ -199,7 +199,7 @@
     statusCode = 0;
     responseHeader = nil;
     responseBody = nil;
-    NSURLSessionConfiguration* config = [NSURLSessionConfiguration backgroundSessionConfiguration:requestURL];
+    NSURLSessionConfiguration* config = [NSURLSessionConfiguration backgroundSessionConfigurationWithIdentifier:requestURL];
     NSURLSession* session = [NSURLSession sessionWithConfiguration:config
                                                           delegate:self
                                                      delegateQueue:[NSOperationQueue mainQueue]];
@@ -431,7 +431,7 @@
     // 和暦回避
     [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
     [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+    [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
     NSDate *expiredate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[[NSDate date] dateByAddingTimeInterval:[DEFAULT_COOKIE_EXPIRED intValue]]]];
     NSLog(@"expiredate=%@", [expiredate description]);
 

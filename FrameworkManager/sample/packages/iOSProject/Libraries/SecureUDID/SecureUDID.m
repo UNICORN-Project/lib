@@ -371,6 +371,11 @@ NSString *SUUIDPasteboardNameForNumber(NSInteger number) {
     return [NSString stringWithFormat:SUUIDPastboardFileFormat, (int)number];
 }
 
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+
+
 /*
  Reads a dictionary from a storage location.  Validation occurs once data
  is read, but before it is returned.  If something fails, or if the read structure
@@ -500,6 +505,10 @@ void SUUIDDeleteStorageLocation(NSInteger number) {
     [pasteboard setData:nil forPasteboardType:SUUIDTypeDataDictionary];
     [UIPasteboard removePasteboardWithName:name];
 }
+
+
+#pragma clang diagnostic pop
+
 
 /*
  SecureUDID leverages UIPasteboards to persistently store its data.

@@ -157,12 +157,12 @@ class AppMigrationManager {
 				$modelfile = str_replace ( '%convert%', $convert, $modelfile );
 				$modelfile = str_replace ( '%set%', $set, $modelfile );
 				$modelfile = str_replace ( '%reset%', $reset, $modelfile );
-				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/androidProject/Project/app/src/main/java/jp/co/project/model/base/' . $modelName . 'ModelBase.java', $modelfile );
-				if (! is_file ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/androidProject/Project/app/src/main/java/jp/co/project/model/' . $modelName . 'Model.java' )) {
+				file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/AndroidProject/Project/app/src/main/java/jp/co/project/model/base/' . $modelName . 'ModelBase.java', $modelfile );
+				if (! is_file ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/AndroidProject/Project/app/src/main/java/jp/co/project/model/' . $modelName . 'Model.java' )) {
 					// まだ該当のモデルの最下層ファイルがなければ生成する
 					$modelfile = file_get_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetPlatform ) . '/core/EmptyModel.java' );
 					$modelfile = str_replace ( '%modelName%', $modelName, $modelfile );
-					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/androidProject/Project/app/src/main/java/jp/co/project/model/' . $modelName . 'Model.java', $modelfile );
+					file_put_contents ( getConfig ( 'PROJECT_ROOT_PATH', $argTargetProjectName ) . '/AndroidProject/Project/app/src/main/java/jp/co/project/model/' . $modelName . 'Model.java', $modelfile );
 				}
 			}
 			if (NULL === $argTargetPlatform || 'cocos' === $argTargetPlatform) {

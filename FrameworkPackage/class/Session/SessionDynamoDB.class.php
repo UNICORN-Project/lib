@@ -17,8 +17,8 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 	protected static $_sessionTblName = 'session';			//セッションテーブルのテーブル名
 	protected static $_sessionPKeyName = 'token';			//セッションテーブルのPKey名
 	protected static $_sessionDateKeyName = 'created';		//セッションテーブルの日時フィールド名
-	protected static $_cryptKey = NULL;						//暗号化キー
-	protected static $_cryptIV = NULL;						//暗号化IV
+	public static $cryptKey = NULL;						//暗号化キー
+	public static $cryptIV = NULL;						//暗号化IV
 	protected static $_DynamoDB = NULL;						//DynamoDBクラスのインスタンス
 
 	/**
@@ -57,27 +57,27 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::CRYPT_KEY;
+				self::$cryptKey = Configure::CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::NETWORK_CRYPT_KEY;
+				self::$cryptKey = Configure::NETWORK_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_KEY')){
 				// 定義から暗号化キーを設定
-				self::$_cryptKey = Configure::SESSION_CRYPT_KEY;
+				self::$cryptKey = Configure::SESSION_CRYPT_KEY;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::CRYPT_IV;
+				self::$cryptIV = Configure::CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('NETWORK_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::NETWORK_CRYPT_IV;
+				self::$cryptIV = Configure::NETWORK_CRYPT_IV;
 			}
 			if(class_exists('Configure') && NULL !== Configure::constant('SESSION_CRYPT_IV')){
 				// 定義から暗号化IVを設定
-				self::$_cryptIV = Configure::SESSION_CRYPT_IV;
+				self::$cryptIV = Configure::SESSION_CRYPT_IV;
 			}
 			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
@@ -100,27 +100,27 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::NETWORK_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_KEY')){
 					// 定義から暗号化キーを設定
-					self::$_cryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
+					self::$cryptKey = $ProjectConfigure::SESSION_CRYPT_KEY;
 				}
 				if(NULL !== $ProjectConfigure::constant('CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('NETWORK_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::NETWORK_CRYPT_IV;
 				}
 				if(NULL !== $ProjectConfigure::constant('SESSION_CRYPT_IV')){
 					// 定義から暗号化IVを設定
-					self::$_cryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
+					self::$cryptIV = $ProjectConfigure::SESSION_CRYPT_IV;
 				}
 			}
 
@@ -152,8 +152,8 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 	 * @return mixed パースに失敗したらFALSE 成功した場合はstring 固有識別子を返す
 	 */
 	protected static function _tokenToIdentifier($argToken, $argUncheck=FALSE){
-		logging(self::$_cryptKey, 'session');
-		logging(self::$_cryptIV, 'session');
+		logging(self::$cryptKey, 'session');
+		logging(self::$cryptIV, 'session');
 		logging(self::$_expiredtime, 'session');
 		$token = $argToken;
 		// 暗号化されたトークンの本体を取得
@@ -163,7 +163,7 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 		logging('$tokenExpierd=' . $tokenExpierd, 'session');
 		logging('$encryptedToken=' . $encryptedToken, 'session');
 		// トークンを複合
-		$decryptToken = Utilities::doHexDecryptAES($encryptedToken, self::$_cryptKey, self::$_cryptIV);
+		$decryptToken = Utilities::doHexDecryptAES($encryptedToken, self::$cryptKey, self::$cryptIV);
 		logging('$decryptToken=' . $decryptToken, 'session');
 		// XXXデフォルトのUUIDはSHA256
 		$identifier = substr($decryptToken, 0, strlen($decryptToken) - 14);
@@ -207,7 +207,7 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 	protected static function _identifierToToken($argIdentifier){
 		$identifier = $argIdentifier;
 		$newExpiredDatetime = Utilities::modifyDate('+'.(string)self::$_expiredtime . 'sec', 'YmdHis', NULL, NULL, 'GMT');
-		$token = Utilities::doHexEncryptAES($identifier.$newExpiredDatetime, self::$_cryptKey, self::$_cryptIV).$newExpiredDatetime;
+		$token = Utilities::doHexEncryptAES($identifier.$newExpiredDatetime, self::$cryptKey, self::$cryptIV).$newExpiredDatetime;
 		return $token;
 	}
 
@@ -312,7 +312,7 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 			}
 			if(NULL === self::$_identifier){
 				// idetifierが未セットの場合は自動生成
-				self::$_identifier = Utilities::doHexEncryptAES(uniqid(), self::$_cryptKey, self::$_cryptIV);
+				self::$_identifier = Utilities::doHexEncryptAES(uniqid(), self::$cryptKey, self::$cryptIV);
 			}
 		}
 		if(NULL === $argIdentifier){

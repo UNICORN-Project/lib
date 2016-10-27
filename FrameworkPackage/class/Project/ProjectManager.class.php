@@ -149,7 +149,23 @@ class ProjectManager
 // 						@exec('sudo sh /Applications/MAMP/bin/startNginx.sh');
 // 						sleep(5);
 					}
-					// XXX リモートサーバの場合の自動設定などをする場合はココに追記
+					// Vagrant環境かどうか
+					else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+						// Vagrant開発環境なので、Vagrant.shしたときの自動hosts設定を前提にしたURL補正処理を実施
+						$configXMLStr = file_get_contents($newConfigXMLPath);
+						$configXMLStr = str_replace(array('<BASE_URL stage="local">http://localhost/</BASE_URL>', '<APPAPI_BASE_URL stage="local">http://localhost/</APPAPI_BASE_URL>'), array('<BASE_URL stage="local">https://web'.substr($_SERVER['HTTP_HOST'], 3).'/</BASE_URL>', '<APPAPI_BASE_URL stage="local">https://api'.substr($_SERVER['HTTP_HOST'], 3).'/</APPAPI_BASE_URL>'), $configXMLStr);
+						file_put_contents($newConfigXMLPath, $configXMLStr);
+					}
+					// XXX それ以外の場合はリモートサーバの場合としている
+					else if (0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+						$configXMLStr = file_get_contents($newConfigXMLPath);
+						$configXMLStr = str_replace(array('<BASE_URL stage="local">http://localhost/</BASE_URL>', '<APPAPI_BASE_URL stage="local">http://localhost/</APPAPI_BASE_URL>'), array('<BASE_URL stage="local">https://web'.substr($_SERVER['HTTP_HOST'], 3).'/</BASE_URL>', '<APPAPI_BASE_URL stage="local">https://api'.substr($_SERVER['HTTP_HOST'], 3).'/</APPAPI_BASE_URL>'), $configXMLStr);
+						file_put_contents($newConfigXMLPath, $configXMLStr);
+					}
+				}
+				// XXX Nginx以外のWebサーバーの場合の振り分けはココに追加
+				else {
+					
 				}
 			}
 		}
@@ -163,8 +179,8 @@ class ProjectManager
 			@file_put_contents($movePath.'/.ios', '1.0.000');
 		}
 		// Androidサンプルのコピー
-		if (1 === (int)$argAndroidEnabled && !is_dir($movePath.'/androidProject')){
-			if(!dir_copy(dirname($samplePackage).'/androidProject', $movePath.'/androidProject', 0777)){
+		if (1 === (int)$argAndroidEnabled && !is_dir($movePath.'/AndroidProject')){
+			if(!dir_copy(dirname($samplePackage).'/AndroidProject', $movePath.'/AndroidProject', 0777)){
 				return FALSE;
 			}
 			// バージョンファイル生成
@@ -195,18 +211,49 @@ class ProjectManager
 					// プロトコル指定を書き換え
 					$iosdefineStr = str_replace('#   define PROTOCOL @"http"', '#   define PROTOCOL @"https"', $iosdefineStr);
 				}
-				// ドメイン指定を書き換え
-				$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"'.strtolower($newProjectName).'api.localhost"', $iosdefineStr);
-				// URL_BASEを書き換え
-				$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"/"', $iosdefineStr);
+				// ローカルサーバかどうか
+				if (is_file('/Applications/MAMP/conf/nginx/nginx.conf')){
+					// ドメイン指定を書き換え
+					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"'.strtolower($newProjectName).'api.localhost"', $iosdefineStr);
+					// URL_BASEを書き換え
+					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"/"', $iosdefineStr);
+				}
+				// Vagrant環境かどうか
+				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
+					// URL_BASEを書き換え
+					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"/"', $iosdefineStr);
+				}
+				// XXX それ以外の場合はリモートサーバの場合としている
+				else if (0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"apitest.unicorn-project.com"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
+				}
 			}
 			else {
-				// おそらくMAMPの場合
-				// REQUEST_URI と $movePath からローカルのドキュメントルートPathを特定する
-				$tmpPath = dirname(dirname($_SERVER['REQUEST_URI']));
-				$tmpPaths = explode('/'.PROJECT_NAME.'/', $tmpPath);
-				$baseURL = $tmpPaths[0].'/'.$newProjectName.'Package/apidocs/';
-				$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"'.$baseURL.'"', $iosdefineStr);
+				// XXX Nginx以外の場合
+				// ローカルサーバかどうか
+				if (is_file('/Applications/MAMP/conf/apache/httpd.conf')){
+					// おそらくMAMP-Apacheの場合
+					// REQUEST_URI と $movePath からローカルのドキュメントルートPathを特定する
+					$tmpPath = dirname(dirname($_SERVER['REQUEST_URI']));
+					$tmpPaths = explode('/'.PROJECT_NAME.'/', $tmpPath);
+					$baseURL = $tmpPaths[0].'/'.$newProjectName.'Package/apidocs/';
+					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"'.$baseURL.'"', $iosdefineStr);
+				}
+				// Vagrant環境かどうか
+				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
+					// URL_BASEを書き換え
+					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"/"', $iosdefineStr);
+				}
+				// XXX それ以外の場合はリモートサーバの場合としている
+				else if (0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"apitest.unicorn-project.com"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
+				}
 			}
 			// 新しい定義で書き換え
 			file_put_contents($movePath.'/iOSProject/Project/SupportingFiles/define.h', $iosdefineStr);
@@ -214,10 +261,72 @@ class ProjectManager
 			unset($iosdefineStr);
 		}
 		// XXX Android用の処理
-		if (1 === (int)$argIOSEnabled){
+		if (1 === (int)$argAndroidEnabled){
 			@chmod($movePath.'/.android', 0666);
+			$remote = false;
+			// iOSサンプル内のプロジェクト内のローカルのRESTfulAPIの向け先を変える
+			$androiddefineStr = file_get_contents($movePath.'/AndroidProject/Project/app/src/debug/java/com/unicorn/constant/Constant.java');
+			if (FALSE !== strpos($_SERVER['HTTP_HOST'], 'localhost') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm') && FALSE !== strpos($_SERVER['SERVER_SOFTWARE'], 'nginx')){
+				// おそらくNginxの場合
+				//if ('443' === $_SERVER['SERVER_PORT']){
+				//	// プロトコル指定を書き換え
+				//	$androiddefineStr = str_replace('String PROTOCOL = "http";', 'String PROTOCOL = "https";', $androiddefineStr);
+				//}
+				// ローカルサーバかどうか
+				if (is_file('/Applications/MAMP/conf/nginx/nginx.conf')){
+					// ドメイン指定を書き換え
+					$androiddefineStr = str_replace('String DOMAIN_NAME = "localhost";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
+					// URL_BASEを書き換え
+					$androiddefineStr = str_replace('"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '"/"', $androiddefineStr);
+				}
+				// Vagrant環境かどうか
+				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$androiddefineStr = str_replace('String DOMAIN_NAME = "localhost";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
+					// URL_BASEを書き換え
+					$androiddefineStr = str_replace('"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '"/"', $androiddefineStr);
+				}
+				// XXX それ以外の場合はリモートサーバの場合としている
+				else if (0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					$remote = true;
+				}
+			}
+			else {
+				// XXX Nginx以外の場合
+				// ローカルサーバかどうか
+				if (is_file('/Applications/MAMP/conf/apache/httpd.conf')){
+					// おそらくMAMP-Apacheの場合
+					// REQUEST_URI と $movePath からローカルのドキュメントルートPathを特定する
+					$tmpPath = dirname(dirname($_SERVER['REQUEST_URI']));
+					$tmpPaths = explode('/'.PROJECT_NAME.'/', $tmpPath);
+					$baseURL = $tmpPaths[0].'/'.$newProjectName.'Package/apidocs/';
+					$androiddefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"'.$baseURL.'"', $androiddefineStr);
+				}
+				// Vagrant環境かどうか
+				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					// ドメイン指定を書き換え
+					$androiddefineStr = str_replace('String DOMAIN_NAME = "localhost";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
+					// URL_BASEを書き換え
+					$androiddefineStr = str_replace('"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '"/"', $androiddefineStr);
+				}
+				// XXX それ以外の場合はリモートサーバの場合としている
+				else if (0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					$remote = true;
+				}
+			}
+			// 新しい定義で書き換え
+			if (false === $remote) {
+				file_put_contents($movePath.'/AndroidProject/Project/app/src/debug/java/com/unicorn/constant/Constant.java', $androiddefineStr);
+			}
+			else {
+				// リモートデバッグ設定の書換
+				$androiddefineStr = file_get_contents($movePath.'/AndroidProject/Project/app/src/release/java/com/unicorn/constant/Constant.java');
+				$androiddefineStr = str_replace('String DOMAIN_NAME = "apitest.unicorn-project.com";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
+				file_put_contents($movePath.'/AndroidProject/Project/app/src/release/java/com/unicorn/constant/Constant.java', $androiddefineStr);
+			}
+			// 重いのでコマメにunset
+			unset($androiddefineStr);
 		}
-		// 
 		return TRUE;
 	}
 

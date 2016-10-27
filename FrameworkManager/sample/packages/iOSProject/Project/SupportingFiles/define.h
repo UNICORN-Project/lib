@@ -104,14 +104,11 @@
 // デフォルトタイムアウトは短めの20秒に設定しています。
 #define TIMEOUT 20
 #define COOKIE_TOKEN_NAME @"token"
-#define SESSION_CRYPT_KEY @"bdcc54fba7d9856c"
-#define SESSION_CRYPT_IV @"ccfd172a95aqqd9a"
+#define SESSION_CRYPT_KEY @"d7088c21ffa2d2a2"
+#define SESSION_CRYPT_IV @"6bd9e83ed242a14c"
 
 // In-App Purchase用の定義
 #define SHARED_SECRET @"769bca60ace44eedaa8f2a3d5e02006d"
-#define COOKIE_TOKEN_NAME @"token"
-#define SESSION_CRYPT_KEY @"bdcc54fba7d9856c"
-#define SESSION_CRYPT_IV @"ccfd172a95aqqd9a"
 #define DEVICE_TOKEN_KEY_NAME @"device_token"
 
 // サイズ定義

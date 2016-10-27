@@ -648,7 +648,7 @@
                 [dateFormatter setLocale:[NSLocale systemLocale]];
                 [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                 [dateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                [dateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                 NSDate *nowdate = [dateFormatter dateFromString:[dateFormatter stringFromDate:[[NSDate date] dateByAddingTimeInterval:-5]]];
                 NSLog(@"now=%@", [nowdate description]);
 
@@ -658,7 +658,7 @@
                 [expireDateFormatter setLocale:[NSLocale systemLocale]];
                 [expireDateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
                 [expireDateFormatter setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
-                [expireDateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                [expireDateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                 NSDate *expiredate = [expireDateFormatter dateFromString:[expireDateFormatter stringFromDate:[[NSDate date] dateByAddingTimeInterval:-1*[DEFAULT_COOKIE_EXPIRED intValue]]]];
                 NSLog(@"expire=%@", [expiredate description]);
 
@@ -669,7 +669,7 @@
                 // 和暦回避
                 [tokenDateFormatter setLocale:[NSLocale systemLocale]];
                 [tokenDateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
-                [tokenDateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar]];
+                [tokenDateFormatter setCalendar:[[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian]];
                 [tokenDateFormatter setDateFormat:@"yyyyMMddHHmmss"];
                 NSDate* tokenExpired = [tokenDateFormatter dateFromString:tokenExpiredDateStr];
                 NSLog(@"tokenExpired=%@", [tokenExpired description]);
@@ -704,7 +704,7 @@
     [dateFormatter setTimeZone:[NSTimeZone timeZoneWithAbbreviation:@"GMT"]];
     [dateFormatter setDateFormat:@"yyyyMMddHHmmss"];
     // 和暦回避
-    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSGregorianCalendar];
+    NSCalendar *calendar = [[NSCalendar alloc] initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
     [dateFormatter setCalendar:calendar];
     NSString *gmtdatetime = [dateFormatter stringFromDate:[NSDate date]];
     NSLog(@"gmtdatetime=%@", gmtdatetime);

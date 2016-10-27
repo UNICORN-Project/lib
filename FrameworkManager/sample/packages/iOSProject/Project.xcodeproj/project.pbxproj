@@ -861,7 +861,7 @@
 		D0C5DC2A193D9AD000B0E944 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0640;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = shuhei_ohono;
 				TargetAttributes = {
 					D0C5DC31193D9AD000B0E944 = {
@@ -1118,9 +1118,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
@@ -1135,12 +1134,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1159,6 +1159,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Project/SupportingFiles/Project-Prefix.pch";
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1210,7 +1211,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1230,12 +1230,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1258,6 +1259,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1309,9 +1311,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
@@ -1329,12 +1330,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1357,6 +1359,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1406,9 +1409,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
@@ -1423,12 +1425,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1447,6 +1450,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Project/SupportingFiles/Project-Prefix.pch";
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1492,9 +1496,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
@@ -1509,12 +1512,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1533,6 +1537,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Project/SupportingFiles/Project-Prefix.pch";
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1619,7 +1624,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1636,12 +1640,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1653,9 +1658,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME = LaunchImage;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Distribution";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries",
@@ -1670,12 +1674,13 @@
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor/include",
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/ProjectTests/ProjectTests-Info.plist";
-				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(PROJECT_DIR)/Libraries/MPurchase/vendor",
 				);
 				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = Project;
 				PROVISIONING_PROFILE = "";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1698,6 +1703,7 @@
 					"$(inherited)",
 				);
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;
@@ -1715,6 +1721,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "Project/SupportingFiles/Project-Prefix.pch";
 				INFOPLIST_FILE = "ProjectTests/ProjectTests-Info.plist";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.unicorn-project.${PRODUCT_NAME:rfc1034identifier}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Project.app/Project";
 				WRAPPER_EXTENSION = xctest;

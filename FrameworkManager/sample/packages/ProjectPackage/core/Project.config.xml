@@ -86,12 +86,18 @@
 			,"me.profile":
 				{"Method GET":
 					{"user":["_c_","_a_","_r_","_o_","_v_","_dv_"]}
+				,"Method PUT":
+					{"user":["name","image"]}
 				}
 			,"me.timeline":
 				{"Method GET":
 					{"user":["_c_","_a_","_r_","_o_","_v_","_dv_","_deep_","LIMIT","OFFSET"]}
 				,"Method POST":
-					{"user":["text","profile_id"]}
+					{"user":["text","profile_id","owner_id"]}
+				}
+			,"timeline.list":
+				{"Method GET":
+					{"user":["_c_","_a_","_r_","_o_","_v_","_dv_","OFFSET","LIMIT"]}
 				}
 			}
 		]]></REST_RESOURCE_WHITE_LIST>
