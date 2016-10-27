@@ -8,6 +8,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	public $restResource = '';
 	public $restResourceModel = '';
 	public $restResourceListed = NULL;
+	public $restResourceAccessedDateKeyName = '';
 	public $restResourceCreateDateKeyName = '';
 	public $restResourceModifyDateKeyName = '';
 	public $restResourceAvailableKeyName = '';
@@ -36,6 +37,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			if(class_exists('Configure') && NULL !== Configure::constant('REST_RESOURCE_OWNER_PKEY_NAME')){
 				$this->authUserIDFieldName = Configure::REST_RESOURCE_OWNER_PKEY_NAME;
 			}
+			if(class_exists('Configure') && NULL !== Configure::constant('REST_RESOURCE_ACCESSED_DATE_KEY_NAME')){
+				$this->restResourceAccessedDateKeyName = Configure::REST_RESOURCE_ACCESSED_DATE_KEY_NAME;
+			}
 			if(class_exists('Configure') && NULL !== Configure::constant('REST_RESOURCE_CREATE_DATE_KEY_NAME')){
 				$this->restResourceCreateDateKeyName = Configure::REST_RESOURCE_CREATE_DATE_KEY_NAME;
 			}
@@ -58,6 +62,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
 				if(NULL !== $ProjectConfigure::constant('REST_RESOURCE_OWNER_PKEY_NAME')){
 					$this->authUserIDFieldName = $ProjectConfigure::REST_RESOURCE_OWNER_PKEY_NAME;
+				}
+				if(NULL !== $ProjectConfigure::constant('REST_RESOURCE_ACCESSED_DATE_KEY_NAME')){
+					$this->restResourceAccessedDateKeyName = $ProjectConfigure::REST_RESOURCE_ACCESSED_DATE_KEY_NAME;
 				}
 				if(NULL !== $ProjectConfigure::constant('REST_RESOURCE_CREATE_DATE_KEY_NAME')){
 					$this->restResourceCreateDateKeyName = $ProjectConfigure::REST_RESOURCE_CREATE_DATE_KEY_NAME;
@@ -225,6 +232,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		$DBO = NULL;
 		$User = FALSE;
 		$userModelName = NULL;
+		$UserModelAccessedFieldName = NULL;
 		$UserModelCreatedFieldName = NULL;
 		$UserModelModifiedFieldName = NULL;
 		$deviceTypeFieldName = NULL;
@@ -232,6 +240,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		$deviceRegistrationIDFieldName = NULL;
 		if(class_exists('Configure') && NULL !== Configure::constant('REST_UIDAUTH_USER_TBL_NAME')){
 			$userModelName = Configure::REST_UIDAUTH_USER_TBL_NAME;
+		}
+		if(class_exists('Configure') && NULL !== Configure::constant('REST_UIDAUTH_USER_ACCESSED_DATE_KEY_NAME')){
+			$UserModelAccessedFieldName = Configure::REST_UIDAUTH_USER_ACCESSED_DATE_KEY_NAME;
 		}
 		if(class_exists('Configure') && NULL !== Configure::constant('REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME')){
 			$UserModelCreatedFieldName = Configure::REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME;
@@ -256,6 +267,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			if(NULL !== $ProjectConfigure::constant('REST_UIDAUTH_USER_TBL_NAME')){
 				$userModelName = $ProjectConfigure::REST_UIDAUTH_USER_TBL_NAME;
 			}
+			if(NULL !== $ProjectConfigure::constant('REST_UIDAUTH_USER_ACCESSED_DATE_KEY_NAME')){
+				$UserModelAccessedFieldName = $ProjectConfigure::REST_UIDAUTH_USER_ACCESSED_DATE_KEY_NAME;
+			}
 			if(NULL !== $ProjectConfigure::constant('REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME')){
 				$UserModelCreatedFieldName = $ProjectConfigure::REST_UIDAUTH_USER_CREATE_DATE_KEY_NAME;
 			}
@@ -274,7 +288,6 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 		try{
 			$DBO = self::_getDBO();
-			debug('oooooo='.var_export($_SERVER, true));
 			// UIDAuth
 			if (0 < strlen((string)getConfig('APP_AUTH_TBL_NAME'))){
 				// アプリ用のAuth設定を適用する
@@ -332,6 +345,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					if(!(0 < strlen($Device->{$ownerIDField}) && '0' != $Device->{$ownerIDField})){
 						// userテーブルとdeviceテーブルのテーブル名が違うので、userテーブルの保存を行う
 						$User = self::_getModel($userModelName);
+						if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys())){
+							$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+						}
 						if(NULL !== $UserModelCreatedFieldName && in_array($UserModelCreatedFieldName, $User->getFieldKeys())){
 							$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelCreatedFieldName)))}(self::$nowGMT);
 						}
@@ -349,6 +365,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						if(!(0 < (int)$User->pkey)){
 							// デバイスの持ち主が変わった可能性
 							// userテーブルとdeviceテーブルのテーブル名が違うので、userテーブルの保存を行う
+							if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys())){
+								$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+							}
 							if(NULL !== $UserModelCreatedFieldName && in_array($UserModelCreatedFieldName, $User->getFieldKeys())){
 								$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelCreatedFieldName)))}(self::$nowGMT);
 							}
@@ -442,6 +461,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					// user情報の更新
 					// userテーブルとdeviceテーブルのテーブル名が違うので、userテーブルの保存を行う
 					$User = self::_getModel($userModelName);
+					if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys())){
+						$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+						$userModified = TRUE;
+					}
 					if(NULL !== $UserModelCreatedFieldName && in_array($UserModelCreatedFieldName, $User->getFieldKeys())){
 						$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelCreatedFieldName)))}(self::$nowGMT);
 						$userModified = TRUE;
@@ -458,6 +481,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					if(!(0 < (int)$User->pkey)){
 						// デバイスの持ち主が変わった可能性
 						// userテーブルとdeviceテーブルのテーブル名が違うので、userテーブルの保存を行う
+						if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys())){
+							$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+							$userModified = TRUE;
+						}
 						if(NULL !== $UserModelCreatedFieldName && in_array($UserModelCreatedFieldName, $User->getFieldKeys())){
 							$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelCreatedFieldName)))}(self::$nowGMT);
 							$userModified = TRUE;
@@ -514,6 +541,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					}
 				}
 				if(TRUE === $userModified){
+					if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys())){
+						$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+						$userModified = TRUE;
+					}
 					if(NULL !== $UserModelModifiedFieldName && in_array($UserModelModifiedFieldName, $User->getFieldKeys())){
 						$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelModifiedFieldName)))}(self::$nowGMT);
 						$userModified = TRUE;
@@ -552,6 +583,16 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		if(FALSE !== $User){
 			// 認証OK
 			$this->AuthUser = $User;
+			debug('accessed='.$User->$UserModelAccessedFieldName);
+			if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys()) && substr($User->$UserModelAccessedFieldName, 0, -3) != substr(self::$nowGMT, 0, -3)){
+				$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+				if(NULL !== $UserModelModifiedFieldName && in_array($UserModelModifiedFieldName, $User->getFieldKeys())){
+					$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelModifiedFieldName)))}(self::$nowGMT);
+				}
+				$User->save();
+				// 一旦コミット
+				$DBO->commit();
+			}
 			$this->authUserID = $User->pkey;
 			if(NULL === $this->authUserIDFieldName){
 				// XXX xxx_xxと言うAuthユーザー判定法は固定です！使用は任意になります。
@@ -599,6 +640,15 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		if(FALSE !== $User){
 			// 認証OK
 			$this->AuthUser = $User;
+			if(NULL !== $UserModelAccessedFieldName && in_array($UserModelAccessedFieldName, $User->getFieldKeys()) && substr($User->$UserModelAccessedFieldName, 0, -3) != substr(self::$nowGMT, 0, -3)){
+				$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelAccessedFieldName)))}(self::$nowGMT);
+				if(NULL !== $UserModelModifiedFieldName && in_array($UserModelModifiedFieldName, $User->getFieldKeys())){
+					$User->{'set' . str_replace(' ', '', ucwords(str_replace('_', ' ', $UserModelModifiedFieldName)))}(self::$nowGMT);
+				}
+				$User->save();
+				// 一旦コミット
+				$DBO->commit();
+			}
 			$this->authUserID = $User->pkey;
 			// XXX xxx_xxと言うAuthユーザー判定法は固定です！使用は任意になります。
 			if(NULL === $this->authUserIDFieldName){
@@ -938,6 +988,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				$RestController->restResourceModel = $this->restResourceModel;
 				$RestController->restResourceListed = $this->restResourceListed;
 				$RestController->restResourceUserTableName = $this->restResourceUserTableName;
+				$RestController->restResourceAccessedDateKeyName = $this->restResourceAccessedDateKeyName;
 				$RestController->restResourceCreateDateKeyName = $this->restResourceCreateDateKeyName;
 				$RestController->restResourceModifyDateKeyName = $this->restResourceModifyDateKeyName;
 				$RestController->restResourceAvailableKeyName = $this->restResourceAvailableKeyName;
@@ -973,6 +1024,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				$this->restResourceModel = $RestController->restResourceModel;
 				$this->restResourceListed = $RestController->restResourceListed;
 				$this->restResourceUserTableName = $RestController->restResourceUserTableName;
+				$this->restResourceAccessedDateKeyName = $RestController->restResourceAccessedDateKeyName;
 				$this->restResourceCreateDateKeyName = $RestController->restResourceCreateDateKeyName;
 				$this->restResourceModifyDateKeyName = $RestController->restResourceModifyDateKeyName;
 				$this->restResourceAvailableKeyName = $RestController->restResourceAvailableKeyName;
@@ -1390,6 +1442,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					}
 				}
 				// 日付の自動変換
+				if (isset($resources[count($resources)-1][$this->restResourceAccessedDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+					$resources[count($resources)-1][$this->restResourceAccessedDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceAccessedDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+				}
 				if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 					$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 				}
@@ -1430,7 +1485,6 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				}
 			}
 			else {
-				debug('is????');
 				debug($argRequestParams);
 				$requestParams = array();
 				if(NULL === $argRequestParams){
@@ -1439,7 +1493,6 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				else {
 					$requestParams = $argRequestParams;
 				}
-				debug('isa????');
 				$Model = $this->_getModel($this->restResourceModel);
 				$fields = $Model->getFieldKeys();
 				debug($fields);
@@ -1585,6 +1638,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								}
 							}
 							// 日付の自動変換
+							if (isset($resources[count($resources)-1][$this->restResourceAccessedDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceAccessedDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceAccessedDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
 							if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
@@ -1705,6 +1761,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 								}
 							}
 							// 日付の自動変換
+							if (isset($resources[count($resources)-1][$this->restResourceAccessedDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+								$resources[count($resources)-1][$this->restResourceAccessedDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceAccessedDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+							}
 							if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 								$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 							}
@@ -1889,6 +1948,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 									}
 								}
 								elseif($fields[$fieldIdx] == $this->restResourceCreateDateKeyName && TRUE !== (0 < strlen($Model->{$this->restResourceCreateDateKeyName}))){
+									// データ作成日付の自動補完
+									$datas[$fields[$fieldIdx]] = self::$nowGMT;
+								}
+								elseif($fields[$fieldIdx] == $this->restResourceAccessedDateKeyName){
 									// データ作成日付の自動補完
 									$datas[$fields[$fieldIdx]] = self::$nowGMT;
 								}
@@ -2085,6 +2148,10 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						// データ更新日付の自動補完
 						$datas[$fields[$fieldIdx]] = self::$nowGMT;
 					}
+					elseif($fields[$fieldIdx] == $this->restResourceAccessedDateKeyName){
+						// データ更新日付の自動補完
+						$datas[$fields[$fieldIdx]] = self::$nowGMT;
+					}
 					// blobの自動処理
 					elseif(FALSE !== strpos($Model->describes[$fields[$fieldIdx]]['type'], 'blob')){
 						// リアルなリクエストメソッドで処理を分岐
@@ -2152,6 +2219,9 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			}
 		}
 		if (isset($resources[count($resources)-1])){
+			if (isset($resources[count($resources)-1][$this->restResourceAccessedDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
+				$resources[count($resources)-1][$this->restResourceAccessedDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceAccessedDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
+			}
 			if (isset($resources[count($resources)-1][$this->restResourceCreateDateKeyName]) && isset($_SERVER['HTTP_ACCEPT_TIMEZONE'])){
 				$resources[count($resources)-1][$this->restResourceCreateDateKeyName] = Utilities::date("Y/m/d H:i", $resources[count($resources)-1][$this->restResourceCreateDateKeyName], 'GMT', $_SERVER['HTTP_ACCEPT_TIMEZONE']);
 			}
@@ -2397,7 +2467,7 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 					$rules['rules'][$key]['minlength']=(int)$val['min-length'];
 				}
 				$Model->describes[$key]['calender'] = FALSE;
-				if($this->restResourceCreateDateKeyName == $key || $this->restResourceModifyDateKeyName == $key || FALSE !== strpos(strtolower($key),'date')){
+				if($this->restResourceAccessedDateKeyName == $key || $this->restResourceCreateDateKeyName == $key || $this->restResourceModifyDateKeyName == $key || FALSE !== strpos(strtolower($key),'date')){
 					// ヘッダーでは日付フィールドである事を明確にして置く
 					$Model->describes[$key]['calender'] = TRUE;
 				}

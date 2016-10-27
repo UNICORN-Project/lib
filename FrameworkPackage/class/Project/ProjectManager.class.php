@@ -150,7 +150,7 @@ class ProjectManager
 // 						sleep(5);
 					}
 					// Vagrant環境かどうか
-					else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+					else if (is_dir('/var/www/release/.vagrant') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
 						// Vagrant開発環境なので、Vagrant.shしたときの自動hosts設定を前提にしたURL補正処理を実施
 						$configXMLStr = file_get_contents($newConfigXMLPath);
 						$configXMLStr = str_replace(array('<BASE_URL stage="local">http://localhost/</BASE_URL>', '<APPAPI_BASE_URL stage="local">http://localhost/</APPAPI_BASE_URL>'), array('<BASE_URL stage="local">https://web'.substr($_SERVER['HTTP_HOST'], 3).'/</BASE_URL>', '<APPAPI_BASE_URL stage="local">https://api'.substr($_SERVER['HTTP_HOST'], 3).'/</APPAPI_BASE_URL>'), $configXMLStr);
@@ -219,7 +219,7 @@ class ProjectManager
 					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"/"', $iosdefineStr);
 				}
 				// Vagrant環境かどうか
-				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+				else if (is_dir('/var/www/release/.vagrant') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
 					// ドメイン指定を書き換え
 					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
 					// URL_BASEを書き換え
@@ -243,7 +243,7 @@ class ProjectManager
 					$iosdefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"'.$baseURL.'"', $iosdefineStr);
 				}
 				// Vagrant環境かどうか
-				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+				else if (is_dir('/var/www/release/.vagrant') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
 					// ドメイン指定を書き換え
 					$iosdefineStr = str_replace('#   define DOMAIN_NAME @"localhost"', '#   define DOMAIN_NAME @"api'.substr($_SERVER['HTTP_HOST'], 3).'"', $iosdefineStr);
 					// URL_BASEを書き換え
@@ -280,7 +280,7 @@ class ProjectManager
 					$androiddefineStr = str_replace('"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '"/"', $androiddefineStr);
 				}
 				// Vagrant環境かどうか
-				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+				else if (is_dir('/var/www/release/.vagrant') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
 					// ドメイン指定を書き換え
 					$androiddefineStr = str_replace('String DOMAIN_NAME = "localhost";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
 					// URL_BASEを書き換え
@@ -303,7 +303,7 @@ class ProjectManager
 					$androiddefineStr = str_replace('#   define URL_BASE @"/workspace/UNICORN-project/lib/FrameworkManager/sample/packages/ProjectPackage/apidocs/"', '#   define URL_BASE @"'.$baseURL.'"', $androiddefineStr);
 				}
 				// Vagrant環境かどうか
-				else if (is_dir('/vagrant_data') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
+				else if (is_dir('/var/www/release/.vagrant') && 0 === strpos($_SERVER['HTTP_HOST'], 'fwm')) {
 					// ドメイン指定を書き換え
 					$androiddefineStr = str_replace('String DOMAIN_NAME = "localhost";', 'String DOMAIN_NAME = "api'.substr($_SERVER['HTTP_HOST'], 3).'";', $androiddefineStr);
 					// URL_BASEを書き換え
