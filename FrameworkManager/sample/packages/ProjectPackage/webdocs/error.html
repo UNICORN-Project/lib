@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8"/>
+		<title id="title">Error %error_code% %error_name%</title>
+		<link rel="shortcut icon" href="//dl.dropboxusercontent.com/u/22810487/UNICORN/image/favicon.ico"/>
+		<!-- 共通ベースCSS -->
+		<link id="sanitaizeCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sanitize.css/2.0.0/sanitize.min.css"/>
+		<link id="fontawesomeCSS" type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+		<link id="bootstrapCSS" rel="stylesheet" href="//maxcdn. bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+		<link id="jqueryDatetimepickerCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.min.css"/>
+		<!-- フレームワーク専用CSS -->
+		<link id="loadingCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/loading.css"/>
+		<link id="alertCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/alert.css"/>
+		<link id="inputclearCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/inputclear.css"/>
+		<link id="validateCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/validate.css">
+		<!-- アプリケーション専用CSS -->
+		<link id="applicationCSS" type="text/css" rel="stylesheet" href="/static/css/sample.css"/>
+		<!-- 画面専用CSS -->
+		<link id="syntaxhighlighterCorCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/styles/shCoreRDark.min.css"/>
+	</head>
+	<body>
+		<section id="errorInformation">
+			%error_title%
+			<div class="exception">%error_msg%</div>
+		</section>
+		<div class="section">
+			<a href="/">Go Back Index.</a>
+		</div>
+		<!-- フレームワーク標準のローディングレイヤー -->
+		<div id="loading-screen"><div class="loader loader-5"></div></div>
+		<!-- JSエリア -->
+		<div id="JSArea">
+			<!-- 共通ベースJS -->
+			<div id="GenericJSArea">
+				<!-- jquery -->
+				<script id="jqueryJS" type="text/javascript" src="//code.jquery.com/jquery-2.0.0.min.js"></script>
+				<!-- jsvalidate-->
+				<script id="jqueryValidateJS" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.1/jquery.validate.min.js"></script>
+				<!-- datetimepicker-->
+				<script id="jqueryDatetimepickerJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.full.min.js"></script>
+			</div>
+			<div id="initializeJSArea">
+				<!-- 変数定義 -->
+				<script id="varJS" type="text/javascript" src="/static/js/var.js"></script>
+			</div>
+			<!-- フレームワーク専用JS -->
+			<div id="FrameworkJSArea">
+				<script id="ntpJS" type="text/javascript" src="/static/vendor/framework/js/ntp.js"></script>
+				<script id="dateutilJS" type="text/javascript" src="/static/vendor/framework/js/dateutil.js"></script>
+				<script id="customtwitterwidgetJS" type="text/javascript" src="/static/vendor/framework/js/customtwitterwidget.js"></script>
+				<script id="apiclientJS" type="text/javascript" src="/static/vendor/framework/js/apiclient.js"></script>
+				<script id="libJS" type="text/javascript" src="/static/vendor/framework/js/lib.js"></script>
+				<script id="inputclearJS" type="text/javascript" src="/static/vendor/framework/js/inputclear.js"></script>
+				<script id="autolinkJS" type="text/javascript" src="/static/vendor/framework/js/autolink.js"></script>
+				<script id="validateJS" type="text/javascript" src="/static/vendor/framework/js/validate.js"></script>
+			</div>
+			<!-- アプリケーション専用JS -->
+			<div id="ApplicationJSArea">
+				<!-- アプリケーションで共通のJSはココに追記 -->
+			</div>
+			<!-- 画面専用JS -->
+			<div id="ViewJSArea">
+				<!-- 画面毎のJSはココに追記 -->
+				<script id="syntaxhighlighterCoreJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shCore.min.js"></script>
+				<script id="syntaxhighlighterPHPJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/SyntaxHighlighter/3.0.83/scripts/shBrushPhp.min.js"></script>
+				<script id="syntaxhighlightJS" type="text/javascript">
+					SyntaxHighlighter.all();
+				</script>
+			</div>
+		</div>
+	</body>
+</html>

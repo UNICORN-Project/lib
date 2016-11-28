@@ -1,0 +1,138 @@
+@charset "utf-8";
+
+#loading-screen {
+	display: none;
+	width: 100%;
+	height: 100%;
+	position: fixed;
+	z-index: 9999;
+	top: 0;
+	left: 0;
+	background-color: rgba(255, 255, 255, 0.3);
+	/*
+	background-image: url(../images/loader.svg);
+	background-position: center center;
+	background-repeat: no-repeat;
+	background-attachment: fixed;
+ */
+	padding-top: calc(25% - 50px);
+	padding-left: calc(50% - 25px);
+}
+
+*::before, *::after {
+	box-sizing: border-box;
+}
+
+.loader {
+	position: relative;
+	display: inline-block;
+	width: 50px;
+	height: 50px;
+	border: 2px solid #0cf;
+	border-radius: 50%;
+	animation: spin 0.75s infinite linear;
+}
+
+.loader::before, .loader::after {
+	left: -2px;
+	top: -2px;
+	display: none;
+	position: absolute;
+	content: '';
+	width: inherit;
+	height: inherit;
+	border: inherit;
+	border-radius: inherit;
+}
+
+/*
+ * LOADER 1
+ */
+.loader-1 {
+	border-top-width: 0;
+}
+
+/*
+ * LOADER 2
+ */
+.loader-2 {
+	border-top-color: transparent;
+}
+
+.loader-2::after {
+	display: block;
+	left: -2px;
+	top: -2px;
+	border: inherit;
+	transform: rotate(65deg);
+}
+
+/*
+ * LOADER 3
+ */
+.loader-3, .loader-3::before, .loader-3::after {
+	display: inline-block;
+	border-color: transparent;
+	border-top-color: #0cf;
+	animation-duration: 1.2s;
+}
+
+.loader-3::before {
+	transform: rotate(120deg);
+}
+
+.loader-3::after {
+	transform: rotate(240deg);
+}
+
+/*
+ * LOADER 4
+ */
+.loader-4 {
+	border-top-color: transparent;
+}
+
+.loader-4::after {
+	display: block;
+	border-color: transparent;
+	border-top-color: #0cf;
+	animation: spin 1.25s infinite linear reverse;
+}
+
+/*
+ * LOADER 5
+ */
+.loader-5, .loader-5::before {
+	display: inline-block;
+	border-color: transparent;
+	border-top-color: #0cf;
+}
+
+.loader-5::before {
+	animation: spin 1.5s infinite ease;
+}
+
+/*
+ * LOADER 6
+ */
+.loader-6 {
+	border-color: transparent;
+	border-top-color: #0cf;
+	animation-duration: 5s;
+}
+
+.loader-6::after {
+	display: block;
+	border-color: transparent;
+	border-top-color: #0cf;
+	animation: spin 0.75s infinite ease-in-out alternate;
+}
+
+@keyframes spin {
+	from {
+		transform:rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}

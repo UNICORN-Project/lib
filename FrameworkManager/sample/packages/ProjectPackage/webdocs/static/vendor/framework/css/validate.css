@@ -1,0 +1,31 @@
+@charset "utf-8";
+
+input+.error, .inputclear+.error, input+.loading, .inputclear+.loading, input+.error+.loading, .inputclear+.error+.loading {
+	position: absolute;
+	color: red;
+	display: block;
+	font-size: 12px;
+	font-weight: bold;
+	line-height: 24px;
+}
+
+input+.loading.loader, .inputclear+.loading.loader, input+.error+.loading.loader, .inputclear+.error+.loading.loader {
+	width: 15px;
+	height: 15px;
+	border-width: 1px;
+	margin-top: -25px;
+	margin-left: 245px;
+}
+
+input+.loading.loader::before, .inputclear+.loading.loader::before, input+.error+.loading.loader::before, .inputclear+.error+.loading.loader::before {
+	left: -1px;
+	top: -1px;
+}
+
+.haserror {
+	margin-bottom: 24px !important;
+}
+
+.valid {
+	color: green;
+}

@@ -31,6 +31,11 @@ if(function_exists('getAutoMigrationEnabled') && TRUE === getAutoMigrationEnable
 	MigrationManager::dispatchDatabase();
 }
 
+if (isTest()){
+	// 開発中はクロスドメインを許可する
+	header('Access-Control-Allow-Origin: *');
+}
+
 // フレームワークのMVCフレームワーク機能(REST)を使う
 Core::webmain($flowPath);
 

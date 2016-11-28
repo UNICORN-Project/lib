@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<xml>
+	<section id="Logout-execute">
+		<execute>
+			<cancelthisbackflow/>
+			<clearbackflow/>
+			<execute class="Auth" method="unCertify"/>
+			<flow section="backflow" redirect="true"/>
+		</execute>
+	</section>
+</xml>

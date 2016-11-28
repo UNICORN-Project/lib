@@ -68,7 +68,7 @@ class GenericAWSS3
 			if(class_exists('Configure') && NULL !== Configure::constant('AWS_S3_TMP_DIR')){
 				$this->_tmpPath = Configure::AWS_S3_TMP_DIR;
 			}
-			elseif(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
+			if(defined('PROJECT_NAME') && strlen(PROJECT_NAME) > 0 && class_exists(PROJECT_NAME . 'Configure')){
 				$ProjectConfigure = PROJECT_NAME . 'Configure';
 				if(NULL !== $ProjectConfigure::constant('AWS_KEY')){
 					$apiKey = $ProjectConfigure::AWS_KEY;

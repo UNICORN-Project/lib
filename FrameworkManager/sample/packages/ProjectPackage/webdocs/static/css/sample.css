@@ -1,0 +1,46 @@
+@charset "utf-8";
+
+body {
+	padding-bottom: 20px;
+}
+
+section, .section {
+	padding: 10px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.input {
+	border: solid 1px;
+	padding: 5px;
+	padding-left: 10px;
+	padding-right: 10px;
+	width: 300px;
+	height: 28px;
+	margin-bottom: 24px;
+	float: left;
+}
+
+.rightBtn {
+	margin-left: 10px;
+}
+
+.sample {
+	color: gray;
+	font-size: 12px;
+}
+
+input[type=text], input[type=number], input[type=search], input[type=tel], input[type=url], input[type=email], input[type=password] {
+	border: none;
+	width: 260px;
+	height: 30px;
+}
+
+input[type=button], input[type=submit] {
+	height: 40px;
+}
+
+input:focus {
+	outline: none;
+}
+

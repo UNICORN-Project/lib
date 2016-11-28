@@ -265,6 +265,8 @@ class MVCCore {
 						}
 					}
 					debug($_SERVER ['DOCUMENT_ROOT'] . '/static/' . $paths ['path']);
+					debug($_SERVER ['DOCUMENT_ROOT'] . dirname($paths ['path']) . '.html');
+					debug($_SERVER ['DOCUMENT_ROOT'] . '/' . basename($paths ['path']) . '.html');
 					if (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] )) {
 						// そのままスタティックファイルとして表示
 						$res = file_get_contents ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] );
@@ -280,6 +282,14 @@ class MVCCore {
 					elseif (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] . 'index.html' )) {
 						// そのままスタティックファイルとして表示
 						$res = file_get_contents ( $_SERVER ['DOCUMENT_ROOT'] . $paths ['path'] . 'index.html');
+					}
+					elseif (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . dirname($paths ['path']) . '.html' )) {
+						// そのままスタティックファイルとして表示
+						$res = file_get_contents ( $_SERVER ['DOCUMENT_ROOT'] . dirname($paths ['path']) . '.html');
+					}
+					elseif (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . '/' . basename($paths ['path']) . '.html' )) {
+						// そのままスタティックファイルとして表示
+						$res = file_get_contents ( $_SERVER ['DOCUMENT_ROOT'] . '/' . basename($paths ['path']) . '.html');
 					}
 					elseif (isset ( $_SERVER ['DOCUMENT_ROOT'] ) && !isset ( $paths ['path'] ) && is_file ( $_SERVER ['DOCUMENT_ROOT'] . '/static/index.html' )) {
 						// そのままスタティックファイルとして表示
@@ -633,6 +643,15 @@ class MVCCore {
 			// コントロール対象を自動特定
 			$controlerClassName = 'Index';
 			if (isset ( $_GET ['_c_'] ) && strlen ( $_GET ['_c_'] ) > 0) {
+				if (0 < strpos($_GET ['_c_'], '-index')){
+					// indexFlow以外に小文字-indexはあり得ない
+					$_GET ['_c_'] = str_replace('-index', '', $_GET ['_c_']);
+				}
+				if (0 < strpos($_GET ['_c_'], '_index')){
+					// indexFlow以外に小文字_indexはあり得ない
+					$_GET ['_c_'] = str_replace('_index', '', $_GET ['_c_']);
+				}
+				debug ( 'mvccore target pathsave0.5=' . $currentTargetPath .' &'.$_GET ['_c_']);
 				$controlerClassName = str_replace ( '-', '_', ucfirst ( $_GET ['_c_'] ) );
 				if (FALSE !== strpos ( $_GET ['_c_'], '/' ) && strlen ( $_GET ['_c_'] ) > 1) {
 					$matches = NULL;

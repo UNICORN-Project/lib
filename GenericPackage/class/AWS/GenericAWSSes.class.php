@@ -93,7 +93,7 @@ class GenericAWSSes
 		}
 	}
 
-	public function sendSimpleMail($contents) {
+	public function send($contents) {
 		if ($this->_initialized === FALSE) {
 			$this->_init();
 		}

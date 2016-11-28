@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8"/>
+		<title id="title">Hello world</title>
+		<link rel="shortcut icon" href="//dl.dropboxusercontent.com/u/22810487/UNICORN/image/favicon.ico"/>
+		<!-- 共通ベースCSS -->
+		<link id="sanitaizeCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sanitize.css/2.0.0/sanitize.min.css"/>
+		<link id="fontawesomeCSS" type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+		<link id="bootstrapCSS" rel="stylesheet" href="//maxcdn. bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css"/>
+		<link id="jqueryDatetimepickerCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.min.css"/>
+		<!-- フレームワーク専用CSS -->
+		<link id="loadingCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/loading.css"/>
+		<link id="alertCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/alert.css"/>
+		<link id="inputclearCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/inputclear.css"/>
+		<link id="validateCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/validate.css">
+		<!-- アプリケーション専用CSS -->
+		<link id="applicationCSS" type="text/css" rel="stylesheet" href="/static/css/sample.css"/>
+		<!-- 画面専用CSS -->
+	</head>
+	<body>
+		<div class="ajax-error alert alert-dismissable alert-warning display hide">
+			<button type="button" class="close" data-dismiss="alert">×</button>
+			<h4 class="alert_title">999:エラー</h4>
+			<p>
+				<span class="alert_prefix"><b>ご迷惑をお掛け致します。</b><br/></span>
+				<span class="alert_message">通信中に予期しないエラーが発生しました。</span>
+			</p>
+		</div>
+		<section id="logout">
+			<h1>Log Out</h1>
+			<div class="maincontents text-center v-center">
+				<p class="lead">本当にログアウトしますか？</p>
+				<a class="lead" href="/logout/execute.html">はい</a>
+				<br>
+				<a class="lead" href="/">いいえ</a>
+			</div>
+		</section>
+		<div class="section">
+			<a href="/">Go Back Index.</a>
+		</div>
+		<!-- フレームワーク標準のローディングレイヤー -->
+		<div id="loading-screen"></div>
+		<!-- JSエリア -->
+		<div id="JSArea">
+			<!-- 共通ベースJS -->
+			<div id="GenericJSArea">
+				<!-- jquery -->
+				<script id="jqueryJS" type="text/javascript" src="//code.jquery.com/jquery-2.0.0.min.js"></script>
+				<!-- jquerycookie-->
+				<script id="jqueryCookieJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-cookie/1.4.1/jquery.cookie.min.js"></script>
+				<!-- jsvalidate-->
+				<script id="jqueryValidateJS" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.1/jquery.validate.min.js"></script>
+				<!-- datetimepicker-->
+				<script id="jqueryDatetimepickerJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.full.min.js"></script>
+			</div>
+			<div id="initializeJSArea">
+				<!-- 変数定義 -->
+				<script id="varJS" type="text/javascript" src="/static/js/var.js"></script>
+			</div>
+			<!-- フレームワーク専用JS -->
+			<div id="FrameworkJSArea">
+				<script id="ntpJS" type="text/javascript" src="/static/vendor/framework/js/ntp.js"></script>
+				<script id="dateutilJS" type="text/javascript" src="/static/vendor/framework/js/dateutil.js"></script>
+				<script id="customtwitterwidgetJS" type="text/javascript" src="/static/vendor/framework/js/customtwitterwidget.js"></script>
+				<script id="apiclientJS" type="text/javascript" src="/static/vendor/framework/js/apiclient.js"></script>
+				<script id="libJS" type="text/javascript" src="/static/vendor/framework/js/lib.js"></script>
+				<script id="inputclearJS" type="text/javascript" src="/static/vendor/framework/js/inputclear.js"></script>
+				<script id="autolinkJS" type="text/javascript" src="/static/vendor/framework/js/autolink.js"></script>
+				<script id="validateJS" type="text/javascript" src="/static/vendor/framework/js/validate.js"></script>
+			</div>
+			<!-- アプリケーション専用JS -->
+			<div id="ApplicationJSArea">
+				<!-- アプリケーションで共通のJSはココに追記 -->
+			</div>
+			<!-- 画面専用JS -->
+			<div id="ViewJSArea">
+				<!-- 画面毎のJSはココに追記 -->
+			</div>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,21 @@
+@charset "utf-8";
+
+/* クリアボタン */
+span.inputclear {
+	position: absolute;
+	z-index: 2;
+	margin-left: 10px;
+	width: 30px;
+	height: 30px;
+}
+
+span.inputclear i {
+	width: 30px;
+	height: 30px;
+	font-size: 1.75em;
+	color: gray;
+}
+
+br.clear {
+	clear: both;
+}

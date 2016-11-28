@@ -15,7 +15,7 @@
 <link class="fwmassetscss" rel="stylesheet" type="text/css" href="./assets/themes/fwm/css/local.css" />
 <link class="fwmassetscss" rel="stylesheet" type="text/css" href="./assets/themes/fwm/bootstrap/css/bs-sticky-footer.css" />
 <script class="fwmassetsjs" type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
-<script class="fwmassetsjs" type="text/javascript" id="setiframeheight-js" src="./assets/vendor/js/setiframeheight/set-iframe-height-parent-min.js" async></script>
+<script class="fwmassetsjs" type="text/javascript" id="setiframeheight-js" src="//cdnjs.cloudflare.com/ajax/libs/set-iframe-height/1.3.1/set-iframe-height-parent-min.js" async></script>
 <script class="fwmassetsjs" type="text/javascript" src="./assets/themes/fwm/bootstrap/js/bootstrap.min.js"></script>
 <link class="fwmassetscss" rel="stylesheet" type="text/css" href="//www.shieldui.com/shared/components/latest/css/shieldui-all.min.css" />
 <link class="fwmassetscss" rel="stylesheet" type="text/css" href="//www.shieldui.com/shared/components/latest/css/light-bootstrap/all.min.css" />
@@ -196,6 +196,7 @@
 						<var selector="title#title" value="array(HtmlViewAssignor::PART_REPLACE_NODE_KEY => array('pagename' => 'Management '  . Flow::$params['get']['target_project'] . ' Flags'))" />
 			<script type="text/javascript" src="./assets/vendor/editarea/edit_area_full.js"></script>
 			<script type="text/javascript">
+			$(function() {
 				if (640 >= $(window).width()) {
 					// モバイルの場合
 					editAreaLoader.init({
@@ -230,6 +231,7 @@
 					$("#"+id).val(content);
 					$('#modifyconfigure-form').submit();
 				}
+			});
 			</script>
 			<div class="maincontents" permission="0">
 				<h2 frowparamsection="target_project">_flow_target_project_のコンフィグ設定を変更出来ます。</h2>
@@ -237,7 +239,7 @@
 				<div flowpostformsectionerror="managementproject-modifyconfigure" id="modified-message" class="red errormsg"></div>
 				<br/>
 				<form id="modifyconfigure-form" flowpostformsection="managementproject-modifyconfigure">
-					<textarea id="configxml" style="height: 450px; width: 100%;" name="configxml"></textarea>
+					<textarea id="configxml" style="height: 100%; width: 100%;" name="configxml"></textarea>
 					<input type="hidden" name="modify" value="1"/>
 				</form>
 			</div>
@@ -260,7 +262,7 @@
 	<!-- 背景を body タグで指定する代わりに、この div タグに指定する -->
 	<div class="background"></div>
 	<!-- ローディング -->
-	<div id="screen-loading"><div class="loader loader-5"></div></div>
+	<div id="loading-screen"><div class="loader loader-5"></div></div>
 
 </body>
 </html>

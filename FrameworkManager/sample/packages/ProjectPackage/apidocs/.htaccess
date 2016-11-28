@@ -26,5 +26,5 @@ php_value mbstring.internal_encoding UTF-8
 # エラーの表示設定
 # 全てのエラーを非表示
 #php_value error_reporting 1
-# 以下はPHP5環境用
+# 以下はPHP5以降環境用
 php_value error_reporting 24575

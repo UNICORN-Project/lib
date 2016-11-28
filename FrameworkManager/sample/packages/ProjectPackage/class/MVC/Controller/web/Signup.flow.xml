@@ -1,0 +1,213 @@
+<?xml version="1.0" ?>
+<xml>
+	<!-- 会員登録受付画面表示 -->
+	<section id="Signup-reserve">
+		<execute>
+			<if val="true === Auth::isCertification()">
+				<flow section="backflow"/>
+			</if>
+			<!-- 入力値チェック -->
+			<!-- signup-reserveは(login側でflowpostformが使われていて)flowpostformされないのでFlow::$paramからPOSTの値が取れない！ -->
+			<if val="!(isset($_POST['mail']) &amp;&amp; true === Validations::isEmail($_POST['mail'], true))">
+				<flowviewparam selector="#signuperror" val="'このメールアドレスはご利用頂けません'"/>
+				<flow section="login"/>
+			</if>
+			<!-- 重複チェック -->
+			<assign var="query" val="'`mail` = :mail '"/>
+			<assign var="binds" val="array('mail' => Utilities::doHexEncryptAES($_POST['mail'], getConfig('AUTH_CRYPT_KEY'), getConfig('AUTH_CRYPT_IV')))"/>
+			<assign var="user" val="ORMapper::getModel(DBO::sharedInstance(), 'user', $query, $binds, FALSE)"/>
+			<if val="true === (isset($user->id) &amp;&amp; null !== $user->id &amp;&amp; FALSE === is_object($user->id) &amp;&amp; 0 &lt; strlen((string)$user->id))">
+				<flowviewparam selector="#signuperror" val="'このメールアドレスはご利用頂けません'"/>
+				<flow section="login"/>
+			</if>
+			<!-- このメアドはまだ未登録なので登録URLをメールする -->
+			<assign var="token" val="Utilities::doHexEncryptAES(json_encode(array('mail' => $_POST['mail'], 'date' => Utilities::date('Y-m-d H:i:s', NULL, NULL, 'GMT'))), getConfig('AUTH_CRYPT_KEY'), getConfig('AUTH_CRYPT_IV'))"/>
+			<execute val="$body = '以下のURLより本登録を行って下さい。'.PHP_EOL.PHP_EOL.getConfig('BASE_URL').'signup/entry.html?token='.$token"/>
+			<if val="true === (MailSender::send($_POST['mail'], '会員登録用URL発行のお知らせ', $body))">
+				<flowviewparam selector="#SMTPSetting" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('style' => 'display:none;'))"/>
+			</if>
+			<else>
+				<flowviewparam selector="#mail-token" val="$body"/>
+			</else>
+			<flowviewparam selector="#signup-email" val="$_POST['mail']"/>
+			<!-- 正常終了 -->
+			<view/>
+		</execute>
+	</section>
+	<!-- 入力画面表示 -->
+	<section id="Signup-entry">
+		<execute>
+			<if val="true === Auth::isCertification()">
+				<!-- 既にログイン済みの場合、登録処理をさせずに元の画面に戻す -->
+				<flow section="backflow"/>
+			</if>
+			<if val="TRUE !== (isset(Flow::$params['get']['token']) &amp;&amp; 0 &lt; strlen(Flow::$params['get']['token']))">
+				<!-- トークンが無い -->
+				<exception code="400"/>
+			</if>
+			<assign var="data" val="json_decode(Utilities::doHexDecryptAES(Flow::$params['get']['token'], getConfig('AUTH_CRYPT_KEY'), getConfig('AUTH_CRYPT_IV')))"/>
+			<if val="TRUE !== (is_object($data) &amp;&amp; TRUE === (isset($data->mail) &amp;&amp; isset($data->date)))">
+				<!-- トークンが壊れてる？ -->
+				<flowviewparam selector="#signupForm" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('style' => 'display:none;'))"/>
+				<view/>
+			</if>
+			<if val="Utilities::date('U', $data->date, 'GMT', 'GMT') &lt;= (Utilities::date('U', NULL, NULL, 'GMT') - (3600*24))">
+				<!-- トークンの有効期限切れ(1時間以上前のトークン) -->
+				<flowviewparam selector="#signupForm" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('style' => 'display:none;'))"/>
+				<view/>
+			</if>
+			<!-- 時間内なので登録を進められるようにする -->
+			<flowviewparam selector="#errorInformation" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('style' => 'display:none;'))"/>
+			<flowviewparam selector=".mail" val="$data->mail"/>
+			<view flowpostformsection="signup/confirm"/>
+		</execute>
+	</section>
+	<!-- 確認画面表示 -->
+	<section id="Signup-confirm">
+		<execute>
+			<if val="true === Auth::isCertification()">
+				<!-- 既にログイン済みの場合、登録処理をさせずに元の画面に戻す -->
+				<flow section="backflow"/>
+			</if>
+			<if val="TRUE !== (isset(Flow::$params['get']['token']) &amp;&amp; 0 &lt; strlen(Flow::$params['get']['token']))">
+				<!-- トークンが無い -->
+				<exception code="400"/>
+			</if>
+			<assign var="data" val="json_decode(Utilities::doHexDecryptAES(Flow::$params['get']['token'], getConfig('AUTH_CRYPT_KEY'), getConfig('AUTH_CRYPT_IV')))"/>
+			<if val="TRUE !== (is_object($data) &amp;&amp; TRUE === (isset($data->mail) &amp;&amp; isset($data->date)))">
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<if val="Utilities::date('U', $data->date, 'GMT', 'GMT') &lt;= (Utilities::date('U', NULL, NULL, 'GMT') - (3600*24))">
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<flowviewparam selector=".mail" val="$data->mail"/>
+			<execute val="$errors = array()"/>
+			<!-- validate -->
+			<if val="!(isset(Flow::$params['post']['unique_name']) &amp;&amp; 0 &lt; strlen(Flow::$params['post']['unique_name']))">
+				<execute val="$errors[] = 'IDをご入力下さい'"/>
+			</if>
+			<else>
+				<!-- 重複チェック -->
+				<assign var="query" val="'`unique_name` = :unique_name '"/>
+				<assign var="binds" val="array('unique_name' => Flow::$params['post']['unique_name'])"/>
+				<assign var="user" val="ORMapper::getModel(DBO::sharedInstance(), 'user', $query, $binds, FALSE)"/>
+				<if val="true === (isset($user->id) &amp;&amp; null !== $user->id &amp;&amp; FALSE === is_object($user->id) &amp;&amp; 0 &lt; strlen((string)$user->id))">
+					<execute val="$errors[] = 'このIDはご利用頂けません'"/>
+				</if>
+			</else>
+			<if val="!(isset(Flow::$params['post']['pass']) &amp;&amp; 0 &lt; strlen(Flow::$params['post']['pass']))">
+				<execute val="$errors[] = 'パスワードをご入力下さい'"/>
+			</if>
+			<elseif val="0 &lt; strlen(getConfig('PASSWORD_PORICY'))">
+				<!-- パスワードポリシーチェック -->
+				<if val="1 !== preg_match(getConfig('PASSWORD_PORICY'), Flow::$params['post']['pass'])">
+					<execute val="$errors[] = 'パスワードは'.getConfig('PASSWORD_PORICY_TEXT').'でご入力下さい'"/>
+				</if>
+			</elseif>
+			<if val="!(isset(Flow::$params['post']['pass_confirm']) &amp;&amp; Flow::$params['post']['pass'] === Flow::$params['post']['pass_confirm'])">
+				<execute val="$errors[] = '確認用パスワードが一致しません'"/>
+			</if>
+			<if val="0 &lt; count($errors)">
+				<!-- 直アクセスによる必須パラメータの欠如。ログイン画面に飛ばす -->
+				<flowpostformsectionerror>'.implode('&lt;br/&gt;', $errors).'</flowpostformsectionerror>
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<view confirmflowpostformsection="signup/finish" backflowpostformsection="signup/entry"/>
+		</execute>
+	</section>
+	<!-- 完了画面表示 -->
+	<section id="Signup-finish">
+		<execute>
+			<if val="true === Auth::isCertification()">
+				<!-- 既にログイン済みの場合、登録処理をさせずに元の画面に戻す -->
+				<flow section="backflow"/>
+			</if>
+			<if val="TRUE !== (isset(Flow::$params['get']['token']) &amp;&amp; 0 &lt; strlen(Flow::$params['get']['token']))">
+				<!-- トークンが無い -->
+				<exception code="400"/>
+			</if>
+			<assign var="data" val="json_decode(Utilities::doHexDecryptAES(Flow::$params['get']['token'], getConfig('AUTH_CRYPT_KEY'), getConfig('AUTH_CRYPT_IV')))"/>
+			<if val="TRUE !== (is_object($data) &amp;&amp; TRUE === (isset($data->mail) &amp;&amp; isset($data->date)))">
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<if val="Utilities::date('U', $data->date, 'GMT', 'GMT') &lt;= (Utilities::date('U', NULL, NULL, 'GMT') - (3600*24))">
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<execute val="$errors = array()"/>
+			<!-- validate -->
+			<if val="!(isset(Flow::$params['post']['unique_name']) &amp;&amp; 0 &lt; strlen(Flow::$params['post']['unique_name']))">
+				<execute val="$errors[] = 'IDをご入力下さい'"/>
+			</if>
+			<else>
+				<!-- 重複チェック -->
+				<assign var="query" val="'`unique_name` = :unique_name '"/>
+				<assign var="binds" val="array('unique_name' => Flow::$params['post']['unique_name'])"/>
+				<assign var="user" val="ORMapper::getModel(DBO::sharedInstance(), 'user', $query, $binds, FALSE)"/>
+				<if val="true === (isset($user->id) &amp;&amp; null !== $user->id &amp;&amp; FALSE === is_object($user->id) &amp;&amp; 0 &lt; strlen((string)$user->id))">
+					<execute val="$errors[] = 'このIDはご利用頂けません'"/>
+				</if>
+			</else>
+			<if val="!(isset(Flow::$params['post']['pass']) &amp;&amp; 0 &lt; strlen(Flow::$params['post']['pass']))">
+				<execute val="$errors[] = 'パスワードをご入力下さい'"/>
+			</if>
+			<elseif val="0 &lt; strlen(getConfig('PASSWORD_PORICY'))">
+				<!-- パスワードポリシーチェック -->
+				<if val="1 !== preg_match(getConfig('PASSWORD_PORICY'), Flow::$params['post']['pass'])">
+					<execute val="$errors[] = 'パスワードは'.getConfig('PASSWORD_PORICY_TEXT').'でご入力下さい'"/>
+				</if>
+			</elseif>
+			<if val="!(isset(Flow::$params['post']['pass_confirm']) &amp;&amp; Flow::$params['post']['pass'] === Flow::$params['post']['pass_confirm'])">
+				<execute val="$errors[] = '確認用パスワードが一致しません'"/>
+			</if>
+			<if val="0 &lt; count($errors)">
+				<!-- 直アクセスによる必須パラメータの欠如。ログイン画面に飛ばす -->
+				<flowpostformsectionerror>'.implode('&lt;br/&gt;', $errors).'</flowpostformsectionerror>
+				<!-- 入力エラーの為前のフローに強制バックするので、backflowの自動登録の見送りを明示指定する必要がある！ -->
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<if val="false !== (Auth::isRegistered($data->mail, Flow::$params['post']['pass'], NULL))">
+				<!-- 登録済みなのでログイン画面へ(あり得ないが・・・) -->
+				<if val="true !== Auth::certify()">
+					<!-- 相当あり得ない・・・ -->
+					<flowpostformsectionerror>システムエラーが発生しました</flowpostformsectionerror>
+					<cancelthisbackflow/>
+					<flow section="signup-entry"/>
+				</if>
+				<else>
+					<!-- ログインして移動 -->
+					<cancelthisbackflow/>
+					<flow section="backflow"/>
+				</else>
+			</if>
+			<!-- 登録処理 -->
+			<execute val="Flow::$params['post']['mail'] = $data->mail"/>
+			<rest execute="execute" resource="string:user" method="POST"/>
+			<if val="true !== (is_array($resource) &amp;&amp; isset($resource[0]) &amp;&amp; 0 &lt; (int)$resource[0]['id'])">
+				<!-- 登録失敗 -->
+				<flowpostformsectionerror>システムエラーが発生しました</flowpostformsectionerror>
+				<cancelthisbackflow/>
+				<flow section="signup-entry"/>
+			</if>
+			<!-- 登録完了 -->
+			<!-- ログイン -->
+			<execute val="Auth::certify()"/>
+			<!-- 登録完了メール送信 -->
+			<if val="true === (MailSender::send($data->mail, '会員登録ありがとうございます', Flow::$params['post']['unique_name'].'様'.PHP_EOL.PHP_EOL.'会員登録が完了しました。'))">
+				<flowviewparam selector="#SMTPSetting" val="array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('style' => 'display:none;'))"/>
+			</if>
+			<flowviewparam selector=".unique_name" val="Flow::$params['post']['unique_name']"/>
+			<view/>
+		</execute>
+	</section>
+</xml>

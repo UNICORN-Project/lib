@@ -47,8 +47,6 @@ class WebFlowControllerBase extends WebControllerBase {
 				return;
 			}
 			foreach($argParams as $key => $val){
-				logging('key='.$key, 'flow');
-				logging('val='.var_export($key, true), 'flow');
 				// POSTパラメータを優先して利用する
 				if (!isset($_POST[$key]) && !isset(Flow::$params['post'][$key])){
 					$inputName = $key;
@@ -71,7 +69,7 @@ class WebFlowControllerBase extends WebControllerBase {
 							Flow::$params['view'][] = array('form[flowpostformsection='.$argFormSection.'] select[class=flowpostformparam-' . $inputName . '] option[value!='.htmlspecialchars($val).']' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('selected'=>'')));
 							Flow::$params['view'][] = array('form[flowpostformsection='.$argFormSection.'] select[class=flowpostformparam-' . $inputName . '] option[value='.htmlspecialchars($val).']' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('selected'=>'selected')));
 							Flow::$params['view'][] = array('form[flowpostformsection='.$argFormSection.'] textarea[class=flowpostformparam-' . $inputName . ']' => htmlspecialchars($val));
-							Flow::$params['view'][] = array('[flowpostformsection='.$argFormSection.'] [class=confirmflowpostforminput-' . $inputName . ']' => nl2br(htmlspecialchars( ((is_numeric($val) && 0 !== strpos($val, '0') && FALSE === strpos($inputName, 'day') && FALSE === strpos($inputName, 'date'))? number_format($val) : $val) )));
+							Flow::$params['view'][] = array('[flowpostformsection='.$argFormSection.'] [class=confirmflowpostforminput-' . $inputName . ']' => nl2br(htmlspecialchars( ((is_numeric($val) && 0 !== strpos($val, '0') && FALSE === strpos($inputName, 'day') && FALSE === strpos($inputName, 'date') && FALSE === strpos($inputName, 'time') && FALSE === strpos($inputName, 'phone') && 0 !== strpos($inputName, 'tel') && FALSE === strpos($inputName, 'code') && FALSE === strpos($inputName, 'account') && FALSE === strpos($inputName, 'zip') && FALSE === strpos($inputName, 'bank') && FALSE === strpos($inputName, 'credit') && FALSE === strpos($inputName, 'card'))? number_format($val) : $val) )));
 							Flow::$params['view'][] = array('[flowpostformsection='.$argFormSection.'] [class=confirmflowpostformswitch-' . $inputName . '][value!='.htmlspecialchars($val).']' => HtmlViewAssignor::REMOVE_NODE);
 							Flow::$params['view'][] = array('[flowpostformsection='.$argFormSection.'] [class=flowpostformhidden-' . $argParentParamInputKey . ']' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="'.$inputName.'" value="'.htmlspecialchars($val).'"/>'.PHP_EOL));
 							// 入力の戻る用
@@ -137,7 +135,7 @@ class WebFlowControllerBase extends WebControllerBase {
 								Flow::$params['view'][] = array('form[flowpostformsection='.$_POST['flowpostformsection'].'] select[class=flowpostformparam-' . $inputName . '] option[value!='.htmlspecialchars($val).']' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('selected'=>'')));
 								Flow::$params['view'][] = array('form[flowpostformsection='.$_POST['flowpostformsection'].'] select[class=flowpostformparam-' . $inputName . '] option[value='.htmlspecialchars($val).']' => array(HtmlViewAssignor::REPLACE_ATTR_KEY => array('selected'=>'selected')));
 								Flow::$params['view'][] = array('form[flowpostformsection='.$_POST['flowpostformsection'].'] textarea[class=flowpostformparam-' . $inputName . ']' => htmlspecialchars($val));
-								Flow::$params['view'][] = array('[flowpostformsection='.$_POST['flowpostformsection'].'] [class=confirmflowpostforminput-' . $inputName . ']' => nl2br(htmlspecialchars( ((is_numeric($val) && 0 !== strpos($val, '0') && FALSE === strpos($inputName, 'day') && FALSE === strpos($inputName, 'date'))? number_format($val) : $val) )));
+								Flow::$params['view'][] = array('[flowpostformsection='.$_POST['flowpostformsection'].'] [class=confirmflowpostforminput-' . $inputName . ']' => nl2br(htmlspecialchars( ((is_numeric($val) && 0 !== strpos($val, '0') && FALSE === strpos($inputName, 'day') && FALSE === strpos($inputName, 'date') && FALSE === strpos($inputName, 'time') && FALSE === strpos($inputName, 'phone') && 0 !== strpos($inputName, 'tel') && FALSE === strpos($inputName, 'code') && FALSE === strpos($inputName, 'account') && FALSE === strpos($inputName, 'zip') && FALSE === strpos($inputName, 'bank') && FALSE === strpos($inputName, 'credit') && FALSE === strpos($inputName, 'card'))? number_format($val) : $val) )));
 								Flow::$params['view'][] = array('[flowpostformsection='.$_POST['flowpostformsection'].'] [class=confirmflowpostformswitch-' . $inputName . '][value='.htmlspecialchars($val).']' => array(HtmlViewAssignor::PART_REPLACE_ATTR_KEY => array('style' => array('display:none;'=>''))));
 								Flow::$params['view'][] = array('[flowpostformsection='.$_POST['flowpostformsection'].'] [class=flowpostformhidden-' . $argParentParamInputKey . ']' => array(HtmlViewAssignor::APPEND_NODE_KEY => '<input type="hidden" name="'.$inputName.'" value="'.htmlspecialchars($val).'"/>'.PHP_EOL));
 								//Flow::$params['view'][] = array('[flowpostformsection='.$_POST['flowpostformsection'].'] [class=confirmflowpostformswitch-' . $inputName . '][value!='.htmlspecialchars($val).']' => HtmlViewAssignor::REMOVE_NODE);

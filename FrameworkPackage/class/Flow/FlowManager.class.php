@@ -38,8 +38,24 @@ class FlowManager
 		if(isset($_SERVER['ReverseRewriteRule'])){
 			$reverseRules = explode(' ', str_replace('＄', '$', $_SERVER['ReverseRewriteRule']));
 			if(count($reverseRules) == 2){
+				debug("flow action=".$action);
 				debug("flow reverseRules=".$reverseRules[0]);
+				debug("flow reverseRules=".$reverseRules[1]);
 				$reverseAction = preg_replace('/' . $reverseRules[0] . '/', $reverseRules[1], $action);
+				$pathDepthOrg = explode('/', $_SERVER['REQUEST_URI']);
+				debug("flow reverseAction=".$reverseAction);
+				$pathDepthNext = explode('/', $reverseAction);
+				debug("flow reverseAction=".count($pathDepthOrg) .' & '. count($pathDepthNext));
+				if (count($pathDepthOrg) >= count($pathDepthNext)){
+					// 実際のパスはディレクトリ構成になっていて深いので、深さ分だけロケーション先に「../」を付加
+					$reverseAction = str_replace('./', '/', $reverseAction);
+					for ($didx=0; $didx < count($pathDepthOrg)-count($pathDepthNext); $didx++){
+						$reverseAction = '../'.$reverseAction;
+					}
+					$reverseAction = str_replace('//', '/', $reverseAction);
+					$reverseAction = str_replace('//', '/', $reverseAction);
+				}
+				debug("flow reverseAction=".$_SERVER['REQUEST_URI']);
 				debug("flow reverseAction=".$action);
 				debug("flow reverseAction=".$reverseAction);
 				if(NULL !== $reverseAction && strlen($reverseAction) > 0){
@@ -79,6 +95,15 @@ class FlowManager
 		}
 		// SSLへ強制リダイレクトする判定処理
 		if (NULL !== $argSSLRequired && FALSE !== $argSSLRequired && TRUE !== (isset($_SERVER['HTTP_REFERER']) && strpos($_SERVER['HTTP_REFERER'], 'https'))){
+			if (0 === strpos($action, '../')){
+				$actions = explode('../', $action);
+				$action = '';
+				for ($aidx=0; $aidx < count($actions); $aidx++){
+					if ($actions[$aidx] != '../'){
+						$action .= '/'.$actions[$aidx];
+					}
+				}
+			}
 			if (0 === strpos($action, './')){
 				$action = substr($action, 2);
 			}
@@ -497,7 +522,7 @@ class FlowManager
 					$code .= $tab . PHP_TAB . 'return TRUE;' . PHP_EOL;
 					$code .= $tab . '}' . PHP_EOL;
 					$code .= $tab . '$instance = new $className();' . PHP_EOL;
-					$code .= $tab . 'if (isset($_POST[\'flowpostformsection\']) && str_replace(\'_\', \'-\', ucfirst($_POST[\'flowpostformsection\'])) != $instance->section){' . PHP_EOL;
+					$code .= $tab . 'if (isset($_POST[\'flowpostformsection\']) && str_replace(\'\\\\\', \'-\', str_replace(\'_\', \'-\', ucfirst($_POST[\'flowpostformsection\']))) != $instance->section){' . PHP_EOL;
 					// POSTパラメータを分離するため、今ポストされているものはバックフロー用のパラメータにしておく
 					$code .= $tab . PHP_TAB . '$this->_convertBackflowForm($this->section, $_POST);' . PHP_EOL;
 					$code .= $tab . '}' . PHP_EOL;
@@ -628,8 +653,19 @@ class FlowManager
 				$code .= '$this->_convertWebFlowForm(\'' . $tmpAttr['section'] . '\', ' . self::_resolveValue($tmpAttr['val']) . ');';
 			}
 			elseif('exception' === $codeType){
-				$msg = '';
-				$code .= 'throw new Exception(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__);';
+				$_class = 'Exception';
+				$_message = '__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__';
+				$_code = '500';
+				if (isset($tmpAttr['class'])){
+					$_class = $tmpAttr['class'];
+				}
+				if (isset($tmpAttr['message'])){
+					$_message = $tmpAttr['message'];
+				}
+				if (isset($tmpAttr['code']) && is_numeric((int)$tmpAttr['code'])){
+					$_code = $tmpAttr['code'];
+				}
+				$code .= 'throw new '.$_class.'('.$_message.', '.$_code.');';
 			}
 			elseif('view' === $codeType){
 				$section = '$this->section';

@@ -2,7 +2,17 @@
 <xml>
 	<section id="Sample">
 		<execute>
-			<flowviewparam selector="#section-message" val="'コレはSample FlowによってIndexが読み込まれています。'"/>
+			<!-- ログイン判定 -->
+			<if val="true !== Auth::isCertification()">
+				<flow section="login"/>
+			</if>
+			<!-- ログインユーザーの情報を取得 -->
+			<rest execute="execute" resource="string:me/user" method="GET"/>
+			<if val="true !== (is_array($resource) &amp;&amp; isset($resource[0]) &amp;&amp; 0 &lt; (int)$resource[0]['id'])">
+				<!-- 情報が取れないのでログイン画面へ移動 -->
+				<flow section="login"/>
+			</if>
+			<flowviewparam selector="#section-message" val="$resource[0]['unique_name'].'さん、コレはSample FlowによってIndexが読み込まれています。'"/>
 			<flowviewparam selector="#next-link" val="HtmlViewAssignor::buildReplaceAttribute('href', 'sample.html', '')"/>
 			<flowviewparam selector="#next-link" val="HtmlViewAssignor::buildSetNode('Go to Index')"/>
 			<view section="index"/>

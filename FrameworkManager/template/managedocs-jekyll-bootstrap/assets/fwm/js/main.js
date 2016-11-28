@@ -23,10 +23,10 @@ if (null != projectName && 0 < projectName.length){
 // メイン処理
 $(document).ready(function() {
 	// 描画の初期化
-	if ($('#screen-loading').size()){
-		$('#screen-loading').hide();
+	if ($('#loading-screen').size()){
+		$('#loading-screen').hide();
 		loadingCnt++;
-		$('#screen-loading').fadeIn();
+		$('#loading-screen').fadeIn();
 	}
 
 	$("[permission]").hide();
@@ -71,11 +71,11 @@ $(document).ready(function() {
 //			return;
 		}
 	}).always(function(){
-		if ($('#screen-loading').size()){
+		if ($('#loading-screen').size()){
 			loadingCnt--;
 			if (0 >= loadingCnt){
 				loadingCnt = 0;
-				$('#screen-loading').fadeOut();
+				$('#loading-screen').fadeOut();
 			}
 		}
 	});
@@ -113,11 +113,11 @@ $(document).ready(function() {
 //				return;
 			}
 		}).always(function(){
-			if ($('#screen-loading').size()){
+			if ($('#loading-screen').size()){
 				loadingCnt--;
 				if (0 >= loadingCnt){
 					loadingCnt = 0;
-					$('#screen-loading').fadeOut();
+					$('#loading-screen').fadeOut();
 				}
 			}
 		});
@@ -139,11 +139,11 @@ $(document).ready(function() {
 				$("#menu-projectmenu").html(menuList);
 			}
 		}).always(function(){
-			if ($('#screen-loading').size()){
+			if ($('#loading-screen').size()){
 				loadingCnt--;
 				if (0 >= loadingCnt){
 					loadingCnt = 0;
-					$('#screen-loading').fadeOut();
+					$('#loading-screen').fadeOut();
 				}
 			}
 		});

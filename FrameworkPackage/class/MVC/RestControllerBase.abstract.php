@@ -614,6 +614,16 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 	public function authAndExecute($argResourceHint=NULL, $argRequestParams=NULL, $argRequestMethod=NULL, $argGETParams=NULL){
 		$this->_init();
 		$DBO = NULL;
+
+		// XXX HEADリクエストでAuthUserTableへの参照は強制的にAuthを外す！
+		if (isset($_SERVER['REQUEST_METHOD']) && 'HEAD' === $_SERVER['REQUEST_METHOD']) {
+			$resource = self::resolveRESTResource($_GET['_r_']);
+			Auth::init();
+			if (strtolower($resource['model']) == strtolower(Auth::$authTable)){
+				return $this->execute($argResourceHint, $argRequestParams, $argRequestMethod, $argGETParams);
+			}
+		}
+
 		try{
 			// Auth
 			$DBO = self::_getDBO();
@@ -1110,20 +1120,49 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 			throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
 		}
 
+		Auth::init();
 		if('HEAD' === $this->requestMethod && isset($res['describes'])){
 			header('Head: ' . json_encode($res['describes']));
 			header('Rules: ' . json_encode($res['rules']));
-			header('Records: ' . $res['count']);
+			if (strtolower($this->restResourceModel) != strtolower(Auth::$authTable)){
+				header('Records: ' . $res['count']);
+			}
+			else if (isset($_COOKIE['refresh_token']) && 0 < strlen($_COOKIE['refresh_token'])){
+				// 管理者は出力してもOK
+				header('Records: ' . $res['count']);
+			}
+			else {
+				header('Records: *');
+			}
 			header('Comment: ' . json_encode($res['comment']));
-			$res = TRUE;
+			if (isset($_GET['validate'] ) && $_GET['validate'] === 'unique' && 0 < (int)$res['count']){
+				// 既にレコードがあるのでエラー
+				$this->httpStatus = 409;
+				throw new RESTException(__CLASS__.PATH_SEPARATOR.__METHOD__.PATH_SEPARATOR.__LINE__, $this->httpStatus);
+				$res = FALSE;
+			}
+			else {
+				$res = TRUE;
+			}
 		}
 		else if(TRUE === $this->rootREST && FALSE === $this->virtualREST && 'DELETE' !== $this->requestMethod && TRUE !== ('index' === strtolower($this->restResourceModel) && 'html' === $this->outputType)){
 			// GETの時はHEADリクエストの結果を包括する為の処理
 			try{
 				$headRes = $this->head($argGETParams);
 				@header('Head: ' . json_encode($headRes['describes']));
-				@header('Rules: ' . json_encode($headRes['rules']));
-				@header('Records: ' . $headRes['count']);
+				if (isset($headRes['rules'])){
+					@header('Rules: ' . json_encode($headRes['rules']));
+				}
+				if (strtolower($this->restResourceModel) != strtolower(Auth::$authTable)){
+					@header('Records: ' . $headRes['count']);
+				}
+				else if (isset($_COOKIE['refresh_token']) && 0 < strlen($_COOKIE['refresh_token'])){
+					// 管理者は出力してもOK
+					header('Records: ' . $headRes['count']);
+				}
+				else {
+					header('Records: *');
+				}
 				@header('Comment: ' . json_encode($headRes['comment']));
 			}
 			catch (Exception $Exception){
@@ -1515,6 +1554,14 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 						else{
 							$baseQuery .= ' AND `' . $Model->tableName . '`.`' . $fields[$fieldIdx] . '` = :' . $fields[$fieldIdx] . ' ';
 							$bindValue = $requestParams[$fields[$fieldIdx]];
+						}
+						Auth::init();
+						// Auth設定されているフィールドへの保存の場合、暗号化・ハッシュ化を自動処理してあげる
+						if (strtolower($this->restResourceModel) === strtolower(Auth::$authTable) && 0 < strlen($requestParams[$fields[$fieldIdx]])){
+							// IDフィールド用
+							if ($fields[$fieldIdx] === Auth::$authIDField){
+								$requestParams[$fields[$fieldIdx]] = Auth::resolveEncrypted($requestParams[$fields[$fieldIdx]], Auth::$authIDEncrypted);
+							}
 						}
 						if(NULL === $baseBinds){
 							$baseBinds = array();
@@ -2368,7 +2415,35 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 		}
 		$baseQuery = ' 1=1 ';
 		$baseBinds = NULL;
-		$rules = array('rules'=>array());;
+
+		$rules = array('rules'=>array());
+		// XXX 後でマルチ言語対応
+		$rules['default_messages'] = array(
+				'required' => '*入力して下さい',
+				'email' => '*正しいメールアドレスの形式で入力して下さい',
+				'url' => '*正しいURLの形式で入力して下さい',
+				'length' => '※{0}文字で入力して下さい',
+				'minlength' => '※{0}文字以上で入力して下さい',
+				'maxlength' => '※{0}文字以内で入力して下さい',
+				'digits' => '*半角英数字で入力して下さい',
+				'number' => '*半角数字で入力して下さい',
+				'katakana' => '*全角カナ・A〜Zで入力してください',
+				'hirakana' => '*全角ひらかなで入力してください',
+				'phone' => '*正しい電話番号の形式で入力してください',
+		);
+		$rules['custom_methods'] = array();
+		$rules['custom_methods']['hirakana'] = '/^([ぁ-んー〜\d]+)$/';
+		$rules['custom_methods']['katakana'] = '/^([ァ-ヶー\d]+)$/';
+		$rules['custom_methods']['phone'] = '/^\+*(\d{11}$|^\d{3}-\d{4}-\d{4})$/';
+		$passwordPoricy = getConfig('PASSWORD_PORICY');
+		if (0 < strlen($passwordPoricy)){
+			$rules['custom_methods']['password'] = $passwordPoricy;
+			$passwordPoricyText = getConfig('PASSWORD_PORICY_TEXT');
+			if (0 < strlen($passwordPoricy)){
+				$rules['default_messages']['password'] = '*'.$passwordPoricyText.'で入力してください';
+			}
+		}
+
 		try{
 			if(TRUE === $this->restResource['me'] && NULL !== $this->AuthUser && is_object($this->AuthUser) && strtolower($this->restResourceModel) == strtolower($this->AuthUser->tableName)){
 				// 自分自身のAuthモデルに対しての処理とする
@@ -2459,12 +2534,18 @@ abstract class RestControllerBase extends APIControllerBase implements RestContr
 				if(isset($val['type']) && 'int' === $val['type']){
 					$rules['rules'][$key]['digits'] = TRUE;
 				}
-				if(isset($val['length'])){
-					$rules['rules'][$key]['maxlength']=(int)$val['length'];
-					$rules['rules'][$key]['minlength'] = (int)$val['length'];
-				}
+				$minlength = false;
 				if(isset($val['min-length'])){
 					$rules['rules'][$key]['minlength']=(int)$val['min-length'];
+					$minlength = true;
+				}
+				if(isset($val['length'])){
+					if (true === $minlength){
+						$rules['rules'][$key]['maxlength']=(int)$val['length'];
+					}
+					else {
+						$rules['rules'][$key]['length'] = (int)$val['length'];
+					}
 				}
 				$Model->describes[$key]['calender'] = FALSE;
 				if($this->restResourceAccessedDateKeyName == $key || $this->restResourceCreateDateKeyName == $key || $this->restResourceModifyDateKeyName == $key || FALSE !== strpos(strtolower($key),'date')){

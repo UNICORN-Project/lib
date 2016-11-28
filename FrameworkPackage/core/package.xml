@@ -206,14 +206,14 @@
 	<UploadFiles>
 		<link>default.controlmain.UploadFiles</link>
 	</UploadFiles>
-	<SimpleEmail>
+	<SimpleEmailSender>
 		<link>default.AWSSDK/autoload.php</link>
-		<link mapfrom="GenericAWSSes" mapto="SimpleEmail">default.implement.AWS/GenericAWSSes</link>
-	</SimpleEmail>
-	<DeliveryMail>
-		<package>SimpleEmail</package>
-		<link mapfrom="GenericMail" mapto="DeliveryMail">default.implement.Mail/GenericMail</link>
-	</DeliveryMail>
+		<link mapfrom="GenericAWSSes" mapto="SimpleEmailSender">default.implement.AWS/GenericAWSSes</link>
+	</SimpleEmailSender>
+	<MailSender>
+		<package>SimpleEmailSender</package>
+		<link mapfrom="GenericMailSender" mapto="MailSender">default.implement.Mail/GenericMailSender</link>
+	</MailSender>
 	<Payment>
 		<link>default.interface.Payment/GenericPaymentIO</link>
 		<link>default.abstract.Payment/GenericPaymentBase</link>

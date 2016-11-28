@@ -1,0 +1,10 @@
+<?xml version="1.0" ?>
+<xml>
+	<!-- EPUBのダウンロード -->
+	<section id="Sample" type="fwm" permission="2">
+		<execute>
+			<flowviewparam selector=".datetimepicker" val="HtmlViewAssignor::buildSetAttribute('value', Utilities::modifyDate('-1day', 'Y-m-d', Utilities::date('Y-m-d', null, 'GMT', 'Asia/Tokyo'), 'Asia/Tokyo', 'Asia/Tokyo'))"/>
+			<view/>
+		</execute>
+	</section>
+</xml>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title id="title">管理ツールサンプル</title>
+		<!-- 共通ベースCSS -->
+		<link id="bootstrapCSS" type="text/css" rel="stylesheet" href="//maxcdn. bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+		<link id="bootstrap-jekyllstyleCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/style.css?body=1" media="all">
+		<link id="sanitaizeCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/sanitize.css/2.0.0/sanitize.min.css"/>
+		<link id="fontawesomeCSS" type="text/css" rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"/>
+		<link id="shielduiCSS" type="text/css" rel="stylesheet" href="//www.shieldui.com/shared/components/latest/css/shieldui-all.min.css" />
+		<link id="bootstrap-shielduiCSS" type="text/css" rel="stylesheet" href="//www.shieldui.com/shared/components/latest/css/light-bootstrap/all.min.css" />
+		<link id="bootstrap-darkthemeCSS" type="text/css" rel="stylesheet" href="//www.shieldui.com/shared/components/latest/css/dark-bootstrap/all.min.css" />
+		<link id="bootstrap-datepickerCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/css/bootstrap-datepicker.min.css" />
+		<link id="jqueryDatetimepickerCSS" type="text/css" rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.min.css"/>
+		<!-- フレームワーク専用CSS -->
+		<link id="resetCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/reset.css" />
+		<link id="localCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/local.css" />
+		<link id="la+themeCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/la+.css" />
+		<link id="la+wakethemeCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/la+wake.css" />
+		<link id="spCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/fwm/sp.css" />
+		<link id="loadingCSS" type="text/css" rel="stylesheet" href="/static/vendor/framework/css/loading.css"/>
+		<link id="datetimepickerCustomCSS" rel="stylesheet" type="text/css" href="/static/vendor/framework/css/fwm/jquery.datetimepicker.custom.css"/>
+		<!-- アプリケーション専用CSS -->
+		<!-- 画面専用CSS -->
+	</head>
+	<body>
+		<div id="wrapper" class="single-wrapper">
+			<div class="ajax-error alert alert-dismissable alert-warning" style="display: none;">
+				<button type="button" class="close" data-dismiss="alert">×</button>
+				<h4 class="alert_title">999:エラー</h4>
+				<p>
+					<span class="alert_prefix"><b>ご迷惑をお掛け致します。</b><br/></span>
+					<span class="alert_message">通信中に予期しないエラーが発生しました。</span>
+				</p>
+			</div>
+			<!-- start main contents -->
+			<div class="maincontents">
+				<h1>管理ツールサンプル</h1>
+				<form>
+					<div id="analyze-form" class="form-area">
+						<div class="row form-group">
+							<div class="col-lg-4">
+								<h3>サマリー単位</h3>
+								<select id="target" class="form-control" name="target">
+									<option value="user">会員サマリー</option>
+								</select>
+							</div>
+						</div>
+						<div class="row form-group">
+							<div class="col-lg-4">
+								<h3>集計単位</h3>
+								<select id="timely" class="form-control" name="timely">
+									<option value="0">Daily</option>
+									<option value="1">Monthly</option>
+								</select>
+							</div>
+						</div>
+						<div class="row form-group">
+							<div class="col-lg-12">
+								<h3>期間指定</h3>
+								<p><label class="label label-danger">(!!!)あまりに長い期間は指定しないで下さい！サーバーダウンの危険があります！</label></p>
+								<p><label class="label label-warning">(!)集計単位が「Monthly」の場合、日付を指定しても無視して「月初 〜 月末」で集計されます。</label></p>
+							</div>
+							<div class="col-lg-2">
+								<input id="mindate" class="form-control datetimepicker" type="text" name="mindate" value=""/>
+							</div>
+							<div class="col-lg-1 text-center">
+							〜
+							</div>
+							<div class="col-lg-2">
+								<input id="maxdate" class="form-control datetimepicker" type="text" name="maxdate" value=""/>
+							</div>
+						</div>
+						<div class="row form-group">
+							<div class="col-lg-12">
+								<div class="buttonarea">
+									<button id="analyze" class="btn btn-success">表示</button>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="data-area">
+						<div class="row">
+							<div class="col-lg-12">
+								<p><small>データはエクセル等にコピペして利用して下さい。そのままセルに貼り付け出来ます。</small></p>
+								<table id="analyzed" class="panel panel-success">
+									<thead>
+										<tr>
+											<th class="panel-body target" style="font-size: small;">-</th>
+											<th class="panel-body text-right"><span class="label label-primary">
+												有効会員推移</span>
+												<br/><span class="label label-primary">売上金額推移</span>
+											</th>
+											<th class="panel-body text-right">
+												<span class="label label-success">入会累計推移</span>
+												<br/><span class="label label-success">決済件数</span>
+											</th>
+											<th class="panel-body text-right">
+												<span class="label label-warning">退会推移推移</span>
+												<br/><span class="label label-warning" style="color: gray;">-</span>
+											</th>
+											<th class="panel-body text-right">
+												<span class="label label-success">入会</span>
+												<br/><span class="label label-success">売上金額</span>
+											</th>
+											<th class="panel-body text-right">
+												<span class="label label-warning">退会</span>
+												<br/><span class="label label-warning">売上件数</span>
+											</th>
+											<th class="panel-body text-right">
+												<span class="label label-danger">当日(当月)退会</span>
+												<br/><span class="label label-danger" style="color: gray;">-</span>
+											</th>
+										</tr>
+									</thead>
+									<tbody class="list">
+										<tr class="line">
+											<th class="panel-body"><span class="date label label-default">Y-m-d</span></th>
+											<td class="panel-body text-right"><span class="total label label-primary">0</span></td>
+											<td class="panel-body text-right"><span class="intotal label label-success">0</span></td>
+											<td class="panel-body text-right"><span class="outtotal label label-warning">0</span></td>
+											<td class="panel-body text-right"><span class="in label label-success">0</span></td>
+											<td class="panel-body text-right"><span class="out label label-warning">0</span></td>
+											<td class="panel-body text-right"><span class="oneout label label-danger">0</span></td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+		<!-- フレームワーク標準のローディングレイヤー -->
+		<div id="loading-screen"><div class="loader loader-5"></div></div>
+		<!-- JSエリア -->
+		<div id="JSArea">
+			<!-- 共通ベースJS -->
+			<div id="GenericJSArea">
+				<!-- jquery -->
+				<script id="jqueryJS" type="text/javascript" src="//code.jquery.com/jquery-2.0.0.min.js"></script>
+				<!-- iframeheight -->
+				<script id="iframeheightJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/set-iframe-height/1.3.1/set-iframe-height-child-min.js" async></script>
+				<!-- bootstrap -->
+				<script id="bootstrapJS" type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+				<!-- bootstrap-shieldui-->
+				<script id="bootstrap-shielduiJS" type="text/javascript" src="//www.shieldui.com/shared/components/latest/js/shieldui-all.min.js"></script>
+				<!-- bootstrap-griddata-->
+				<script id="bootstrap-griddataJS" type="text/javascript" src="//www.prepbootstrap.com/Content/js/gridData.js"></script>
+				<!-- bootstrap-datepicker-->
+				<script id="bootstrap-datepickerJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/js/bootstrap-datepicker.min.js"></script>
+				<script id="bootstrap-datepickerJS-ja" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.4/locales/bootstrap-datepicker.ja.min.js"></script>
+				<!-- jsvalidate-->
+				<script id="jqueryValidateJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.15.1/jquery.validate.js"></script>
+				<!-- datetimepicker-->
+				<script id="jqueryDatetimepickerJS" type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-datetimepicker/2.5.4/build/jquery.datetimepicker.full.min.js"></script>
+			</div>
+			<!-- 初期化JS -->
+			<div id="initializeJSArea">
+				<!-- 変数定義 -->
+				<script id="varJS" type="text/javascript" src="/static/js/var.js"></script>
+			</div>
+			<!-- フレームワーク専用JS -->
+			<div id="FrameworkJSArea">
+				<script id="ntpJS" type="text/javascript" src="/static/vendor/framework/js/ntp.js"></script>
+				<script id="dateutilJS" type="text/javascript" src="/static/vendor/framework/js/dateutil.js"></script>
+				<script id="apiclientJS" type="text/javascript" src="/static/vendor/framework/js/apiclient.js"></script>
+				<script id="libJS" type="text/javascript" src="/static/vendor/framework/js/lib.js"></script>
+			</div>
+			<!-- アプリケーション専用JS -->
+			<div id="ApplicationJSArea">
+				<!-- アプリケーションで共通のJSはココに追記 -->
+			</div>
+			<!-- 画面専用JS -->
+			<div id="ViewJSArea">
+				<!-- 画面毎のJSはココに追記 -->
+				<script id="fwmanalyzeJS" type="text/javascript">
+				$(document).ready(function() {
+					var baseDom = $('#analyzed .line').clone();
+					var getAnalyzedData = function(){
+						$('#analyzed .target').text($('#target option:selected').text());
+						if ('' != $('#campaign_code').val()){
+							$('#analyzed .target').html($('#target option:selected').text());
+						}
+						// データ取得
+						apiclient.search(
+							'fwmanalyze',
+							function(done) {
+								if (0 < done.length) {
+									$('#analyzed .list').empty();
+									for (var idx = 0; idx < done.length; idx++){
+										var dom = baseDom.clone();
+										dom.find('.date').text(done[idx]['date']);
+										dom.find('.total').text(done[idx]['total']);
+										dom.find('.intotal').text(done[idx]['intotal']);
+										dom.find('.outtotal').text(done[idx]['outtotal']);
+										if ('0' === done[idx]['outtotal'] || '-' === done[idx]['outtotal']){
+											dom.find('.outtotal').attr('style', 'color:gray; ' + dom.find('.outtotal').attr('style'));
+										}
+										dom.find('.in').text(done[idx]['in']);
+										if ('0' === done[idx]['in'] || '-' === done[idx]['in']){
+											dom.find('.in').attr('style', 'color:gray; ' + dom.find('.in').attr('style'));
+										}
+										dom.find('.out').text(done[idx]['out']);
+										if ('0' === done[idx]['out'] || '-' === done[idx]['out']){
+											dom.find('.out').attr('style', 'color:gray; ' + dom.find('.out').attr('style'));
+										}
+										dom.find('.oneout').text(done[idx]['oneout']);
+										if ('0' === done[idx]['oneout'] || '-' === done[idx]['oneout']){
+											dom.find('.oneout').attr('style', 'color:gray; ' + dom.find('.oneout').attr('style'));
+										}
+										$('#analyzed .list').append(dom);
+									}
+								}
+							},
+							{'_a_':'execute', 'target':$('#target').val(), 'campaign_code':$('#campaign_code').val(), 'timely':$('#timely').val(), 'mindate':$('#mindate').val(), 'maxdate':$('#maxdate').val()}
+						);
+					}
+					$('#analyze').click(function (){
+						getAnalyzedData();
+						return false;
+					});
+					// 初期データを表示
+					getAnalyzedData();
+				});
+				</script>
+			</div>
+		</div>
+	</body>
+</html>

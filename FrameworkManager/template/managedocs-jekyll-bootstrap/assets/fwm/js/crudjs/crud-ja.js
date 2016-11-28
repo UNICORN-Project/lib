@@ -9,7 +9,7 @@
 // 	<div id="crudcontents"></div>
 
 var loadingCnt = 0;
-var loadingSelector = '#screen-loading';
+var loadingSelector = '#loading-screen';
 
 // 外部参照許可変数
 var headers;

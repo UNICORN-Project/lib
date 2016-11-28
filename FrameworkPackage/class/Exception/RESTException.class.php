@@ -26,6 +26,10 @@ class RESTException extends Exception
 			// 許可されていない(もしくは未定義の)リソースメソッドの実行
 			$msg = 'Method Not Allowed';
 		}
+		elseif(409 === $argCode){
+			// 重複が許可されていないデータが、既に存在している
+			$msg = 'Conflict';
+		}
 		elseif(503 === $argCode){
 			// メンテナンスや制限ユーザー等の理由による一時利用の制限中
 			$msg = 'Service Unavailable';
