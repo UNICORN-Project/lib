@@ -13,10 +13,20 @@ Interface SessionIO {
 	public static function setTokenKey($argTokenKey);
 
 	/**
+	 * Cookieからトークンを出し入れする時のキー名のアクセサ
+	 */
+	public static function getTokenKey();
+
+	/**
 	 * 新しいトークンを指定のトークンキー名で払い出しcookieにセットする
 	 * @param string トークンキー名
 	*/
 	public static function setTokenToCookie($argTokenKey);
+
+	/**
+	 * 現在の最新のトークン返す
+	 */
+	public static function getToken();
 
 	/**
 	 * セッションIDを明示的に指定する

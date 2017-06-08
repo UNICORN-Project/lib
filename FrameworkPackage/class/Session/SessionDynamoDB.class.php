@@ -272,6 +272,13 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 	}
 
 	/**
+	 * Cookieからトークンを出し入れする時のキー名のアクセサ
+	 */
+	public static function getTokenKey(){
+		return self::$_tokenKeyName;
+	}
+
+	/**
 	 * 新しいトークンを指定のトークンキー名で払い出しcookieにセットする
 	 * @param string トークンキー名
 	 */
@@ -294,6 +301,13 @@ class SessionDynamoDB extends SessionDataDynamoDB implements SessionIO {
 		}		
 		
 		logging('set session='.var_export($Session, TRUE), 'session');
+	}
+
+	/**
+	 * 現在の最新のトークン返す
+	 */
+	public static function getToken(){
+		return self::$_token;
 	}
 
 	/**
