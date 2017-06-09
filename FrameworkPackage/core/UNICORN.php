@@ -861,7 +861,7 @@ function loadConfig($argConfigPath){
 					if(FALSE !== strpos($val, '__FILE__')){
 						$val = str_replace('__FILE__', '\'' . realpath($argConfigPath) .'\'', $val);
 					}
-					eval('$val = '.$val.';');
+					eval('@$val = '.$val.';');
 					if(!isset($configs['Configure'])){
 						$configs['Configure'] = '';
 					}
@@ -1476,7 +1476,7 @@ function logging($arglog, $argLogName = NULL, $argConsolEchoFlag = FALSE){
 
 	$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/logs/';
 	if(NULL !== defined('PROJECT_NAME')){
-		$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/' . PROJECT_NAME . '/logs/';
+		@$logpath = dirname(dirname(dirname(dirname(__FILE__)))).'/' . PROJECT_NAME . '/logs/';
 	}
 	if(class_exists('Configure', FALSE) && NULL !== constant('Configure::LOG_PATH')){
 		$logpath = Configure::LOG_PATH;
@@ -1774,12 +1774,12 @@ function getAutoStageCheckEnabled($argProjectName=NULL){
 		}
 		elseif(NULL !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.autostagecheck';
+			@$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.autostagecheck';
 			if(TRUE !== is_file($autoStagecheckEnabledFilepath)){
-				$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.autostagecheck';
+				@$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.autostagecheck';
 			}
-			if(TRUE !== is_file($autoStagecheckEnabledFilepath) && 'Project' === PROJECT_NAME){
-				$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.autostagecheck';
+			if(TRUE !== is_file($autoStagecheckEnabledFilepath) && NULL !== defined('PROJECT_NAME') && 'Project' === @constant('PROJECT_NAME')){
+				@$autoStagecheckEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.autostagecheck';
 			}
 		}
 		else{
@@ -1840,9 +1840,9 @@ function getLocalEnabled($argProjectName=NULL, $argHost=NULL){
 			}
 			elseif(NULL !== defined('PROJECT_NAME')){
 				// 併設されている事を前提とする！
-				$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.local';
+				@$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.local';
 				if(TRUE !== is_file($localEnabledFilepath)){
-					$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.local';
+					@$localEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.local';
 				}
 			}
 			else{
@@ -1901,9 +1901,9 @@ function getDevelopmentEnabled($argProjectName=NULL, $argHost=NULL){
 			}
 			elseif(NULL !== defined('PROJECT_NAME')){
 				// 併設されている事を前提とする！
-				$devlopmentEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.dev';
+				@$devlopmentEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.dev';
 				if(TRUE !== is_file($devlopmentEnabledFilepath)){
-					$devlopmentEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.dev';
+					@$devlopmentEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.dev';
 				}
 			}
 			else{
@@ -1971,9 +1971,9 @@ function getTestEnabled($argProjectName=NULL, $argHost=NULL){
 			}
 			elseif(NULL !== defined('PROJECT_NAME')){
 				// 併設されている事を前提とする！
-				$testEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.test';
+				@$testEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.test';
 				if(TRUE !== is_file($testEnabledFilepath)){
-					$testEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.test';
+					@$testEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.test';
 				}
 			}
 			else{
@@ -2032,9 +2032,9 @@ function getStagingEnabled($argProjectName=NULL, $argHost=NULL){
 			}
 			elseif(NULL !== defined('PROJECT_NAME')){
 				// 併設されている事を前提とする！
-				$stagingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.staging';
+				@$stagingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.staging';
 				if(TRUE !== is_file($stagingEnabledFilepath)){
-					$stagingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.staging';
+					@$stagingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.staging';
 				}
 			}
 			else{
@@ -2093,12 +2093,12 @@ function getDebugEnabled($argProjectName=NULL, $argHost=NULL){
 			}
 			elseif(NULL !== defined('PROJECT_NAME')){
 				// 併設されている事を前提とする！
-				$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.debug';
+				@$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.debug';
 				if(TRUE !== is_file($debugEnabledFilepath)){
-					$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.debug';
+					@$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.debug';
 				}
-				if(TRUE !== is_file($debugEnabledFilepath) && 'Project' === PROJECT_NAME){
-					$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.debug';
+				if(TRUE !== is_file($debugEnabledFilepath) && NULL !== defined('PROJECT_NAME') && 'Project' === @constant('PROJECT_NAME')){
+					@$debugEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/FrameworkManager/sample/packages/'.PROJECT_NAME.'Package/.debug';
 				}
 			}
 			else{
@@ -2152,9 +2152,9 @@ function getErrorReportEnabled($argProjectName=NULL){
 		}
 		elseif(NULL !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$errorReportEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.error_report';
+			@$errorReportEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.error_report';
 			if(TRUE !== is_file($errorReportEnabledFilepath)){
-				$errorReportEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.error_report';
+				@$errorReportEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.error_report';
 			}
 		}
 		else{
@@ -2213,9 +2213,9 @@ function getLoggingEnabled($argProjectName=NULL){
 		}
 		elseif(NULL !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.logging';
+			@$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.logging';
 			if(TRUE !== is_file($loggingEnabledFilepath)){
-				$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.logging';
+				@$loggingEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.logging';
 			}
 		}
 		else{
@@ -2274,9 +2274,9 @@ function getAutoGenerateEnabled($argProjectName=NULL){
 		}
 		elseif(FALSE !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$autoGenerateEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.autogenerate';
+			@$autoGenerateEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.autogenerate';
 			if(TRUE !== is_file($autoGenerateEnabledFilepath)){
-				$autoGenerateEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.autogenerate';
+				@$autoGenerateEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.autogenerate';
 			}
 		}
 		else{
@@ -2326,9 +2326,9 @@ function getAutoMigrationEnabled($argProjectName=NULL){
 		}
 		elseif(NULL !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$autoMigrationEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.automigration';
+			@$autoMigrationEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/.automigration';
 			if(TRUE !== is_file($autoMigrationEnabledFilepath)){
-				$autoMigrationEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.automigration';
+				@$autoMigrationEnabledFilepath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/.automigration';
 			}
 		}
 		else{
@@ -2371,13 +2371,13 @@ function getAutoGeneratedPath(){
 		$generatedPath = dirname(dirname(__FILE__)).'/autogenerate/';
 		if(FALSE !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$tmpGeneratedPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/autogenerate';
+			@$tmpGeneratedPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/autogenerate';
 			if(TRUE === is_dir($tmpGeneratedPath)){
 				// パスとして認める
 				$generatedPath = $tmpGeneratedPath.'/';
 			}
 			else{
-				$tmpGeneratedPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/autogenerate';
+				@$tmpGeneratedPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/autogenerate';
 				if(TRUE === is_dir($tmpGeneratedPath)){
 					// パスとして認める
 					$generatedPath = $tmpGeneratedPath.'/';
@@ -2473,13 +2473,13 @@ function getAutoMigrationPath(){
 		$migrationPath = dirname(dirname(__FILE__)).'/automigration/';
 		if(NULL !== defined('PROJECT_NAME')){
 			// 併設されている事を前提とする！
-			$tmpMigrationPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/automigration';
+			@$tmpMigrationPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'/automigration';
 			if(TRUE === is_dir($tmpMigrationPath)){
 				// パスとして認める
 				$migrationPath = $tmpMigrationPath.'/';
 			}
 			else {
-				$tmpMigrationPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/automigration';
+				@$tmpMigrationPath = dirname(dirname(dirname(__FILE__))).'/'.PROJECT_NAME.'Package/automigration';
 				if(TRUE === is_dir($tmpMigrationPath)){
 					// パスとして認める
 					$migrationPath = $tmpMigrationPath.'/';
