@@ -66,21 +66,26 @@ class HtmlViewAssignor {
 		$this->_orgHtmlKey = $argKey;
 	}
 
-	public function addTemplate($argHtmlHinst, $argKey='main'){
-		if(is_object($argHtmlHinst)){
+	public function addTemplate($argHtmlHint, $argKey='main'){
+		if(is_object($argHtmlHint)){
 			// テンプレートエンジンインスタンスが渡ってきていると判定
-			$this->Templates[$argKey] = $argHtmlHinst;
+			$this->Templates[$argKey] = $argHtmlHint;
 			$this->TemplateCaches[$argKey] = array();
 		}
 		else {
 			// テンプレートファイルパスないし、html文字列が渡ってきていると判定し
 			// テンプレートエンジンインスタンス生成
-			$this->Templates[$argKey] = new HtmlTemplate($argHtmlHinst);
+			$this->Templates[$argKey] = new HtmlTemplate($argHtmlHint);
 			$this->TemplateCaches[$argKey] = array();
 		}
 	}
 
 	public function execute($argHtmlHint=NULL, $argParams=NULL, $argKey=NULL){
+
+		if (is_array($argHtmlHint)){
+			$argKey = $argParams;
+			$argParams = $argHtmlHint;
+		}
 
 		if(NULL === $argKey){
 			$argKey = $this->_orgHtmlKey;

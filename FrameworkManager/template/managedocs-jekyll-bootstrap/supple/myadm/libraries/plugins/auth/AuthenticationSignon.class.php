@@ -202,13 +202,13 @@ class AuthenticationSignon extends AuthenticationPlugin
              */
             PMA_Util::clearUserCache();
         }
-        //var_dump($_SESSION);
+
         // Returns whether we get authentication settings or not
         if (empty($PHP_AUTH_USER)) {
             unset($_SESSION['LAST_SIGNON_URL']);
             return false;
         } else {
-        	$_SESSION['LAST_SIGNON_URL'] = $GLOBALS['cfg']['Server']['SignonURL'];
+            $_SESSION['LAST_SIGNON_URL'] = $GLOBALS['cfg']['Server']['SignonURL'];
             return true;
         }
     }
